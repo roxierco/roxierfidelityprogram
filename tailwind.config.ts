@@ -1,0 +1,56 @@
+import type { Config } from "tailwindcss";
+
+/**
+ * Sistema de diseño Roxier Co.
+ * Todos los colores y tipografías de la marca viven aquí.
+ * Si algún día cambia el branding, se cambia en este solo archivo.
+ */
+const config: Config = {
+  content: ["./src/**/*.{ts,tsx}"],
+  theme: {
+    extend: {
+      colors: {
+        // Paleta oficial Roxier (del brand guide)
+        "near-black": "#0E0E10",
+        "paper": "#F5F4F2",
+        "mist": "#96969E",
+        // Variantes derivadas para superficies e interacciones
+        surface: {
+          DEFAULT: "#161618",
+          raised: "#1C1C1F",
+          border: "#2A2A2E",
+        },
+        magenta: {
+          DEFAULT: "#FF2E63",
+          hover: "#FF1F58",
+          muted: "rgba(255, 46, 99, 0.12)",
+        },
+      },
+      fontFamily: {
+        // Syne es la tipografía oficial de la marca
+        sans: ["var(--font-syne)", "system-ui", "sans-serif"],
+      },
+      borderRadius: {
+        brand: "12px",
+        "brand-lg": "16px",
+      },
+      keyframes: {
+        "fade-up": {
+          "0%": { opacity: "0", transform: "translateY(12px)" },
+          "100%": { opacity: "1", transform: "translateY(0)" },
+        },
+        "fade-in": {
+          "0%": { opacity: "0" },
+          "100%": { opacity: "1" },
+        },
+      },
+      animation: {
+        "fade-up": "fade-up 0.5s cubic-bezier(0.22, 1, 0.36, 1) forwards",
+        "fade-in": "fade-in 0.4s ease forwards",
+      },
+    },
+  },
+  plugins: [],
+};
+
+export default config;

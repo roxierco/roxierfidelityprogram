@@ -1,0 +1,66 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/**
+ * Estilos globales — Roxier Fidelity
+ * Fondo near-black por defecto, texto paper.
+ */
+@layer base {
+  :root {
+    color-scheme: dark;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-near-black text-paper antialiased;
+    font-family: var(--font-syne), system-ui, sans-serif;
+  }
+
+  /* Selección de texto con el magenta de la marca */
+  ::selection {
+    background-color: #ff2e63;
+    color: #0e0e10;
+  }
+
+  /* Anillo de foco accesible (importante para navegación por teclado) */
+  :focus-visible {
+    outline: 2px solid #ff2e63;
+    outline-offset: 2px;
+  }
+}
+
+@layer components {
+  /* Botón primario de la marca */
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 rounded-full bg-magenta px-6 py-3
+           font-bold text-near-black transition-colors hover:bg-magenta-hover
+           disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
+  /* Botón secundario (contorno) */
+  .btn-secondary {
+    @apply inline-flex items-center justify-center gap-2 rounded-full border border-surface-border
+           bg-transparent px-6 py-3 font-semibold text-paper transition-colors
+           hover:bg-surface-raised;
+  }
+
+  /* Tarjeta de superficie */
+  .card {
+    @apply rounded-brand-lg border border-surface-border bg-surface p-6;
+  }
+
+  /* Campo de formulario */
+  .input {
+    @apply w-full rounded-brand border border-surface-border bg-surface px-4 py-3
+           text-paper placeholder:text-mist transition-colors
+           focus:border-magenta focus:outline-none;
+  }
+
+  .label {
+    @apply mb-1.5 block text-sm font-semibold text-paper;
+  }
+}
