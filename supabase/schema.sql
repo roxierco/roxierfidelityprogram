@@ -57,6 +57,12 @@ create table public.loyalty_cards (
   stamps_required integer not null default 10,
   reward_text     text not null default 'Un producto gratis',
   is_active       boolean not null default true,
+  -- Personalización avanzada del fondo
+  bg_type         text not null default 'solid' check (bg_type in ('solid', 'gradient', 'image')),
+  color_gradient_end  text,
+  gradient_direction  text,
+  bg_image_url        text,
+  bg_image_position   text check (bg_image_position in ('top', 'center', 'bottom', 'cover')),
   created_at      timestamptz not null default now(),
   updated_at      timestamptz not null default now()
 );

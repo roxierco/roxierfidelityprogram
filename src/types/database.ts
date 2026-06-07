@@ -34,6 +34,12 @@ export interface LoyaltyCard {
   stamps_required: number;
   reward_text: string;
   is_active: boolean;
+  // Personalización avanzada del fondo
+  bg_type: "solid" | "gradient" | "image";
+  color_gradient_end: string | null;
+  gradient_direction: string | null;
+  bg_image_url: string | null;
+  bg_image_position: "top" | "center" | "bottom" | "cover" | null;
   created_at: string;
   updated_at: string;
 }
