@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
-export function EnrollmentForm({ businessId, slug }: { businessId: string; slug: string }) {
+export function EnrollmentForm({ businessId, slug, cardId }: { businessId: string; slug: string; cardId?: string }) {
   const router = useRouter();
   const [form, setForm] = useState({ name: "", email: "", phone: "" });
   const [loading, setLoading] = useState(false);
@@ -28,7 +28,10 @@ export function EnrollmentForm({ businessId, slug }: { businessId: string; slug:
       return;
     }
 
-    router.push(`/c/${slug}/u/${data.customerId}`);
+    const dest = cardId
+      ? `/c/${slug}/u/${data.customerId}?card=${cardId}`
+      : `/c/${slug}/u/${data.customerId}`;
+    router.push(dest);
   }
 
   return (

@@ -1,6 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
 import { TarjetasClient } from "./TarjetasClient";
-import { EnrollmentQR } from "./EnrollmentQR";
 import type { LoyaltyCard } from "@/types/database";
 
 export default async function TarjetasPage() {
@@ -19,24 +18,20 @@ export default async function TarjetasPage() {
     .eq("business_id", business!.id)
     .order("created_at", { ascending: false });
 
-  const enrollUrl = `${process.env.NEXT_PUBLIC_APP_URL}/c/${business!.slug}`;
-
   return (
-    <div className="animate-fade-up space-y-10">
+    <div className="animate-fade-up space-y-8">
       <div>
         <h1 className="text-3xl font-extrabold text-paper">Mis tarjetas de fidelidad</h1>
         <p className="mt-1 text-mist">
-          Personaliza cómo se ve tu tarjeta en el wallet de tus clientes.
+          Diseña tu tarjeta y genera el QR para que tus clientes se registren.
         </p>
       </div>
 
-      {/* QR de inscripción */}
-      <EnrollmentQR enrollUrl={enrollUrl} slug={business!.slug} />
-
-      {/* Editor de tarjetas */}
       <TarjetasClient
         cards={(cards as LoyaltyCard[]) ?? []}
         businessId={business!.id}
+        slug={business!.slug}
+        appUrl={process.env.NEXT_PUBLIC_APP_URL ?? ""}
       />
     </div>
   );

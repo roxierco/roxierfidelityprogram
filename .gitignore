@@ -31,3 +31,5 @@ yarn-error.log*
 /certificados/
 *.p12
 *.cer
+
+.vercel
