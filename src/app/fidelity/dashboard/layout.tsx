@@ -22,7 +22,7 @@ export default async function DashboardLayout({
 
   const { data: business } = await supabase
     .from("businesses")
-    .select("name")
+    .select("name, logo_url")
     .eq("owner_id", user.id)
     .single();
 
@@ -30,7 +30,7 @@ export default async function DashboardLayout({
 
   return (
     <div className="flex min-h-screen bg-near-black">
-      <Sidebar businessName={business.name} />
+      <Sidebar businessName={business.name} businessLogoUrl={business.logo_url ?? null} />
       <main className="flex-1 overflow-y-auto">
         <div className="mx-auto max-w-5xl px-8 py-8">{children}</div>
       </main>

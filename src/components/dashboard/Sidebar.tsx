@@ -16,22 +16,43 @@ const navItems = [
   { href: "/fidelity/dashboard/configuracion", label: "Configuración", icon: "M12 15a3 3 0 100-6 3 3 0 000 6zM19 12a7 7 0 00-.1-1l2-1.5-2-3.5-2.4 1a7 7 0 00-1.7-1L14.5 2h-5l-.3 2.5a7 7 0 00-1.7 1l-2.4-1-2 3.5L2.6 11a7 7 0 000 2l-2 1.5 2 3.5 2.4-1a7 7 0 001.7 1l.3 2.5h5l.3-2.5a7 7 0 001.7-1l2.4 1 2-3.5-2-1.5a7 7 0 00.1-1z" },
 ];
 
-export function Sidebar({ businessName }: { businessName: string }) {
+export function Sidebar({ businessName, businessLogoUrl }: { businessName: string; businessLogoUrl: string | null }) {
   const pathname = usePathname();
 
   return (
     <aside className="flex w-64 flex-col border-r border-surface-border bg-surface">
-      <div className="flex items-center gap-2.5 px-6 py-6">
-        <XMark className="h-6 w-6" />
-        <span className="font-extrabold tracking-wide text-paper">
-          ROXIER<span className="ml-1 text-xs font-semibold text-magenta">Fidelity</span>
-        </span>
-      </div>
+      {/* Co-branding header */}
+      <div className="px-5 py-5 border-b border-surface-border">
+        {/* Roxier Fidelity */}
+        <div className="flex items-center gap-2 mb-3">
+          <XMark className="h-5 w-5" />
+          <span className="font-extrabold tracking-wide text-paper text-sm">
+            ROXIER<span className="ml-1 text-xs font-semibold text-magenta">Fidelity</span>
+          </span>
+        </div>
 
-      <div className="px-4 pb-2">
-        <p className="truncate rounded-brand bg-near-black px-3 py-2 text-sm font-semibold text-mist">
-          {businessName}
-        </p>
+        {/* Separador × */}
+        <div className="flex items-center gap-2 mb-3">
+          <div className="h-px flex-1 bg-surface-border" />
+          <span className="text-xs font-bold text-mist">×</span>
+          <div className="h-px flex-1 bg-surface-border" />
+        </div>
+
+        {/* Logo + nombre del negocio */}
+        <div className="flex items-center gap-2.5">
+          {businessLogoUrl ? (
+            <img
+              src={businessLogoUrl}
+              alt={businessName}
+              className="h-8 w-8 flex-shrink-0 rounded-lg object-contain bg-near-black p-0.5"
+            />
+          ) : (
+            <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-magenta text-near-black font-extrabold text-sm">
+              {businessName[0]?.toUpperCase()}
+            </div>
+          )}
+          <span className="truncate text-sm font-bold text-paper">{businessName}</span>
+        </div>
       </div>
 
       <nav className="flex-1 space-y-1 px-3 py-4">

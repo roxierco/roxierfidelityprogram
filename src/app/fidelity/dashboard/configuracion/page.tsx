@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { formatMXN } from "@/lib/utils";
 import { ActivarSuscripcion } from "./ActivarSuscripcion";
+import { LogoUpload } from "./LogoUpload";
 import type { Business } from "@/types/database";
 
 /**
@@ -33,7 +34,16 @@ export default async function ConfiguracionPage() {
       <h1 className="text-3xl font-extrabold text-paper">Configuración</h1>
       <p className="mt-1 text-mist">Tu cuenta y suscripción.</p>
 
-      <div className="card mt-8 space-y-4">
+      {/* Logo del negocio */}
+      <div className="card mt-8">
+        <h3 className="font-bold text-paper mb-1">Logo del negocio</h3>
+        <p className="text-sm text-mist mb-4">
+          Aparece junto al nombre en el sidebar y le da identidad a tu marca.
+        </p>
+        <LogoUpload currentLogoUrl={business.logo_url ?? null} businessId={business.id} />
+      </div>
+
+      <div className="card mt-4 space-y-4">
         <Row label="Negocio" value={business.name} />
         <Row label="Correo" value={business.email} />
         <Row label="Plan" value={business.plan} />

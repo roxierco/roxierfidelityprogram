@@ -14,6 +14,7 @@ export interface Business {
   slug: string;
   email: string;
   phone: string | null;
+  logo_url: string | null;
   status: BusinessStatus;
   plan: BusinessPlan;
   monthly_price: number;
