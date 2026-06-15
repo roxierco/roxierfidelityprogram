@@ -30,7 +30,7 @@ export default async function EnrollPage({ params }: { params: Promise<{ slug: s
           className="mb-6 rounded-2xl p-5 shadow-2xl"
           style={{
             backgroundColor: card?.color_background ?? "#0E0E10",
-            color: card?.color_text ?? "#F5F4F2",
+            color: card?.text_color ?? "#F5F4F2",
             border: `2px solid ${card?.color_primary ?? "#FF2E63"}`,
           }}
         >
