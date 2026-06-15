@@ -4,6 +4,7 @@ import { z } from "zod";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { slugify } from "@/lib/utils";
 
 /**
@@ -51,8 +52,10 @@ export async function registrarNegocio(
     return { error: authError?.message ?? "No se pudo crear la cuenta" };
   }
 
-  // 2. Crear el registro del negocio vinculado al usuario
-  const { error: bizError } = await supabase.from("businesses").insert({
+  // 2. Crear el registro del negocio con el cliente admin (bypasa RLS)
+  // Necesario cuando la confirmación de email está activa y el usuario no tiene sesión aún.
+  const admin = createAdminClient();
+  const { error: bizError } = await admin.from("businesses").insert({
     owner_id: authData.user.id,
     name: businessName,
     slug: `${slugify(businessName)}-${authData.user.id.slice(0, 6)}`,
@@ -64,7 +67,14 @@ export async function registrarNegocio(
   });
 
   if (bizError) {
-    return { error: "No se pudo crear el negocio. Intenta de nuevo." };
+    // Si falla, eliminar el usuario creado para no dejar datos huérfanos
+    await admin.auth.admin.deleteUser(authData.user.id);
+    return { error: "No se pudo crear el negocio: " + bizError.message };
+  }
+
+  // Si no hay sesión activa es porque Supabase requiere confirmación de email
+  if (!authData.session) {
+    redirect("/fidelity/login?msg=confirma-tu-email");
   }
 
   revalidatePath("/fidelity/dashboard");

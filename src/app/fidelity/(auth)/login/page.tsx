@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useActionState } from "react";
+import { useSearchParams } from "next/navigation";
 import { iniciarSesion, type ActionState } from "../actions";
 import { RoxierLogo } from "@/components/brand/XMark";
 
@@ -10,6 +11,8 @@ export default function LoginPage() {
     iniciarSesion,
     undefined,
   );
+  const searchParams = useSearchParams();
+  const msg = searchParams.get("msg");
 
   return (
     <div className="flex min-h-screen items-center justify-center px-6 py-12">
@@ -25,6 +28,12 @@ export default function LoginPage() {
           <p className="mb-6 text-sm text-mist">
             Entra al panel de tu negocio.
           </p>
+
+          {msg === "confirma-tu-email" && (
+            <div className="mb-4 rounded-brand bg-green-500/10 border border-green-500/30 px-4 py-3 text-sm text-green-400">
+              ✅ Cuenta creada. Revisa tu correo y confirma tu email antes de iniciar sesión.
+            </div>
+          )}
 
           <form action={formAction} className="space-y-4">
             <div>
