@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { use, useEffect, useState } from "react";
 import { QRCodeSVG } from "qrcode.react";
 
 interface Customer {
@@ -29,9 +29,10 @@ interface Business {
 export default function CustomerCardPage({
   params,
 }: {
-  params: { slug: string; customerId: string };
+  params: Promise<{ slug: string; customerId: string }>;
 }) {
-  const { slug, customerId } = params;
+  const resolvedParams = use(params);
+  const { slug, customerId } = resolvedParams;
   const [customer, setCustomer] = useState<Customer | null>(null);
   const [card, setCard] = useState<Card | null>(null);
   const [business, setBusiness] = useState<Business | null>(null);
