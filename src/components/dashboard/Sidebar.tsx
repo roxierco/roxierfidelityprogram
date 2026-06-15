@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { XMark } from "@/components/brand/XMark";
 import { cerrarSesion } from "@/app/fidelity/(auth)/actions";
+import { ThemeToggle } from "@/components/dashboard/ThemeToggle";
 
 const navItems = [
   { href: "/fidelity/dashboard", label: "Resumen", icon: "M3 3h7v7H3zM14 3h7v7h-7zM14 14h7v7h-7zM3 14h7v7H3z" },
@@ -56,14 +57,17 @@ export function Sidebar({ businessName }: { businessName: string }) {
         })}
       </nav>
 
-      <form action={cerrarSesion} className="border-t border-surface-border p-3">
-        <button type="submit" className="flex w-full items-center gap-3 rounded-brand px-3 py-2.5 text-sm font-semibold text-mist transition-colors hover:bg-near-black hover:text-paper">
-          <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9" />
-          </svg>
-          Cerrar sesión
-        </button>
-      </form>
+      <div className="border-t border-surface-border p-3 space-y-1">
+        <ThemeToggle />
+        <form action={cerrarSesion}>
+          <button type="submit" className="flex w-full items-center gap-3 rounded-brand px-3 py-2.5 text-sm font-semibold text-mist transition-colors hover:bg-near-black hover:text-paper">
+            <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9" />
+            </svg>
+            Cerrar sesión
+          </button>
+        </form>
+      </div>
     </aside>
   );
 }

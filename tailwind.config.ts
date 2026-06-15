@@ -10,15 +10,14 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        // Paleta oficial Roxier (del brand guide)
-        "near-black": "#0E0E10",
-        "paper": "#F5F4F2",
-        "mist": "#96969E",
-        // Variantes derivadas para superficies e interacciones
+        // Paleta oficial Roxier — referencia CSS variables para soporte de temas
+        "near-black": "var(--near-black)",
+        "paper":      "var(--paper)",
+        "mist":       "var(--mist)",
         surface: {
-          DEFAULT: "#161618",
-          raised: "#1C1C1F",
-          border: "#2A2A2E",
+          DEFAULT: "var(--surface)",
+          raised:  "var(--surface-raised)",
+          border:  "var(--surface-border)",
         },
         magenta: {
           DEFAULT: "#FF2E63",

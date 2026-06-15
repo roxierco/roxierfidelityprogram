@@ -29,6 +29,14 @@ export default function RootLayout({
 }) {
   return (
     <html lang="es-MX" className={syne.variable}>
+      {/* Aplica el tema antes de que React hidrate para evitar flash */}
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var t=localStorage.getItem('theme');if(t==='light')document.documentElement.classList.add('light');}catch(e){}})();`,
+          }}
+        />
+      </head>
       <body>{children}</body>
     </html>
   );

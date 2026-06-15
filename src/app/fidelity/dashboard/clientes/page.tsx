@@ -60,7 +60,7 @@ export default async function ClientesPage() {
             </thead>
             <tbody className="divide-y divide-surface-border">
               {list.map((c) => (
-                <tr key={c.id} className="text-paper hover:bg-surface/50 transition-colors">
+                <tr key={c.id} className="text-paper hover:bg-surface-raised transition-colors">
                   <td className="px-4 py-3 font-semibold">{c.full_name}</td>
                   <td className="px-4 py-3 text-mist">{c.phone ?? "—"}</td>
                   <td className="px-4 py-3 text-mist text-xs">{c.email ?? "—"}</td>

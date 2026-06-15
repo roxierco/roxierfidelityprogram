@@ -4,13 +4,32 @@
 
 /**
  * Estilos globales — Roxier Fidelity
- * Fondo near-black por defecto, texto paper.
  */
-@layer base {
-  :root {
-    color-scheme: dark;
-  }
 
+/* ── Variables de tema ─────────────────────────────────── */
+:root {
+  /* Modo oscuro (por defecto) */
+  --near-black: #0E0E10;
+  --paper:      #F5F4F2;
+  --mist:       #96969E;
+  --surface:         #161618;
+  --surface-raised:  #1C1C1F;
+  --surface-border:  #2A2A2E;
+  color-scheme: dark;
+}
+
+html.light {
+  /* Modo claro */
+  --near-black: #FFFFFF;
+  --paper:      #0D0D0F;
+  --mist:       #58585F;
+  --surface:         #F2F2F5;
+  --surface-raised:  #E8E8ED;
+  --surface-border:  #D0D0D8;
+  color-scheme: light;
+}
+
+@layer base {
   html {
     scroll-behavior: smooth;
   }
