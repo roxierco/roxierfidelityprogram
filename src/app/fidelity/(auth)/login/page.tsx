@@ -1,18 +1,28 @@
 "use client";
 
 import Link from "next/link";
+import { Suspense } from "react";
 import { useActionState } from "react";
 import { useSearchParams } from "next/navigation";
 import { iniciarSesion, type ActionState } from "../actions";
 import { RoxierLogo } from "@/components/brand/XMark";
+
+function EmailConfirmBanner() {
+  const searchParams = useSearchParams();
+  const msg = searchParams.get("msg");
+  if (msg !== "confirma-tu-email") return null;
+  return (
+    <div className="mb-4 rounded-brand border border-green-500/30 bg-green-500/10 px-4 py-3 text-sm text-green-400">
+      ✅ Cuenta creada. Revisa tu correo y confirma tu email antes de iniciar sesión.
+    </div>
+  );
+}
 
 export default function LoginPage() {
   const [state, formAction, pending] = useActionState<ActionState, FormData>(
     iniciarSesion,
     undefined,
   );
-  const searchParams = useSearchParams();
-  const msg = searchParams.get("msg");
 
   return (
     <div className="flex min-h-screen items-center justify-center px-6 py-12">
@@ -29,11 +39,9 @@ export default function LoginPage() {
             Entra al panel de tu negocio.
           </p>
 
-          {msg === "confirma-tu-email" && (
-            <div className="mb-4 rounded-brand bg-green-500/10 border border-green-500/30 px-4 py-3 text-sm text-green-400">
-              ✅ Cuenta creada. Revisa tu correo y confirma tu email antes de iniciar sesión.
-            </div>
-          )}
+          <Suspense fallback={null}>
+            <EmailConfirmBanner />
+          </Suspense>
 
           <form action={formAction} className="space-y-4">
             <div>
