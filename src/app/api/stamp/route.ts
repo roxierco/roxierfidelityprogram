@@ -10,7 +10,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "No autorizado" }, { status: 401 });
   }
 
-  const { customerId, businessId } = await req.json();
+  const { customerId, businessId, cardId } = await req.json();
   if (!customerId || !businessId) {
     return NextResponse.json({ error: "Faltan datos" }, { status: 400 });
   }
@@ -29,12 +29,29 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Cliente no encontrado en este negocio" }, { status: 404 });
   }
 
-  // Obtener la tarjeta para saber cuántos sellos se necesitan
-  const { data: card } = await admin
-    .from("loyalty_cards")
-    .select("stamps_required, reward_text")
-    .eq("business_id", businessId)
-    .maybeSingle();
+  // Obtener la tarjeta específica para saber cuántos sellos se necesitan
+  let card = null;
+  if (cardId) {
+    const { data } = await admin
+      .from("loyalty_cards")
+      .select("stamps_required, reward_text")
+      .eq("id", cardId)
+      .eq("business_id", businessId)
+      .single();
+    card = data;
+  }
+  if (!card) {
+    // fallback: primera tarjeta activa del negocio
+    const { data } = await admin
+      .from("loyalty_cards")
+      .select("stamps_required, reward_text")
+      .eq("business_id", businessId)
+      .eq("is_active", true)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    card = data;
+  }
 
   const stampsRequired = card?.stamps_required ?? 10;
   const newStamps = customer.current_stamps + 1;

@@ -39,11 +39,13 @@ export function ScannerClient({ businessId, businessName }: { businessId: string
   const [error, setError] = useState("");
   const [stamping, setStamping] = useState(false);
   const [scannedCustomerId, setScannedCustomerId] = useState<string | null>(null);
+  const [scannedCardId, setScannedCardId] = useState<string | null>(null);
 
   async function startScanner() {
     setError("");
     setResult(null);
     setScannedCustomerId(null);
+    setScannedCardId(null);
 
     const qr = new Html5Qrcode("qr-reader");
     scannerRef.current = qr;
@@ -70,7 +72,7 @@ export function ScannerClient({ businessId, businessName }: { businessId: string
   }
 
   async function handleScan(url: string, qr: Html5Qrcode) {
-    // Extraer customerId de URL tipo /c/{slug}/u/{customerId}
+    // Extraer customerId de URL tipo /c/{slug}/u/{customerId}?card={cardId}
     const match = url.match(/\/u\/([a-f0-9-]{36})/);
     if (!match) {
       setError("QR inválido — no es una tarjeta de este sistema.");
@@ -79,6 +81,17 @@ export function ScannerClient({ businessId, businessName }: { businessId: string
 
     const customerId = match[1];
     setScannedCustomerId(customerId);
+
+    // Extraer cardId del query param ?card=xxx si está presente
+    try {
+      const parsed = new URL(url);
+      const cardId = parsed.searchParams.get("card");
+      if (cardId) setScannedCardId(cardId);
+    } catch {
+      // URL relativa — intentar con regex
+      const cardMatch = url.match(/[?&]card=([a-f0-9-]{36})/);
+      if (cardMatch) setScannedCardId(cardMatch[1]);
+    }
 
     await qr.stop();
     scannerRef.current = null;
@@ -93,7 +106,7 @@ export function ScannerClient({ businessId, businessName }: { businessId: string
     const res = await fetch("/api/stamp", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ customerId: scannedCustomerId, businessId }),
+      body: JSON.stringify({ customerId: scannedCustomerId, businessId, cardId: scannedCardId }),
     });
 
     const data = await res.json();
