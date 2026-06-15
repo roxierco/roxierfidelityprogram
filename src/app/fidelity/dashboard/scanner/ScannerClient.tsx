@@ -11,6 +11,27 @@ interface ScanResult {
   stampsRequired: number;
 }
 
+function playRewardSound() {
+  try {
+    const ctx = new AudioContext();
+    const notes = [523, 659, 784, 1047]; // C5 E5 G5 C6
+    notes.forEach((freq, i) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.frequency.value = freq;
+      osc.type = "sine";
+      gain.gain.setValueAtTime(0.3, ctx.currentTime + i * 0.12);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + i * 0.12 + 0.4);
+      osc.start(ctx.currentTime + i * 0.12);
+      osc.stop(ctx.currentTime + i * 0.12 + 0.4);
+    });
+  } catch {
+    // audio not available
+  }
+}
+
 export function ScannerClient({ businessId, businessName }: { businessId: string; businessName: string }) {
   const scannerRef = useRef<Html5Qrcode | null>(null);
   const [scanning, setScanning] = useState(false);
@@ -86,6 +107,7 @@ export function ScannerClient({ businessId, businessName }: { businessId: string
     setResult(data);
     setScannedCustomerId(null);
     setStamping(false);
+    if (data.rewarded) playRewardSound();
   }
 
   useEffect(() => {
@@ -143,26 +165,15 @@ export function ScannerClient({ businessId, businessName }: { businessId: string
         </div>
       )}
 
-      {/* Resultado */}
-      {result && (
-        <div className={`rounded-brand border p-6 space-y-3 text-center ${
-          result.rewarded
-            ? "border-yellow-400 bg-yellow-400/10"
-            : "border-green-500 bg-green-500/10"
-        }`}>
-          <div className="text-5xl">{result.rewarded ? "🎉" : "✅"}</div>
+      {/* Sello normal */}
+      {result && !result.rewarded && (
+        <div className="rounded-brand border border-green-500 bg-green-500/10 p-6 space-y-3 text-center">
+          <div className="text-5xl">✅</div>
           <div>
             <p className="font-bold text-lg text-paper">{result.customer.full_name}</p>
-            {result.rewarded ? (
-              <>
-                <p className="text-yellow-400 font-semibold mt-1">¡Recompensa ganada!</p>
-                <p className="text-sm text-mist">{result.rewardText}</p>
-              </>
-            ) : (
-              <p className="text-green-400 font-semibold mt-1">
-                Sello agregado · {result.customer.current_stamps}/{result.stampsRequired} sellos
-              </p>
-            )}
+            <p className="text-green-400 font-semibold mt-1">
+              Sello agregado · {result.customer.current_stamps}/{result.stampsRequired} sellos
+            </p>
           </div>
           <button
             onClick={() => { setResult(null); startScanner(); }}
@@ -170,6 +181,36 @@ export function ScannerClient({ businessId, businessName }: { businessId: string
           >
             Escanear otro cliente
           </button>
+        </div>
+      )}
+
+      {/* Pantalla completa de recompensa */}
+      {result && result.rewarded && (
+        <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-yellow-400 animate-pulse-once">
+          <div className="text-center px-8 space-y-6">
+            <div className="text-8xl animate-bounce">🎉</div>
+            <div>
+              <p className="text-3xl font-black text-yellow-900 leading-tight">
+                ¡RECOMPENSA<br />GANADA!
+              </p>
+              <p className="mt-3 text-xl font-bold text-yellow-800">
+                {result.customer.full_name}
+              </p>
+            </div>
+            <div className="rounded-2xl bg-yellow-900/20 px-6 py-4">
+              <p className="text-xs font-semibold uppercase tracking-widest text-yellow-800 mb-1">Premio a entregar</p>
+              <p className="text-2xl font-extrabold text-yellow-900">{result.rewardText}</p>
+            </div>
+            <p className="text-sm text-yellow-800 opacity-75">
+              Entrega el premio al cliente y luego continúa.
+            </p>
+            <button
+              onClick={() => { setResult(null); startScanner(); }}
+              className="w-full rounded-2xl bg-yellow-900 py-4 text-lg font-bold text-yellow-100 active:scale-95 transition-transform"
+            >
+              ✓ Premio entregado — Siguiente
+            </button>
+          </div>
         </div>
       )}
 
