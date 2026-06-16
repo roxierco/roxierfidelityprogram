@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { Sidebar } from "@/components/dashboard/Sidebar";
 
 /**
@@ -28,18 +29,14 @@ export default async function DashboardLayout({
 
   if (!business) redirect("/fidelity/login");
 
-  // Intentar obtener logo_url por separado para no romper si la columna aún no existe
-  let logoUrl: string | null = null;
-  try {
-    const { data: biz } = await supabase
-      .from("businesses")
-      .select("logo_url")
-      .eq("owner_id", user.id)
-      .single();
-    logoUrl = (biz as { logo_url?: string | null })?.logo_url ?? null;
-  } catch {
-    // columna aún no existe en la BD — se ignora
-  }
+  // Admin client para leer logo_url sin problemas de caché de esquema
+  const admin = createAdminClient();
+  const { data: bizFull } = await admin
+    .from("businesses")
+    .select("logo_url")
+    .eq("owner_id", user.id)
+    .single();
+  const logoUrl: string | null = (bizFull as { logo_url?: string | null })?.logo_url ?? null;
 
   return (
     <div className="flex min-h-screen bg-near-black">
