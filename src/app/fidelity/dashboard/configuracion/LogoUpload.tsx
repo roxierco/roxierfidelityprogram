@@ -1,7 +1,6 @@
 "use client";
 
 import { useRef, useState, useTransition } from "react";
-import { createClient } from "@/lib/supabase/client";
 
 export function LogoUpload({ currentLogoUrl, businessId }: { currentLogoUrl: string | null; businessId: string }) {
   const [logoUrl, setLogoUrl] = useState(currentLogoUrl);
@@ -26,36 +25,21 @@ export function LogoUpload({ currentLogoUrl, businessId }: { currentLogoUrl: str
     setError("");
     setUploading(true);
 
-    const supabase = createClient();
-    const ext = file.name.split(".").pop();
-    const path = `business-logos/${businessId}.${ext}`;
+    const form = new FormData();
+    form.append("file", file);
+    form.append("businessId", businessId);
 
-    const { error: uploadError } = await supabase.storage
-      .from("logos")
-      .upload(path, file, { upsert: true });
+    const res = await fetch("/api/upload-business-logo", { method: "POST", body: form });
+    const data = await res.json();
 
-    if (uploadError) {
-      setError("Error al subir la imagen: " + uploadError.message);
+    if (!res.ok) {
+      setError("Error al subir la imagen: " + (data.error ?? "desconocido"));
       setUploading(false);
       return;
     }
 
-    const { data: { publicUrl } } = supabase.storage.from("logos").getPublicUrl(path);
-
-    const { error: updateError } = await supabase
-      .from("businesses")
-      .update({ logo_url: publicUrl })
-      .eq("id", businessId);
-
-    if (updateError) {
-      setError("Error al guardar: " + updateError.message);
-      setUploading(false);
-      return;
-    }
-
-    setLogoUrl(publicUrl);
+    setLogoUrl(data.publicUrl);
     setUploading(false);
-    // Refresca para que el sidebar muestre el nuevo logo
     startTransition(() => { window.location.reload(); });
   }
 
