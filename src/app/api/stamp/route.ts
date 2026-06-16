@@ -3,19 +3,38 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 
 export async function POST(req: NextRequest) {
-  // Verificar que el negocio que escanea está autenticado
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) {
     return NextResponse.json({ error: "No autorizado" }, { status: 401 });
   }
 
-  const { customerId, businessId, cardId } = await req.json();
+  const body = await req.json();
+  const { customerId, businessId, cardId } = body;
+
   if (!customerId || !businessId) {
     return NextResponse.json({ error: "Faltan datos" }, { status: 400 });
   }
 
+  // Validar formato UUID para evitar queries maliciosas
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  if (!uuidRegex.test(customerId) || !uuidRegex.test(businessId)) {
+    return NextResponse.json({ error: "Datos inválidos" }, { status: 400 });
+  }
+
   const admin = createAdminClient();
+
+  // SEGURIDAD: verificar que el businessId pertenece al usuario autenticado
+  const { data: ownedBusiness } = await admin
+    .from("businesses")
+    .select("id")
+    .eq("id", businessId)
+    .eq("owner_id", user.id)
+    .single();
+
+  if (!ownedBusiness) {
+    return NextResponse.json({ error: "No autorizado para este negocio" }, { status: 403 });
+  }
 
   // Verificar que el cliente pertenece a este negocio
   const { data: customer } = await admin
@@ -31,17 +50,17 @@ export async function POST(req: NextRequest) {
 
   // Obtener la tarjeta específica para saber cuántos sellos se necesitan
   let card = null;
-  if (cardId) {
+  if (cardId && uuidRegex.test(cardId)) {
     const { data } = await admin
       .from("loyalty_cards")
       .select("stamps_required, reward_text")
       .eq("id", cardId)
       .eq("business_id", businessId)
+      .eq("is_active", true)
       .single();
     card = data;
   }
   if (!card) {
-    // fallback: primera tarjeta activa del negocio
     const { data } = await admin
       .from("loyalty_cards")
       .select("stamps_required, reward_text")
@@ -58,7 +77,6 @@ export async function POST(req: NextRequest) {
   const rewarded = newStamps >= stampsRequired;
   const finalStamps = rewarded ? newStamps - stampsRequired : newStamps;
 
-  // Actualizar sellos
   await admin
     .from("end_customers")
     .update({
@@ -69,7 +87,6 @@ export async function POST(req: NextRequest) {
     })
     .eq("id", customerId);
 
-  // Registrar visita
   await admin.from("visits").insert({
     business_id: businessId,
     customer_id: customerId,

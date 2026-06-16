@@ -15,6 +15,23 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Faltan datos" }, { status: 400 });
   }
 
+  // Validar UUID
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  if (!uuidRegex.test(businessId)) {
+    return NextResponse.json({ error: "Negocio inválido" }, { status: 400 });
+  }
+
+  // Validar tipo MIME en el servidor (no confiar solo en el cliente)
+  const allowedTypes = ["image/jpeg", "image/png", "image/webp", "image/svg+xml", "image/gif"];
+  if (!allowedTypes.includes(file.type)) {
+    return NextResponse.json({ error: "Tipo de archivo no permitido. Usa JPG, PNG, WEBP o SVG." }, { status: 400 });
+  }
+
+  // Límite de tamaño: 2 MB
+  if (file.size > 2 * 1024 * 1024) {
+    return NextResponse.json({ error: "La imagen no puede pesar más de 2 MB." }, { status: 400 });
+  }
+
   const admin = createAdminClient();
 
   // Verificar que el negocio pertenece a este usuario
