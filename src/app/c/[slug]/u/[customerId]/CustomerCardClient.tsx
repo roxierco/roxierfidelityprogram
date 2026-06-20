@@ -48,16 +48,52 @@ export function CustomerCardClient({
   const [walletLoading, setWalletLoading] = useState(false);
   const [pushState, setPushState] = useState<"idle" | "asking" | "subscribed" | "denied" | "unsupported">("idle");
   const [justStamped, setJustStamped] = useState(false);
+  const [celebrating, setCelebrating] = useState(false);
+  const [celebrationReward, setCelebrationReward] = useState("");
   const prevStampsRef = useRef(initialCustomer.current_stamps);
+  const prevRewardsRef = useRef(initialCustomer.rewards_redeemed);
+  const stampsRequired = card?.stamps_required ?? 10;
 
-  const applyUpdate = useCallback((data: { current_stamps: number; total_visits: number; rewards_redeemed: number }) => {
-    if (data.current_stamps !== prevStampsRef.current) {
-      prevStampsRef.current = data.current_stamps;
+  const applyUpdate = useCallback((data: {
+    current_stamps: number;
+    total_visits: number;
+    rewards_redeemed: number;
+    rewarded?: boolean;
+    reward_text?: string;
+    stamps_required?: number;
+  }) => {
+    const justRewarded = data.rewarded || data.rewards_redeemed > prevRewardsRef.current;
+
+    if (!justRewarded && data.current_stamps === prevStampsRef.current) return;
+
+    prevStampsRef.current = data.current_stamps;
+    prevRewardsRef.current = data.rewards_redeemed;
+
+    if (justRewarded) {
+      // Mostrar tarjeta COMPLETA primero con celebración
+      const totalStamps = data.stamps_required ?? stampsRequired;
+      setCustomer((prev) => ({
+        ...prev,
+        current_stamps: totalStamps, // todos llenos
+        total_visits: data.total_visits,
+        rewards_redeemed: data.rewards_redeemed,
+      }));
+      setCelebrationReward(data.reward_text ?? card?.reward_text ?? "¡Premio especial!");
+      setCelebrating(true);
+      setJustStamped(true);
+
+      // Después de 9 segundos, reinicia la tarjeta
+      setTimeout(() => {
+        setCelebrating(false);
+        setCustomer((prev) => ({ ...prev, current_stamps: data.current_stamps }));
+        setTimeout(() => setJustStamped(false), 600);
+      }, 9000);
+    } else {
       setCustomer((prev) => ({ ...prev, ...data }));
       setJustStamped(true);
       setTimeout(() => setJustStamped(false), 2000);
     }
-  }, []);
+  }, [card?.reward_text, stampsRequired]);
 
   // Polling cada 5 segundos — funciona en todos los navegadores incluyendo Safari/iPhone
   useEffect(() => {
@@ -151,11 +187,43 @@ export function CustomerCardClient({
   const primary = card?.color_primary ?? "#FF2E63";
   const bg = card?.color_background ?? "#0E0E10";
   const text = card?.text_color ?? "#F5F4F2";
-  const stampsRequired = card?.stamps_required ?? 10;
   const progress = Math.min(customer.current_stamps, stampsRequired);
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4" style={{ backgroundColor: bg }}>
+
+      {/* Pantalla de celebración — tarjeta completa */}
+      {celebrating && (
+        <div
+          className="fixed inset-0 z-50 flex flex-col items-center justify-center text-center px-8 animate-fade-in"
+          style={{ backgroundColor: primary }}
+        >
+          <div className="text-7xl mb-4 animate-bounce">🎉</div>
+          <h1 className="text-3xl font-extrabold text-white mb-2">
+            ¡Tarjeta completada!
+          </h1>
+          <p className="text-white text-lg font-semibold mb-2" style={{ opacity: 0.9 }}>
+            Tu recompensa:
+          </p>
+          <p className="text-white text-2xl font-black mb-8">
+            {celebrationReward}
+          </p>
+          <p className="text-white text-sm" style={{ opacity: 0.7 }}>
+            Muestra esta pantalla al cajero
+          </p>
+          <button
+            onClick={() => {
+              setCelebrating(false);
+              setCustomer((prev) => ({ ...prev, current_stamps: prevStampsRef.current }));
+              setJustStamped(false);
+            }}
+            className="mt-8 rounded-full bg-white px-8 py-3 font-bold text-sm"
+            style={{ color: primary }}
+          >
+            Entendido
+          </button>
+        </div>
+      )}
       <div className="w-full max-w-sm space-y-4">
 
         {/* Tarjeta de lealtad */}

@@ -18,7 +18,11 @@ export async function GET(req: NextRequest) {
 
   if (!data) return NextResponse.json({ error: "No encontrado" }, { status: 404 });
 
-  return NextResponse.json(data, {
+  return NextResponse.json({
+    current_stamps: data.current_stamps,
+    total_visits: data.total_visits,
+    rewards_redeemed: data.rewards_redeemed,
+  }, {
     headers: { "Cache-Control": "no-store" },
   });
 }
