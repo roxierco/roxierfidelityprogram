@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { Resend } from "resend";
+import { isGoogleWalletConfigured, sendWalletPromoMessage } from "@/lib/google-wallet";
+import { isPushConfigured, sendPush } from "@/lib/web-push";
 
 export async function POST(
   _req: NextRequest,
@@ -30,23 +32,20 @@ export async function POST(
     .single();
   if (!business) return NextResponse.json({ error: "No autorizado" }, { status: 403 });
 
-  // Obtener todos los clientes con email
-  const { data: customers } = await admin
+  // Obtener todos los clientes
+  const { data: allCustomers } = await admin
     .from("end_customers")
     .select("id, full_name, email")
-    .eq("business_id", business.id)
-    .not("email", "is", null);
+    .eq("business_id", business.id);
 
-  const withEmail = (customers ?? []).filter((c) => c.email);
-  if (withEmail.length === 0) {
-    return NextResponse.json({ sent: 0, message: "No hay clientes con email registrado" });
-  }
+  const customers = allCustomers ?? [];
+  const withEmail = customers.filter((c) => c.email);
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "";
   let sent = 0;
 
-  // Enviar emails si Resend está configurado
-  if (process.env.RESEND_API_KEY && process.env.RESEND_API_KEY !== "re_placeholder") {
+  // 1. Emails via Resend
+  if (process.env.RESEND_API_KEY && process.env.RESEND_API_KEY !== "re_placeholder" && withEmail.length > 0) {
     const resend = new Resend(process.env.RESEND_API_KEY);
     const from = process.env.RESEND_FROM_EMAIL ?? "Roxier Fidelity <noreply@roxierfidelity.com>";
 
@@ -79,15 +78,62 @@ export async function POST(
     sent = withEmail.length;
   }
 
+  // 2. Google Wallet addMessage para clientes con tarjeta guardada en Wallet
+  if (isGoogleWalletConfigured()) {
+    const { data: activeCards } = await admin
+      .from("loyalty_cards")
+      .select("id")
+      .eq("business_id", business.id)
+      .eq("is_active", true);
+
+    if (activeCards?.length) {
+      await Promise.allSettled(
+        customers.flatMap((c) =>
+          activeCards.map((card) =>
+            sendWalletPromoMessage(c.id, card.id, promo.title, promo.message).catch(() => null),
+          ),
+        ),
+      );
+    }
+  }
+
+  // 3. Web Push para clientes con suscripción activa en el navegador
+  if (isPushConfigured() && customers.length > 0) {
+    const customerIds = customers.map((c) => c.id);
+    const { data: subs } = await admin
+      .from("push_subscriptions")
+      .select("id, endpoint, p256dh, auth, customer_id")
+      .in("customer_id", customerIds);
+
+    if (subs?.length) {
+      const expired: string[] = [];
+      await Promise.allSettled(
+        subs.map(async (sub) => {
+          const customer = customers.find((c) => c.id === sub.customer_id);
+          const cardUrl = `${appUrl}/c/${business.slug}/u/${sub.customer_id}`;
+          const result = await sendPush(
+            { endpoint: sub.endpoint, p256dh: sub.p256dh, auth: sub.auth },
+            { title: `📣 ${business.name}: ${promo.title}`, body: promo.message, url: cardUrl },
+          );
+          if (result === "expired") expired.push(sub.id);
+          return customer;
+        }),
+      );
+      if (expired.length) {
+        await admin.from("push_subscriptions").delete().in("id", expired);
+      }
+    }
+  }
+
   // Registrar en historial
   await admin.from("push_notifications").insert({
     business_id: business.id,
     title: promo.title,
     message: promo.message,
-    recipients_count: sent,
+    recipients_count: sent || customers.length,
   });
 
-  return NextResponse.json({ sent });
+  return NextResponse.json({ sent: sent || customers.length });
 }
 
 function emailTemplate(data: {

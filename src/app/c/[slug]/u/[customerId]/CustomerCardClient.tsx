@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { QRCodeSVG } from "qrcode.react";
+import { createClient } from "@/lib/supabase/client";
 
 interface Customer {
   id: string;
@@ -27,12 +28,13 @@ interface Business {
 }
 
 export function CustomerCardClient({
-  customer,
+  customer: initialCustomer,
   card,
   business,
   cardUrl,
   cardId,
   googleWalletEnabled,
+  vapidPublicKey,
 }: {
   customer: Customer;
   card: Card | null;
@@ -40,8 +42,82 @@ export function CustomerCardClient({
   cardUrl: string;
   cardId?: string;
   googleWalletEnabled: boolean;
+  vapidPublicKey?: string;
 }) {
+  const [customer, setCustomer] = useState(initialCustomer);
   const [walletLoading, setWalletLoading] = useState(false);
+  const [pushState, setPushState] = useState<"idle" | "asking" | "subscribed" | "denied" | "unsupported">("idle");
+  const [justStamped, setJustStamped] = useState(false);
+  const channelRef = useRef<ReturnType<typeof createClient>["channel"] extends (arg: string) => infer R ? R : never | null>(null);
+
+  // Supabase Realtime — actualiza sellos sin recargar la página
+  useEffect(() => {
+    const supabase = createClient();
+    const channel = supabase
+      .channel(`customer:${customer.id}`)
+      .on("broadcast", { event: "stamp_added" }, (msg) => {
+        const payload = msg.payload as { current_stamps: number; total_visits: number; rewards_redeemed: number };
+        setCustomer((prev) => ({
+          ...prev,
+          current_stamps: payload.current_stamps,
+          total_visits: payload.total_visits ?? prev.total_visits,
+          rewards_redeemed: payload.rewards_redeemed ?? prev.rewards_redeemed,
+        }));
+        setJustStamped(true);
+        setTimeout(() => setJustStamped(false), 2000);
+      })
+      .subscribe();
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (channelRef as any).current = channel;
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [customer.id]);
+
+  // Estado inicial del permiso de notificaciones
+  useEffect(() => {
+    if (!("Notification" in window) || !("serviceWorker" in navigator)) {
+      setPushState("unsupported");
+      return;
+    }
+    if (Notification.permission === "granted") {
+      setPushState("subscribed");
+    } else if (Notification.permission === "denied") {
+      setPushState("denied");
+    }
+  }, []);
+
+  async function subscribePush() {
+    if (!vapidPublicKey) return;
+    setPushState("asking");
+    try {
+      const reg = await navigator.serviceWorker.register("/sw.js");
+      await navigator.serviceWorker.ready;
+
+      const permission = await Notification.requestPermission();
+      if (permission !== "granted") {
+        setPushState("denied");
+        return;
+      }
+
+      const sub = await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(vapidPublicKey),
+      });
+
+      await fetch("/api/push/subscribe", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ customerId: customer.id, subscription: sub.toJSON() }),
+      });
+
+      setPushState("subscribed");
+    } catch {
+      setPushState("idle");
+    }
+  }
 
   async function saveToGoogleWallet() {
     if (!cardId) return;
@@ -53,13 +129,12 @@ export function CustomerCardClient({
         body: JSON.stringify({ customerId: customer.id, cardId }),
       });
       const data = await res.json();
-      if (data.saveUrl) {
-        window.location.href = data.saveUrl;
-      }
+      if (data.saveUrl) window.location.href = data.saveUrl;
     } finally {
       setWalletLoading(false);
     }
   }
+
   const primary = card?.color_primary ?? "#FF2E63";
   const bg = card?.color_background ?? "#0E0E10";
   const text = card?.text_color ?? "#F5F4F2";
@@ -71,11 +146,15 @@ export function CustomerCardClient({
       <div className="w-full max-w-sm space-y-4">
 
         {/* Tarjeta de lealtad */}
-        <div className="rounded-2xl p-5 shadow-2xl" style={{
-          backgroundColor: bg,
-          color: text,
-          border: `2px solid ${primary}`,
-        }}>
+        <div
+          className={`rounded-2xl p-5 shadow-2xl transition-all duration-500 ${justStamped ? "scale-105 ring-4" : ""}`}
+          style={{
+            backgroundColor: bg,
+            color: text,
+            border: `2px solid ${primary}`,
+            ...(justStamped ? { ringColor: primary } : {}),
+          }}
+        >
           <div className="flex items-center gap-3 mb-4">
             {card?.logo_url ? (
               <img src={card.logo_url} alt="Logo" className="h-10 w-10 rounded-lg object-contain" />
@@ -89,6 +168,9 @@ export function CustomerCardClient({
               <p className="font-bold">{card?.title ?? "Tarjeta de lealtad"}</p>
               <p className="text-xs" style={{ opacity: 0.6 }}>{customer.full_name}</p>
             </div>
+            {justStamped && (
+              <span className="ml-auto text-lg animate-bounce">✨</span>
+            )}
           </div>
 
           <p className="text-[10px] font-bold uppercase tracking-wider mb-2" style={{ opacity: 0.6 }}>
@@ -97,7 +179,9 @@ export function CustomerCardClient({
           <div className="flex flex-wrap gap-1.5 mb-3">
             {Array.from({ length: stampsRequired }).map((_, i) => (
               <div key={i}
-                className="flex h-8 w-8 items-center justify-center rounded-full border-2 text-xs font-bold"
+                className={`flex h-8 w-8 items-center justify-center rounded-full border-2 text-xs font-bold transition-all duration-300 ${
+                  justStamped && i === progress - 1 ? "scale-125" : ""
+                }`}
                 style={{
                   borderColor: primary,
                   backgroundColor: i < progress ? primary : "transparent",
@@ -116,7 +200,7 @@ export function CustomerCardClient({
               </p>
               <p className="text-sm font-semibold">{card?.reward_text ?? "Premio especial"}</p>
             </div>
-            <p className="text-xs" style={{ opacity: 0.6 }}>{progress}/{stampsRequired}</p>
+            <p className="text-xs font-bold" style={{ opacity: 0.8 }}>{progress}/{stampsRequired}</p>
           </div>
         </div>
 
@@ -143,6 +227,33 @@ export function CustomerCardClient({
           </div>
         </div>
 
+        {/* Botón notificaciones push */}
+        {pushState !== "unsupported" && vapidPublicKey && (
+          <button
+            onClick={pushState === "idle" || pushState === "asking" ? subscribePush : undefined}
+            disabled={pushState === "asking" || pushState === "subscribed" || pushState === "denied"}
+            className="w-full flex items-center justify-center gap-2 rounded-2xl px-6 py-3 shadow-lg transition-all"
+            style={{
+              backgroundColor: pushState === "subscribed" ? "rgba(34,197,94,0.15)" : "rgba(255,255,255,0.1)",
+              color: pushState === "subscribed" ? "#22c55e" : text,
+              opacity: pushState === "denied" ? 0.4 : 1,
+            }}
+          >
+            <span className="text-lg">
+              {pushState === "subscribed" ? "🔔" : pushState === "denied" ? "🔕" : "🔔"}
+            </span>
+            <span className="text-sm font-semibold">
+              {pushState === "subscribed"
+                ? "Notificaciones activadas"
+                : pushState === "denied"
+                ? "Notificaciones bloqueadas"
+                : pushState === "asking"
+                ? "Activando..."
+                : "Activar notificaciones"}
+            </span>
+          </button>
+        )}
+
         {/* Botón Google Wallet */}
         {googleWalletEnabled && cardId && (
           <button
@@ -167,4 +278,11 @@ export function CustomerCardClient({
       </div>
     </div>
   );
+}
+
+function urlBase64ToUint8Array(base64String: string) {
+  const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
+  const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
+  const rawData = window.atob(base64);
+  return Uint8Array.from([...rawData].map((c) => c.charCodeAt(0)));
 }

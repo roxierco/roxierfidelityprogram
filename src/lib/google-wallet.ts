@@ -145,6 +145,17 @@ async function addMessage(objectId: string, header: string, body: string) {
   });
 }
 
+// Envía mensaje de promoción a un cliente específico
+export async function sendWalletPromoMessage(
+  customerId: string,
+  cardId: string,
+  title: string,
+  message: string,
+) {
+  const objectId = getObjectId(customerId, cardId);
+  await addMessage(objectId, title, message);
+}
+
 // Actualiza sellos Y envía notificación — llamar después de cada sello
 export async function syncAfterStamp(params: {
   customerId: string;

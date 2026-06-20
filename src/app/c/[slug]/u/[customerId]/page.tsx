@@ -63,6 +63,7 @@ export default async function CustomerCardPage({
       cardUrl={cardUrl}
       cardId={cardId}
       googleWalletEnabled={isGoogleWalletConfigured()}
+      vapidPublicKey={process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY}
     />
   );
 }

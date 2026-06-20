@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { isGoogleWalletConfigured, syncAfterStamp } from "@/lib/google-wallet";
+import { isPushConfigured, sendPush } from "@/lib/web-push";
 
 export async function POST(req: NextRequest) {
   const supabase = await createClient();
@@ -95,10 +96,32 @@ export async function POST(req: NextRequest) {
     is_redemption: rewarded,
   });
 
-  // Sincronizar con Google Wallet en segundo plano + notificación push
+  const slug = (ownedBusiness as { id: string; slug: string }).slug;
+  const cardUrl = `${process.env.NEXT_PUBLIC_APP_URL}/c/${slug}/u/${customerId}${cardId ? `?card=${cardId}` : ""}`;
+
+  // 1. Broadcast Supabase Realtime → actualiza la tarjeta en el navegador en tiempo real
+  fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/realtime/v1/api/broadcast`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
+      "apikey": process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    },
+    body: JSON.stringify({
+      messages: [{
+        topic: `realtime:customer:${customerId}`,
+        event: "stamp_added",
+        payload: {
+          current_stamps: finalStamps,
+          total_visits: customer.total_visits + 1,
+          rewards_redeemed: rewarded ? customer.rewards_redeemed + 1 : customer.rewards_redeemed,
+        },
+      }],
+    }),
+  }).catch(() => null);
+
+  // 2. Google Wallet sync
   if (isGoogleWalletConfigured() && cardId) {
-    const slug = (ownedBusiness as { id: string; slug: string }).slug;
-    const cardUrl = `${process.env.NEXT_PUBLIC_APP_URL}/c/${slug}/u/${customerId}?card=${cardId}`;
     syncAfterStamp({
       customerId,
       cardId,
@@ -109,6 +132,40 @@ export async function POST(req: NextRequest) {
       cardUrl,
       rewarded,
     }).catch(() => null);
+  }
+
+  // 3. Web Push al navegador del cliente
+  if (isPushConfigured()) {
+    (async () => {
+      const { data: subs } = await admin
+        .from("push_subscriptions")
+        .select("endpoint, p256dh, auth, id")
+        .eq("customer_id", customerId);
+
+      if (!subs?.length) return;
+
+      const notifTitle = rewarded
+        ? `🎉 ¡Ganaste tu premio en ${ownedBusiness.id}!`
+        : `✅ Sello añadido — ${finalStamps}/${stampsRequired}`;
+      const notifBody = rewarded
+        ? (card?.reward_text ?? "¡Ve a recoger tu recompensa!")
+        : `Te faltan ${stampsRequired - finalStamps} sellos para tu premio.`;
+
+      const expired: string[] = [];
+      await Promise.allSettled(
+        subs.map(async (sub) => {
+          const result = await sendPush(
+            { endpoint: sub.endpoint, p256dh: sub.p256dh, auth: sub.auth },
+            { title: notifTitle, body: notifBody, url: cardUrl },
+          );
+          if (result === "expired") expired.push(sub.id);
+        }),
+      );
+
+      if (expired.length) {
+        await admin.from("push_subscriptions").delete().in("id", expired);
+      }
+    })().catch(() => null);
   }
 
   return NextResponse.json({
