@@ -102,8 +102,9 @@ export async function upsertLoyaltyObject(params: {
   stampsRequired: number;
   rewardText: string;
   cardUrl: string;
+  rewarded?: boolean;
 }) {
-  const { customerId, cardId, customerName, currentStamps, stampsRequired, rewardText, cardUrl } = params;
+  const { customerId, cardId, customerName, currentStamps, stampsRequired, rewardText, cardUrl, rewarded } = params;
   const id = getObjectId(customerId, cardId);
   const classId = getClassId(cardId);
 
@@ -115,7 +116,7 @@ export async function upsertLoyaltyObject(params: {
     accountName: customerName,
     loyaltyPoints: {
       label: "Sellos",
-      balance: { string: `${currentStamps} / ${stampsRequired}` },
+      balance: { string: rewarded ? `¡Premio ganado! 🎉` : `${currentStamps} / ${stampsRequired}` },
     },
     textModulesData: [
       { header: "Premio al completar", body: rewardText, id: "reward" },
@@ -135,6 +136,34 @@ export async function upsertLoyaltyObject(params: {
   }
 
   return id;
+}
+
+// Envía una notificación push al celular del cliente
+async function addMessage(objectId: string, header: string, body: string) {
+  await walletFetch("POST", `/loyaltyObject/${encodeURIComponent(objectId)}/addMessage`, {
+    message: { header, body },
+  });
+}
+
+// Actualiza sellos Y envía notificación — llamar después de cada sello
+export async function syncAfterStamp(params: {
+  customerId: string;
+  cardId: string;
+  customerName: string;
+  currentStamps: number;
+  stampsRequired: number;
+  rewardText: string;
+  cardUrl: string;
+  rewarded: boolean;
+}) {
+  const objectId = await upsertLoyaltyObject(params);
+  if (!objectId) return;
+
+  const msg = params.rewarded
+    ? { header: "🎉 ¡Premio ganado!", body: `${params.rewardText} — preséntalo al cajero` }
+    : { header: "Nuevo sello agregado", body: `Llevas ${params.currentStamps} de ${params.stampsRequired} sellos` };
+
+  await addMessage(objectId, msg.header, msg.body);
 }
 
 export function generateSaveLink(objectId: string): string {

@@ -348,12 +348,23 @@ export function TarjetaEditor({
       bg_image_position: card.bg_image_position ?? null,
     };
 
+    let savedCardId = card.id;
     if (card.id) {
       await supabase.from("loyalty_cards").update(payload).eq("id", card.id);
     } else {
       const { data } = await supabase.from("loyalty_cards").insert(payload).select().single();
-      if (data) setCard(data);
+      if (data) { setCard(data); savedCardId = data.id; }
     }
+
+    // Sincronizar diseño con Google Wallet en segundo plano
+    if (savedCardId) {
+      fetch("/api/wallet/google/sync-class", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ cardId: savedCardId }),
+      }).catch(() => null);
+    }
+
     setSaving(false);
     setSaved(true);
     onSaved?.();

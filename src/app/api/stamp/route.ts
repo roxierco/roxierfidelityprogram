@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
-import { isGoogleWalletConfigured, upsertLoyaltyObject } from "@/lib/google-wallet";
+import { isGoogleWalletConfigured, syncAfterStamp } from "@/lib/google-wallet";
 
 export async function POST(req: NextRequest) {
   const supabase = await createClient();
@@ -95,10 +95,11 @@ export async function POST(req: NextRequest) {
     is_redemption: rewarded,
   });
 
-  // Sincronizar con Google Wallet en segundo plano (no bloquea la respuesta)
+  // Sincronizar con Google Wallet en segundo plano + notificación push
   if (isGoogleWalletConfigured() && cardId) {
-    const cardUrl = `${process.env.NEXT_PUBLIC_APP_URL}/c/${(ownedBusiness as { slug?: string })?.slug ?? ""}/u/${customerId}?card=${cardId}`;
-    upsertLoyaltyObject({
+    const slug = (ownedBusiness as { id: string; slug: string }).slug;
+    const cardUrl = `${process.env.NEXT_PUBLIC_APP_URL}/c/${slug}/u/${customerId}?card=${cardId}`;
+    syncAfterStamp({
       customerId,
       cardId,
       customerName: customer.full_name,
@@ -106,6 +107,7 @@ export async function POST(req: NextRequest) {
       stampsRequired,
       rewardText: card?.reward_text ?? "",
       cardUrl,
+      rewarded,
     }).catch(() => null);
   }
 

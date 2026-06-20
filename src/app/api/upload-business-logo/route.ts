@@ -58,7 +58,16 @@ export async function POST(req: NextRequest) {
 
   const { data: { publicUrl } } = admin.storage.from("logos").getPublicUrl(path);
 
-  await admin.from("businesses").update({ logo_url: publicUrl }).eq("id", businessId);
+  // Usar RPC para evitar problemas de caché de esquema de PostgREST
+  const { error: rpcError } = await admin.rpc("set_business_logo", {
+    p_business_id: businessId,
+    p_logo_url: publicUrl,
+    p_owner_id: user.id,
+  });
+
+  if (rpcError) {
+    return NextResponse.json({ error: "Error al guardar: " + rpcError.message }, { status: 500 });
+  }
 
   return NextResponse.json({ publicUrl });
 }
