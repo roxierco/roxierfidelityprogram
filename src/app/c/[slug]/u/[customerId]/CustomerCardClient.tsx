@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { QRCodeSVG } from "qrcode.react";
 import { createClient } from "@/lib/supabase/client";
 
@@ -48,33 +48,46 @@ export function CustomerCardClient({
   const [walletLoading, setWalletLoading] = useState(false);
   const [pushState, setPushState] = useState<"idle" | "asking" | "subscribed" | "denied" | "unsupported">("idle");
   const [justStamped, setJustStamped] = useState(false);
-  const channelRef = useRef<ReturnType<typeof createClient>["channel"] extends (arg: string) => infer R ? R : never | null>(null);
+  const prevStampsRef = useRef(initialCustomer.current_stamps);
 
-  // Supabase Realtime — actualiza sellos sin recargar la página
+  const applyUpdate = useCallback((data: { current_stamps: number; total_visits: number; rewards_redeemed: number }) => {
+    if (data.current_stamps !== prevStampsRef.current) {
+      prevStampsRef.current = data.current_stamps;
+      setCustomer((prev) => ({ ...prev, ...data }));
+      setJustStamped(true);
+      setTimeout(() => setJustStamped(false), 2000);
+    }
+  }, []);
+
+  // Polling cada 5 segundos — funciona en todos los navegadores incluyendo Safari/iPhone
+  useEffect(() => {
+    const poll = async () => {
+      try {
+        const res = await fetch(`/api/customer-status?customerId=${initialCustomer.id}`, {
+          cache: "no-store",
+        });
+        if (res.ok) applyUpdate(await res.json());
+      } catch {
+        // silencioso — sin conexión
+      }
+    };
+
+    const interval = setInterval(poll, 5000);
+    return () => clearInterval(interval);
+  }, [initialCustomer.id, applyUpdate]);
+
+  // Broadcast Supabase Realtime como camino rápido (Chrome/Android)
   useEffect(() => {
     const supabase = createClient();
     const channel = supabase
-      .channel(`customer:${customer.id}`)
+      .channel(`customer:${initialCustomer.id}`)
       .on("broadcast", { event: "stamp_added" }, (msg) => {
-        const payload = msg.payload as { current_stamps: number; total_visits: number; rewards_redeemed: number };
-        setCustomer((prev) => ({
-          ...prev,
-          current_stamps: payload.current_stamps,
-          total_visits: payload.total_visits ?? prev.total_visits,
-          rewards_redeemed: payload.rewards_redeemed ?? prev.rewards_redeemed,
-        }));
-        setJustStamped(true);
-        setTimeout(() => setJustStamped(false), 2000);
+        applyUpdate(msg.payload as { current_stamps: number; total_visits: number; rewards_redeemed: number });
       })
       .subscribe();
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (channelRef as any).current = channel;
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [customer.id]);
+    return () => { supabase.removeChannel(channel); };
+  }, [initialCustomer.id, applyUpdate]);
 
   // Estado inicial del permiso de notificaciones
   useEffect(() => {
