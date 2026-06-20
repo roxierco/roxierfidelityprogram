@@ -41,6 +41,7 @@ export interface LoyaltyCard {
   gradient_direction: string | null;
   bg_image_url: string | null;
   bg_image_position: "top" | "center" | "bottom" | "cover" | null;
+  stamp_icon: string | null;
   created_at: string;
   updated_at: string;
 }

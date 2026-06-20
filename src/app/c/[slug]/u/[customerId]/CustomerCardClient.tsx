@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
+import type { CSSProperties } from "react";
 import { QRCodeSVG } from "qrcode.react";
 import { createClient } from "@/lib/supabase/client";
 
@@ -20,6 +21,23 @@ interface Card {
   color_background: string;
   text_color: string;
   logo_url: string | null;
+  stamp_icon: string | null;
+  bg_type: string | null;
+  bg_image_url: string | null;
+  color_gradient_end: string | null;
+  gradient_direction: string | null;
+}
+
+function cardBgStyle(card: Card | null): CSSProperties {
+  if (!card) return {};
+  const type = card.bg_type ?? "solid";
+  if (type === "gradient" && card.color_gradient_end) {
+    return { background: `linear-gradient(${card.gradient_direction ?? "to bottom right"}, ${card.color_background}, ${card.color_gradient_end})` };
+  }
+  if (type === "image" && card.bg_image_url) {
+    return { backgroundImage: `url(${card.bg_image_url})`, backgroundSize: "cover", backgroundPosition: "center" };
+  }
+  return { backgroundColor: card.color_background ?? "#0E0E10" };
 }
 
 interface Business {
@@ -225,6 +243,7 @@ export function CustomerCardClient({
   const primary = card?.color_primary ?? "#FF2E63";
   const bg = card?.color_background ?? "#0E0E10";
   const text = card?.text_color ?? "#F5F4F2";
+  const stampIcon = card?.stamp_icon ?? "✓";
   const progress = Math.min(customer.current_stamps, stampsRequired);
 
   return (
@@ -266,49 +285,55 @@ export function CustomerCardClient({
 
         {/* Tarjeta de lealtad */}
         <div
-          className={`rounded-2xl p-5 shadow-2xl transition-all duration-500 ${justStamped ? "scale-105" : ""}`}
-          style={{ backgroundColor: bg, color: text, border: `2px solid ${primary}` }}
+          className={`relative overflow-hidden rounded-2xl p-5 shadow-2xl transition-all duration-500 ${justStamped ? "scale-105" : ""}`}
+          style={{ ...cardBgStyle(card), color: text, border: `2px solid ${primary}` }}
         >
-          <div className="flex items-center gap-3 mb-4">
-            {card?.logo_url ? (
-              <img src={card.logo_url} alt="Logo" className="h-10 w-10 rounded-lg object-contain" />
-            ) : (
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg font-bold text-sm"
-                style={{ backgroundColor: primary, color: bg }}>
-                {business.name[0]}
+          {card?.bg_type === "image" && card?.bg_image_url && (
+            <div className="absolute inset-0 bg-black/45" />
+          )}
+          <div className="relative">
+            <div className="flex items-center gap-3 mb-4">
+              {card?.logo_url ? (
+                <img src={card.logo_url} alt="Logo" className="h-10 w-10 rounded-lg object-contain shadow" />
+              ) : (
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg font-bold text-sm shadow"
+                  style={{ backgroundColor: primary, color: bg }}>
+                  {business.name[0]}
+                </div>
+              )}
+              <div>
+                <p className="font-bold">{card?.title ?? "Tarjeta de lealtad"}</p>
+                <p className="text-xs" style={{ opacity: 0.6 }}>{customer.full_name}</p>
               </div>
-            )}
-            <div>
-              <p className="font-bold">{card?.title ?? "Tarjeta de lealtad"}</p>
-              <p className="text-xs" style={{ opacity: 0.6 }}>{customer.full_name}</p>
+              {justStamped && <span className="ml-auto text-lg animate-bounce">✨</span>}
             </div>
-            {justStamped && <span className="ml-auto text-lg animate-bounce">✨</span>}
-          </div>
 
-          <p className="text-[10px] font-bold uppercase tracking-wider mb-2" style={{ opacity: 0.6 }}>
-            Sellos acumulados
-          </p>
-          <div className="flex flex-wrap gap-1.5 mb-3">
-            {Array.from({ length: stampsRequired }).map((_, i) => (
-              <div key={i}
-                className={`flex h-8 w-8 items-center justify-center rounded-full border-2 text-xs font-bold transition-all duration-300 ${justStamped && i === progress - 1 ? "scale-125" : ""}`}
-                style={{
-                  borderColor: primary,
-                  backgroundColor: i < progress ? primary : "transparent",
-                  color: i < progress ? bg : primary,
-                }}
-              >
-                {i < progress ? "✓" : ""}
+            <p className="text-[10px] font-bold uppercase tracking-wider mb-2" style={{ opacity: 0.6 }}>
+              Sellos acumulados
+            </p>
+            <div className="flex flex-wrap gap-1.5 mb-3">
+              {Array.from({ length: stampsRequired }).map((_, i) => (
+                <div key={i}
+                  className={`flex h-8 w-8 items-center justify-center rounded-full border-2 font-bold transition-all duration-300 ${justStamped && i === progress - 1 ? "scale-125" : ""}`}
+                  style={{
+                    borderColor: primary,
+                    backgroundColor: i < progress ? primary : "transparent",
+                    color: i < progress ? bg : primary,
+                    fontSize: stampIcon.length > 1 ? "10px" : "14px",
+                  }}
+                >
+                  {i < progress ? stampIcon : ""}
+                </div>
+              ))}
+            </div>
+
+            <div className="flex items-end justify-between">
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-wider" style={{ opacity: 0.6 }}>Recompensa</p>
+                <p className="text-sm font-semibold">{card?.reward_text ?? "Premio especial"}</p>
               </div>
-            ))}
-          </div>
-
-          <div className="flex items-end justify-between">
-            <div>
-              <p className="text-[10px] font-bold uppercase tracking-wider" style={{ opacity: 0.6 }}>Recompensa</p>
-              <p className="text-sm font-semibold">{card?.reward_text ?? "Premio especial"}</p>
+              <p className="text-xs font-bold" style={{ opacity: 0.8 }}>{progress}/{stampsRequired}</p>
             </div>
-            <p className="text-xs font-bold" style={{ opacity: 0.8 }}>{progress}/{stampsRequired}</p>
           </div>
         </div>
 
