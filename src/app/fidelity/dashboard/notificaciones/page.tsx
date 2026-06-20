@@ -1,61 +1,62 @@
 import { createClient } from "@/lib/supabase/server";
-import type { PushNotification } from "@/types/database";
+import { createAdminClient } from "@/lib/supabase/admin";
 
-/**
- * Notificaciones push. El negocio puede enviar mensajes manuales
- * a sus clientes cuando quiera (no por ubicación, según el brief).
- * El envío real a los wallets se conecta en la Fase 4.
- */
 export default async function NotificacionesPage() {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { data: { user } } = await supabase.auth.getUser();
 
-  const { data: business } = await supabase
+  const admin = createAdminClient();
+  const { data: business } = await admin
     .from("businesses")
     .select("id")
     .eq("owner_id", user!.id)
     .single();
 
-  const { data: notifs } = await supabase
+  const { data: notifs } = await admin
     .from("push_notifications")
-    .select("*")
+    .select("id, title, message, recipients_count, sent_at")
     .eq("business_id", business!.id)
     .order("sent_at", { ascending: false });
 
-  const list = (notifs ?? []) as PushNotification[];
+  const list = notifs ?? [];
 
   return (
     <div className="animate-fade-up">
       <h1 className="text-3xl font-extrabold text-paper">Notificaciones</h1>
       <p className="mt-1 text-mist">
-        Envía mensajes a la pantalla de tus clientes cuando quieras.
+        Historial de emails enviados a tus clientes desde Promociones.
       </p>
 
-      <div className="card mt-8">
-        <h3 className="mb-4 font-bold text-paper">Nueva notificación</h3>
-        <div className="space-y-4">
-          <input className="input" placeholder="Título (ej: ¡Oferta de hoy!)" />
-          <textarea className="input min-h-24" placeholder="Mensaje para tus clientes..." />
-          <button className="btn-primary">Enviar a todos mis clientes</button>
+      {list.length === 0 ? (
+        <div className="card mt-8 py-12 text-center">
+          <div className="text-4xl mb-3">📭</div>
+          <p className="font-semibold text-paper mb-1">Sin envíos aún</p>
+          <p className="text-sm text-mist">
+            Ve a <strong>Promociones</strong> y presiona &quot;Enviar a clientes&quot; para mandar tu primera campaña.
+          </p>
         </div>
-      </div>
-
-      {list.length > 0 && (
-        <div className="mt-8">
-          <h3 className="mb-3 font-bold text-paper">Historial</h3>
-          <div className="space-y-3">
-            {list.map((n) => (
-              <div key={n.id} className="card">
-                <div className="flex items-center justify-between">
+      ) : (
+        <div className="mt-8 space-y-3">
+          {list.map((n) => (
+            <div key={n.id} className="card">
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex-1 min-w-0">
                   <h4 className="font-bold text-paper">{n.title}</h4>
-                  <span className="text-xs text-mist">{n.recipients_count} enviadas</span>
+                  <p className="mt-1 text-sm text-mist leading-relaxed">{n.message}</p>
                 </div>
-                <p className="mt-1 text-sm text-mist">{n.message}</p>
+                <div className="flex-shrink-0 text-right">
+                  <span className="block text-sm font-bold text-paper">{n.recipients_count}</span>
+                  <span className="text-xs text-mist">enviados</span>
+                </div>
               </div>
-            ))}
-          </div>
+              <p className="mt-3 text-xs text-mist opacity-60">
+                {new Date(n.sent_at).toLocaleDateString("es-MX", {
+                  day: "numeric", month: "short", year: "numeric",
+                  hour: "2-digit", minute: "2-digit",
+                })}
+              </p>
+            </div>
+          ))}
         </div>
       )}
     </div>
