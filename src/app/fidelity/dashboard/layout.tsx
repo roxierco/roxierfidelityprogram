@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { Sidebar } from "@/components/dashboard/Sidebar";
+import { DashboardShell } from "@/components/dashboard/DashboardShell";
 
 /**
  * Layout del dashboard.
@@ -39,11 +39,8 @@ export default async function DashboardLayout({
   const logoUrl: string | null = (bizFull as { logo_url?: string | null })?.logo_url ?? null;
 
   return (
-    <div className="flex min-h-screen bg-near-black">
-      <Sidebar businessName={business.name} businessLogoUrl={logoUrl} />
-      <main className="flex-1 overflow-y-auto">
-        <div className="mx-auto max-w-5xl px-8 py-8">{children}</div>
-      </main>
-    </div>
+    <DashboardShell businessName={business.name} businessLogoUrl={logoUrl}>
+      {children}
+    </DashboardShell>
   );
 }

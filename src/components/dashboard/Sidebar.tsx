@@ -16,19 +16,38 @@ const navItems = [
   { href: "/fidelity/dashboard/configuracion", label: "Configuración", icon: "M12 15a3 3 0 100-6 3 3 0 000 6zM19 12a7 7 0 00-.1-1l2-1.5-2-3.5-2.4 1a7 7 0 00-1.7-1L14.5 2h-5l-.3 2.5a7 7 0 00-1.7 1l-2.4-1-2 3.5L2.6 11a7 7 0 000 2l-2 1.5 2 3.5 2.4-1a7 7 0 001.7 1l.3 2.5h5l.3-2.5a7 7 0 001.7-1l2.4 1 2-3.5-2-1.5a7 7 0 00.1-1z" },
 ];
 
-export function Sidebar({ businessName, businessLogoUrl }: { businessName: string; businessLogoUrl: string | null }) {
+export function Sidebar({
+  businessName,
+  businessLogoUrl,
+  onClose,
+}: {
+  businessName: string;
+  businessLogoUrl: string | null;
+  onClose?: () => void;
+}) {
   const pathname = usePathname();
 
   return (
-    <aside className="flex w-64 flex-col border-r border-surface-border bg-surface">
+    <aside className="flex h-full w-72 flex-col border-r border-surface-border bg-surface md:w-64">
       {/* Co-branding header */}
       <div className="px-5 py-5 border-b border-surface-border">
-        {/* Roxier Fidelity */}
+        {/* Roxier Fidelity + botón cerrar en móvil */}
         <div className="flex items-center gap-2 mb-3">
           <XMark className="h-5 w-5" />
           <span className="font-extrabold tracking-wide text-paper text-sm">
             ROXIER<span className="ml-1 text-xs font-semibold text-magenta">Fidelity</span>
           </span>
+          {onClose && (
+            <button
+              onClick={onClose}
+              className="ml-auto rounded-lg p-1 text-mist hover:text-paper md:hidden"
+              aria-label="Cerrar menú"
+            >
+              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          )}
         </div>
 
         {/* Separador × */}
@@ -62,6 +81,7 @@ export function Sidebar({ businessName, businessLogoUrl }: { businessName: strin
             <Link
               key={item.href}
               href={item.href}
+              onClick={onClose}
               className={cn(
                 "flex items-center gap-3 rounded-brand px-3 py-2.5 text-sm font-semibold transition-colors",
                 active
