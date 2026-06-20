@@ -27,6 +27,12 @@ interface Business {
   slug: string;
 }
 
+const TEN_MINUTES = 10 * 60 * 1000;
+
+function lsKey(id: string) {
+  return `rx_completed_${id}`;
+}
+
 export function CustomerCardClient({
   customer: initialCustomer,
   card,
@@ -52,7 +58,43 @@ export function CustomerCardClient({
   const [celebrationReward, setCelebrationReward] = useState("");
   const prevStampsRef = useRef(initialCustomer.current_stamps);
   const prevRewardsRef = useRef(initialCustomer.rewards_redeemed);
+  const celebTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const stampsRequired = card?.stamps_required ?? 10;
+
+  // Restaurar celebración si el cliente recargó la página dentro de los 10 minutos
+  useEffect(() => {
+    const saved = localStorage.getItem(lsKey(initialCustomer.id));
+    if (!saved) return;
+    try {
+      const data = JSON.parse(saved);
+      const remaining = TEN_MINUTES - (Date.now() - data.at);
+      if (remaining <= 0) {
+        localStorage.removeItem(lsKey(initialCustomer.id));
+        return;
+      }
+      setCustomer((prev) => ({
+        ...prev,
+        current_stamps: data.stamps_required,
+        total_visits: data.total_visits,
+        rewards_redeemed: data.rewards_redeemed,
+      }));
+      prevStampsRef.current = data.current_stamps_after;
+      prevRewardsRef.current = data.rewards_redeemed;
+      setCelebrationReward(data.reward_text);
+      setCelebrating(true);
+      celebTimerRef.current = setTimeout(() => endCelebration(data.current_stamps_after, initialCustomer.id), remaining);
+    } catch {
+      localStorage.removeItem(lsKey(initialCustomer.id));
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  function endCelebration(stampsAfter: number, customerId: string) {
+    setCelebrating(false);
+    setCustomer((prev) => ({ ...prev, current_stamps: stampsAfter }));
+    setJustStamped(false);
+    localStorage.removeItem(lsKey(customerId));
+  }
 
   const applyUpdate = useCallback((data: {
     current_stamps: number;
@@ -63,51 +105,58 @@ export function CustomerCardClient({
     stamps_required?: number;
   }) => {
     const justRewarded = data.rewarded || data.rewards_redeemed > prevRewardsRef.current;
-
     if (!justRewarded && data.current_stamps === prevStampsRef.current) return;
 
     prevStampsRef.current = data.current_stamps;
     prevRewardsRef.current = data.rewards_redeemed;
 
     if (justRewarded) {
-      // Mostrar tarjeta COMPLETA primero con celebración
       const totalStamps = data.stamps_required ?? stampsRequired;
+      const rewardText = data.reward_text ?? card?.reward_text ?? "¡Premio especial!";
+
+      // Mostrar tarjeta completa
       setCustomer((prev) => ({
         ...prev,
-        current_stamps: totalStamps, // todos llenos
+        current_stamps: totalStamps,
         total_visits: data.total_visits,
         rewards_redeemed: data.rewards_redeemed,
       }));
-      setCelebrationReward(data.reward_text ?? card?.reward_text ?? "¡Premio especial!");
+      setCelebrationReward(rewardText);
       setCelebrating(true);
       setJustStamped(true);
 
-      // Después de 9 segundos, reinicia la tarjeta
-      setTimeout(() => {
-        setCelebrating(false);
-        setCustomer((prev) => ({ ...prev, current_stamps: data.current_stamps }));
-        setTimeout(() => setJustStamped(false), 600);
-      }, 9000);
+      // Guardar en localStorage para que persista si recarga
+      localStorage.setItem(lsKey(initialCustomer.id), JSON.stringify({
+        at: Date.now(),
+        reward_text: rewardText,
+        stamps_required: totalStamps,
+        current_stamps_after: data.current_stamps,
+        total_visits: data.total_visits,
+        rewards_redeemed: data.rewards_redeemed,
+      }));
+
+      // Auto-reiniciar después de 10 minutos
+      if (celebTimerRef.current) clearTimeout(celebTimerRef.current);
+      celebTimerRef.current = setTimeout(
+        () => endCelebration(data.current_stamps, initialCustomer.id),
+        TEN_MINUTES,
+      );
     } else {
       setCustomer((prev) => ({ ...prev, ...data }));
       setJustStamped(true);
       setTimeout(() => setJustStamped(false), 2000);
     }
-  }, [card?.reward_text, stampsRequired]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [card?.reward_text, stampsRequired, initialCustomer.id]);
 
   // Polling cada 5 segundos — funciona en todos los navegadores incluyendo Safari/iPhone
   useEffect(() => {
     const poll = async () => {
       try {
-        const res = await fetch(`/api/customer-status?customerId=${initialCustomer.id}`, {
-          cache: "no-store",
-        });
+        const res = await fetch(`/api/customer-status?customerId=${initialCustomer.id}`, { cache: "no-store" });
         if (res.ok) applyUpdate(await res.json());
-      } catch {
-        // silencioso — sin conexión
-      }
+      } catch { /* sin conexión */ }
     };
-
     const interval = setInterval(poll, 5000);
     return () => clearInterval(interval);
   }, [initialCustomer.id, applyUpdate]);
@@ -121,7 +170,6 @@ export function CustomerCardClient({
         applyUpdate(msg.payload as { current_stamps: number; total_visits: number; rewards_redeemed: number });
       })
       .subscribe();
-
     return () => { supabase.removeChannel(channel); };
   }, [initialCustomer.id, applyUpdate]);
 
@@ -131,11 +179,8 @@ export function CustomerCardClient({
       setPushState("unsupported");
       return;
     }
-    if (Notification.permission === "granted") {
-      setPushState("subscribed");
-    } else if (Notification.permission === "denied") {
-      setPushState("denied");
-    }
+    if (Notification.permission === "granted") setPushState("subscribed");
+    else if (Notification.permission === "denied") setPushState("denied");
   }, []);
 
   async function subscribePush() {
@@ -144,24 +189,17 @@ export function CustomerCardClient({
     try {
       const reg = await navigator.serviceWorker.register("/sw.js");
       await navigator.serviceWorker.ready;
-
       const permission = await Notification.requestPermission();
-      if (permission !== "granted") {
-        setPushState("denied");
-        return;
-      }
-
+      if (permission !== "granted") { setPushState("denied"); return; }
       const sub = await reg.pushManager.subscribe({
         userVisibleOnly: true,
         applicationServerKey: urlBase64ToUint8Array(vapidPublicKey),
       });
-
       await fetch("/api/push/subscribe", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ customerId: customer.id, subscription: sub.toJSON() }),
       });
-
       setPushState("subscribed");
     } catch {
       setPushState("idle");
@@ -192,49 +230,44 @@ export function CustomerCardClient({
   return (
     <div className="min-h-screen flex items-center justify-center p-4" style={{ backgroundColor: bg }}>
 
-      {/* Pantalla de celebración — tarjeta completa */}
+      {/* Pantalla de celebración — dura 10 minutos */}
       {celebrating && (
         <div
-          className="fixed inset-0 z-50 flex flex-col items-center justify-center text-center px-8 animate-fade-in"
+          className="fixed inset-0 z-50 flex flex-col items-center justify-center text-center px-8"
           style={{ backgroundColor: primary }}
         >
           <div className="text-7xl mb-4 animate-bounce">🎉</div>
           <h1 className="text-3xl font-extrabold text-white mb-2">
             ¡Tarjeta completada!
           </h1>
-          <p className="text-white text-lg font-semibold mb-2" style={{ opacity: 0.9 }}>
+          <p className="text-white text-lg font-semibold mb-1" style={{ opacity: 0.9 }}>
             Tu recompensa:
           </p>
           <p className="text-white text-2xl font-black mb-8">
             {celebrationReward}
           </p>
-          <p className="text-white text-sm" style={{ opacity: 0.7 }}>
+          <p className="text-white text-sm mb-8" style={{ opacity: 0.7 }}>
             Muestra esta pantalla al cajero
           </p>
           <button
             onClick={() => {
-              setCelebrating(false);
-              setCustomer((prev) => ({ ...prev, current_stamps: prevStampsRef.current }));
-              setJustStamped(false);
+              if (celebTimerRef.current) clearTimeout(celebTimerRef.current);
+              endCelebration(prevStampsRef.current, initialCustomer.id);
             }}
-            className="mt-8 rounded-full bg-white px-8 py-3 font-bold text-sm"
+            className="rounded-full bg-white px-8 py-3 font-bold text-sm"
             style={{ color: primary }}
           >
             Entendido
           </button>
         </div>
       )}
+
       <div className="w-full max-w-sm space-y-4">
 
         {/* Tarjeta de lealtad */}
         <div
-          className={`rounded-2xl p-5 shadow-2xl transition-all duration-500 ${justStamped ? "scale-105 ring-4" : ""}`}
-          style={{
-            backgroundColor: bg,
-            color: text,
-            border: `2px solid ${primary}`,
-            ...(justStamped ? { ringColor: primary } : {}),
-          }}
+          className={`rounded-2xl p-5 shadow-2xl transition-all duration-500 ${justStamped ? "scale-105" : ""}`}
+          style={{ backgroundColor: bg, color: text, border: `2px solid ${primary}` }}
         >
           <div className="flex items-center gap-3 mb-4">
             {card?.logo_url ? (
@@ -249,9 +282,7 @@ export function CustomerCardClient({
               <p className="font-bold">{card?.title ?? "Tarjeta de lealtad"}</p>
               <p className="text-xs" style={{ opacity: 0.6 }}>{customer.full_name}</p>
             </div>
-            {justStamped && (
-              <span className="ml-auto text-lg animate-bounce">✨</span>
-            )}
+            {justStamped && <span className="ml-auto text-lg animate-bounce">✨</span>}
           </div>
 
           <p className="text-[10px] font-bold uppercase tracking-wider mb-2" style={{ opacity: 0.6 }}>
@@ -260,9 +291,7 @@ export function CustomerCardClient({
           <div className="flex flex-wrap gap-1.5 mb-3">
             {Array.from({ length: stampsRequired }).map((_, i) => (
               <div key={i}
-                className={`flex h-8 w-8 items-center justify-center rounded-full border-2 text-xs font-bold transition-all duration-300 ${
-                  justStamped && i === progress - 1 ? "scale-125" : ""
-                }`}
+                className={`flex h-8 w-8 items-center justify-center rounded-full border-2 text-xs font-bold transition-all duration-300 ${justStamped && i === progress - 1 ? "scale-125" : ""}`}
                 style={{
                   borderColor: primary,
                   backgroundColor: i < progress ? primary : "transparent",
@@ -276,9 +305,7 @@ export function CustomerCardClient({
 
           <div className="flex items-end justify-between">
             <div>
-              <p className="text-[10px] font-bold uppercase tracking-wider" style={{ opacity: 0.6 }}>
-                Recompensa
-              </p>
+              <p className="text-[10px] font-bold uppercase tracking-wider" style={{ opacity: 0.6 }}>Recompensa</p>
               <p className="text-sm font-semibold">{card?.reward_text ?? "Premio especial"}</p>
             </div>
             <p className="text-xs font-bold" style={{ opacity: 0.8 }}>{progress}/{stampsRequired}</p>
@@ -291,9 +318,7 @@ export function CustomerCardClient({
           <div className="rounded-xl border border-gray-100 p-3">
             <QRCodeSVG value={cardUrl} size={180} bgColor="#ffffff" fgColor="#0E0E10" level="M" />
           </div>
-          <p className="text-center text-xs text-gray-400">
-            Muéstraselo al cajero para agregar un sello
-          </p>
+          <p className="text-center text-xs text-gray-400">Muéstraselo al cajero para agregar un sello</p>
         </div>
 
         {/* Stats */}
@@ -304,14 +329,14 @@ export function CustomerCardClient({
           </div>
           <div className="rounded-2xl p-4 text-center" style={{ backgroundColor: "rgba(255,255,255,0.1)" }}>
             <p className="text-2xl font-bold" style={{ color: primary }}>{customer.rewards_redeemed}</p>
-            <p className="text-xs" style={{ color: text, opacity: 0.6 }}>Premios canjeados</p>
+            <p className="text-xs" style={{ color: text, opacity: 0.6 }}>Tarjetas completadas</p>
           </div>
         </div>
 
         {/* Botón notificaciones push */}
         {pushState !== "unsupported" && vapidPublicKey && (
           <button
-            onClick={pushState === "idle" || pushState === "asking" ? subscribePush : undefined}
+            onClick={pushState === "idle" ? subscribePush : undefined}
             disabled={pushState === "asking" || pushState === "subscribed" || pushState === "denied"}
             className="w-full flex items-center justify-center gap-2 rounded-2xl px-6 py-3 shadow-lg transition-all"
             style={{
@@ -320,16 +345,11 @@ export function CustomerCardClient({
               opacity: pushState === "denied" ? 0.4 : 1,
             }}
           >
-            <span className="text-lg">
-              {pushState === "subscribed" ? "🔔" : pushState === "denied" ? "🔕" : "🔔"}
-            </span>
+            <span className="text-lg">{pushState === "denied" ? "🔕" : "🔔"}</span>
             <span className="text-sm font-semibold">
-              {pushState === "subscribed"
-                ? "Notificaciones activadas"
-                : pushState === "denied"
-                ? "Notificaciones bloqueadas"
-                : pushState === "asking"
-                ? "Activando..."
+              {pushState === "subscribed" ? "Notificaciones activadas"
+                : pushState === "denied" ? "Notificaciones bloqueadas"
+                : pushState === "asking" ? "Activando..."
                 : "Activar notificaciones"}
             </span>
           </button>
