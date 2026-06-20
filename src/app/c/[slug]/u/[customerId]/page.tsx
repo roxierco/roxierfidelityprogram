@@ -1,6 +1,7 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { notFound } from "next/navigation";
 import { CustomerCardClient } from "./CustomerCardClient";
+import { isGoogleWalletConfigured } from "@/lib/google-wallet";
 
 export default async function CustomerCardPage({
   params,
@@ -30,7 +31,6 @@ export default async function CustomerCardPage({
 
   if (!business || business.slug !== slug) notFound();
 
-  // Intentar cargar la tarjeta específica; si no, la primera activa del negocio
   let card = null;
   if (cardId) {
     const { data } = await supabase
@@ -61,6 +61,8 @@ export default async function CustomerCardPage({
       card={card}
       business={business}
       cardUrl={cardUrl}
+      cardId={cardId}
+      googleWalletEnabled={isGoogleWalletConfigured()}
     />
   );
 }

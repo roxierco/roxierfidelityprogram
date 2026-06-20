@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { QRCodeSVG } from "qrcode.react";
 
 interface Customer {
@@ -30,12 +31,35 @@ export function CustomerCardClient({
   card,
   business,
   cardUrl,
+  cardId,
+  googleWalletEnabled,
 }: {
   customer: Customer;
   card: Card | null;
   business: Business;
   cardUrl: string;
+  cardId?: string;
+  googleWalletEnabled: boolean;
 }) {
+  const [walletLoading, setWalletLoading] = useState(false);
+
+  async function saveToGoogleWallet() {
+    if (!cardId) return;
+    setWalletLoading(true);
+    try {
+      const res = await fetch("/api/wallet/google/save", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ customerId: customer.id, cardId }),
+      });
+      const data = await res.json();
+      if (data.saveUrl) {
+        window.location.href = data.saveUrl;
+      }
+    } finally {
+      setWalletLoading(false);
+    }
+  }
   const primary = card?.color_primary ?? "#FF2E63";
   const bg = card?.color_background ?? "#0E0E10";
   const text = card?.text_color ?? "#F5F4F2";
@@ -118,6 +142,24 @@ export function CustomerCardClient({
             <p className="text-xs" style={{ color: text, opacity: 0.6 }}>Premios canjeados</p>
           </div>
         </div>
+
+        {/* Botón Google Wallet */}
+        {googleWalletEnabled && cardId && (
+          <button
+            onClick={saveToGoogleWallet}
+            disabled={walletLoading}
+            className="w-full flex items-center justify-center gap-3 rounded-2xl bg-white px-6 py-3 shadow-lg active:scale-95 transition-transform disabled:opacity-60"
+          >
+            <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none">
+              <path d="M21.5 12c0-5.25-4.25-9.5-9.5-9.5S2.5 6.75 2.5 12s4.25 9.5 9.5 9.5 9.5-4.25 9.5-9.5z" fill="#4285F4"/>
+              <path d="M21.5 12c0 5.25-4.25 9.5-9.5 9.5" stroke="#34A853" strokeWidth="1.5"/>
+              <path d="M12 7v5l3 3" stroke="white" strokeWidth="1.5" strokeLinecap="round"/>
+            </svg>
+            <span className="text-sm font-semibold text-gray-800">
+              {walletLoading ? "Abriendo Google Wallet..." : "Guardar en Google Wallet"}
+            </span>
+          </button>
+        )}
 
         <p className="text-center text-xs" style={{ color: text, opacity: 0.4 }}>
           Guarda esta página como favorito para acceder siempre a tu tarjeta

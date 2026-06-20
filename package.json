@@ -13,8 +13,11 @@
   "dependencies": {
     "@supabase/ssr": "^0.5.2",
     "@supabase/supabase-js": "^2.45.4",
+    "@types/jsonwebtoken": "^9.0.10",
     "clsx": "^2.1.1",
+    "google-auth-library": "^10.7.0",
     "html5-qrcode": "^2.3.8",
+    "jsonwebtoken": "^9.0.3",
     "mercadopago": "^2.0.15",
     "next": "^15.5.19",
     "qrcode": "^1.5.4",
