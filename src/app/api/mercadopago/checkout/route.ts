@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { crearSuscripcion } from "@/lib/mercadopago/client";
+import { crearCheckoutInicial } from "@/lib/mercadopago/client";
 
 export async function POST() {
   try {
@@ -15,22 +15,16 @@ export async function POST() {
       .single();
 
     if (!business) return NextResponse.json({ error: "Negocio no encontrado" }, { status: 404 });
+    if (business.status === "active") return NextResponse.json({ error: "Ya tienes un plan activo" }, { status: 400 });
 
-    const { initPoint, subscriptionId } = await crearSuscripcion({
+    const { initPoint } = await crearCheckoutInicial({
       businessEmail: business.email,
       businessId: business.id,
     });
 
-    await supabase.from("subscriptions").upsert({
-      business_id: business.id,
-      mercadopago_subscription_id: subscriptionId,
-      status: "pending",
-      amount: 449,
-    }, { onConflict: "business_id" });
-
     return NextResponse.json({ initPoint });
   } catch (err) {
-    console.error("MP suscripción error:", err);
-    return NextResponse.json({ error: "Error al crear la suscripción" }, { status: 500 });
+    console.error("MP checkout error:", err);
+    return NextResponse.json({ error: "Error al crear el pago" }, { status: 500 });
   }
 }

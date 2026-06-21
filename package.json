@@ -19,7 +19,7 @@
     "google-auth-library": "^10.7.0",
     "html5-qrcode": "^2.3.8",
     "jsonwebtoken": "^9.0.3",
-    "mercadopago": "^2.0.15",
+    "mercadopago": "^2.13.0",
     "next": "^15.5.19",
     "qrcode": "^1.5.4",
     "qrcode.react": "^4.2.0",
