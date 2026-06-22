@@ -68,6 +68,7 @@ export async function registrarNegocio(
     status: "trial",
     plan: "basico",
     monthly_price: 549,
+    trial_ends_at: null,
   });
 
   if (bizError) {

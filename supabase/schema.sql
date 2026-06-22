@@ -35,7 +35,7 @@ create table public.businesses (
   -- Plan contratado
   plan            text not null default 'basico' check (plan in ('basico', 'pro', 'empresarial')),
   monthly_price   integer not null default 500,  -- precio en pesos MXN
-  trial_ends_at   timestamptz default (now() + interval '15 days'),
+  trial_ends_at   timestamptz default null,
   created_at      timestamptz not null default now(),
   updated_at      timestamptz not null default now()
 );
