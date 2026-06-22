@@ -3,43 +3,36 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { DashboardShell } from "@/components/dashboard/DashboardShell";
 
-/**
- * Layout del dashboard.
- * Verifica sesión y carga el negocio del usuario. Si no hay negocio,
- * algo salió mal en el registro, así que se manda a login.
- */
-export default async function DashboardLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient();
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
+  const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/fidelity/login");
 
-  const { data: business } = await supabase
+  const admin = createAdminClient();
+  const { data: business } = await admin
     .from("businesses")
-    .select("name")
+    .select("id, name, status, trial_ends_at, logo_url")
     .eq("owner_id", user.id)
     .single();
 
   if (!business) redirect("/fidelity/login");
 
-  // Admin client para leer logo_url sin problemas de caché de esquema
-  const admin = createAdminClient();
-  const { data: bizFull } = await admin
-    .from("businesses")
-    .select("logo_url")
-    .eq("owner_id", user.id)
-    .single();
-  const logoUrl: string | null = (bizFull as { logo_url?: string | null })?.logo_url ?? null;
+  const { data: subscription } = await admin
+    .from("subscriptions")
+    .select("status")
+    .eq("business_id", business.id)
+    .maybeSingle();
+
+  const hasSubscription = subscription?.status === "authorized";
 
   return (
-    <DashboardShell businessName={business.name} businessLogoUrl={logoUrl}>
+    <DashboardShell
+      businessName={business.name}
+      businessLogoUrl={(business as { logo_url?: string | null }).logo_url ?? null}
+      businessStatus={business.status}
+      trialEndsAt={business.trial_ends_at ?? null}
+      hasSubscription={hasSubscription}
+    >
       {children}
     </DashboardShell>
   );
