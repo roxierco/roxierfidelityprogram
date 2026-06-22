@@ -40,7 +40,9 @@ export async function POST(req: NextRequest) {
       const ref = sub.external_reference as string | undefined;
       if (!ref) return NextResponse.json({ ok: true });
 
-      const businessId = ref.replace("sub:", "");
+      const [, businessId, planKey] = ref.split(":");
+      const planAmounts: Record<string, number> = { basico: 549, pro: 749 };
+      const amount = planAmounts[planKey] ?? 549;
 
       if (sub.status === "authorized") {
         const expiresAt = new Date();
@@ -48,6 +50,8 @@ export async function POST(req: NextRequest) {
 
         await admin.from("businesses").update({
           status: "active",
+          plan: planKey ?? "basico",
+          monthly_price: amount,
           trial_ends_at: expiresAt.toISOString(),
         }).eq("id", businessId);
 
@@ -55,7 +59,7 @@ export async function POST(req: NextRequest) {
           business_id: businessId,
           mercadopago_subscription_id: sub.id,
           status: "authorized",
-          amount: 449,
+          amount,
           next_payment_at: expiresAt.toISOString(),
         }, { onConflict: "business_id" });
 

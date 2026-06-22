@@ -3,84 +3,124 @@
 import { useState } from "react";
 import Link from "next/link";
 
-export default function PlanesPage() {
-  const [loading, setLoading] = useState(false);
+const PLANES = [
+  {
+    key: "basico",
+    name: "Básico",
+    price: 549,
+    description: "Para negocios que están empezando",
+    features: [
+      "1 tarjeta de lealtad activa",
+      "1 promoción activa",
+      "Notificaciones push",
+      "Estadísticas básicas",
+      "Soporte por WhatsApp",
+    ],
+    highlight: false,
+  },
+  {
+    key: "pro",
+    name: "Pro",
+    price: 749,
+    description: "Para negocios que quieren crecer",
+    features: [
+      "Tarjetas de lealtad ilimitadas",
+      "Promociones ilimitadas",
+      "Notificaciones personalizadas con nombre",
+      "Estadísticas avanzadas + exportar Excel",
+      "Soporte por WhatsApp",
+    ],
+    highlight: true,
+  },
+] as const;
 
-  async function activar() {
-    setLoading(true);
+export default function PlanesPage() {
+  const [loading, setLoading] = useState<string | null>(null);
+
+  async function activar(plan: "basico" | "pro") {
+    setLoading(plan);
     try {
-      const res = await fetch("/api/mercadopago/checkout", { method: "POST" });
+      const res = await fetch("/api/mercadopago/crear-suscripcion", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ plan }),
+      });
       const data = await res.json();
       if (data.initPoint) {
         window.location.href = data.initPoint;
       } else {
         alert(data.error || "Error al procesar el pago");
-        setLoading(false);
+        setLoading(null);
       }
     } catch {
       alert("Error de conexión. Intenta de nuevo.");
-      setLoading(false);
+      setLoading(null);
     }
   }
 
   return (
     <div className="min-h-screen bg-near-black flex flex-col items-center justify-center px-4 py-16">
 
-      <div className="mb-10 text-center">
+      <div className="mb-12 text-center">
         <p className="text-magenta text-sm font-bold uppercase tracking-widest mb-2">Roxier Fidelity</p>
-        <h1 className="text-4xl font-black text-paper mb-3">Activa tu negocio</h1>
-        <p className="text-mist text-lg">Un solo plan, sin complicaciones.</p>
+        <h1 className="text-4xl font-black text-paper mb-3">Elige tu plan</h1>
+        <p className="text-mist text-lg">7 días gratis · Sin cuota de activación · Cancela cuando quieras</p>
       </div>
 
-      {/* Card del plan */}
-      <div className="w-full max-w-md rounded-2xl border-2 border-magenta bg-surface p-8 shadow-2xl">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-2xl">
+        {PLANES.map((plan) => (
+          <div
+            key={plan.key}
+            className={`rounded-2xl p-8 flex flex-col ${
+              plan.highlight
+                ? "border-2 border-magenta bg-surface shadow-2xl shadow-magenta/10"
+                : "border border-white/10 bg-surface"
+            }`}
+          >
+            {plan.highlight && (
+              <div className="inline-flex items-center gap-2 rounded-full bg-magenta/15 px-3 py-1 mb-4 self-start">
+                <span className="h-1.5 w-1.5 rounded-full bg-magenta animate-pulse" />
+                <span className="text-magenta text-xs font-bold uppercase tracking-widest">Más popular</span>
+              </div>
+            )}
 
-        {/* Badge */}
-        <div className="inline-flex items-center gap-2 rounded-full bg-magenta/15 px-4 py-1.5 mb-6">
-          <span className="h-2 w-2 rounded-full bg-magenta animate-pulse" />
-          <span className="text-magenta text-xs font-bold uppercase tracking-widest">Plan Único</span>
-        </div>
+            <p className="text-xl font-black text-paper mb-1">{plan.name}</p>
+            <p className="text-mist text-sm mb-4">{plan.description}</p>
 
-        {/* Precio */}
-        <div className="mb-2">
-          <span className="text-5xl font-black text-paper">$1,499</span>
-          <span className="text-mist ml-2">pago inicial</span>
-        </div>
-        <p className="text-mist text-sm mb-6">
-          Después solo <span className="text-paper font-bold">$449/mes</span> — cancela cuando quieras
-        </p>
+            <div className="mb-6">
+              <span className="text-4xl font-black text-paper">${plan.price}</span>
+              <span className="text-mist ml-1 text-sm">MXN / mes</span>
+            </div>
 
-        {/* Features */}
-        <ul className="space-y-3 mb-8">
-          {[
-            "Tarjetas de lealtad digitales ilimitadas",
-            "Sellos en tiempo real (sin apps)",
-            "Notificaciones push a tus clientes",
-            "Promociones y correos automáticos",
-            "Panel de estadísticas",
-            "Soporte por WhatsApp",
-          ].map((f) => (
-            <li key={f} className="flex items-center gap-3 text-sm text-paper">
-              <span className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-magenta/20 text-magenta text-xs">✓</span>
-              {f}
-            </li>
-          ))}
-        </ul>
+            <ul className="space-y-2.5 mb-8 flex-1">
+              {plan.features.map((f) => (
+                <li key={f} className="flex items-start gap-2.5 text-sm text-paper">
+                  <span className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-magenta/20 text-magenta text-xs mt-0.5">✓</span>
+                  {f}
+                </li>
+              ))}
+            </ul>
 
-        <button
-          onClick={activar}
-          disabled={loading}
-          className="btn-primary w-full py-4 text-base font-bold disabled:opacity-60"
-        >
-          {loading ? "Redirigiendo a Mercado Pago..." : "Activar mi negocio — $1,499"}
-        </button>
-
-        <p className="mt-4 text-center text-xs text-mist">
-          Pago seguro con Mercado Pago · Tarjeta, OXXO o transferencia
-        </p>
+            <button
+              onClick={() => activar(plan.key)}
+              disabled={loading !== null}
+              className={`w-full py-3.5 rounded-xl font-bold text-sm transition-all disabled:opacity-60 ${
+                plan.highlight
+                  ? "bg-magenta text-white hover:bg-magenta/90"
+                  : "border border-magenta text-magenta hover:bg-magenta/10"
+              }`}
+            >
+              {loading === plan.key ? "Redirigiendo..." : `Probar 7 días gratis`}
+            </button>
+          </div>
+        ))}
       </div>
 
-      <p className="mt-8 text-mist text-sm">
+      <p className="mt-8 text-mist text-xs text-center max-w-sm">
+        Al terminar el período de prueba se hace el cobro automático. Cancela antes de los 7 días sin costo.
+      </p>
+
+      <p className="mt-6 text-mist text-sm">
         ¿Ya tienes cuenta?{" "}
         <Link href="/fidelity/login" className="text-magenta hover:underline">
           Inicia sesión

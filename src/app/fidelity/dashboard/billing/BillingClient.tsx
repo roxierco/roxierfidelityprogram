@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Link from "next/link";
 
 interface Business {
   id: string;
@@ -18,6 +19,13 @@ interface Subscription {
   mercadopago_subscription_id: string | null;
 }
 
+const PLANES = {
+  basico: { name: "Básico", amount: 549 },
+  pro: { name: "Pro", amount: 749 },
+} as const;
+
+type PlanKey = keyof typeof PLANES;
+
 export function BillingClient({
   business,
   subscription,
@@ -27,38 +35,36 @@ export function BillingClient({
   subscription: Subscription | null;
   paymentStatus?: string;
 }) {
-  const [loadingCheckout, setLoadingCheckout] = useState(false);
-  const [loadingSub, setLoadingSub] = useState(false);
-  const [toast, setToast] = useState<string | null>(null);
+  const [loading, setLoading] = useState<string | null>(null);
+  const [toast, setToast] = useState<{ msg: string; ok: boolean } | null>(null);
 
   useEffect(() => {
-    if (paymentStatus === "success") setToast("✅ Pago recibido. ¡Tu cuenta está activa!");
-    if (paymentStatus === "subscribed") setToast("✅ Suscripción mensual activada correctamente.");
-    if (paymentStatus === "failure") setToast("❌ El pago no se completó. Intenta de nuevo.");
+    if (paymentStatus === "subscribed") setToast({ msg: "¡Suscripción activada! Tu período de prueba de 7 días ha comenzado.", ok: true });
+    if (paymentStatus === "failure") setToast({ msg: "El pago no se completó. Intenta de nuevo.", ok: false });
   }, [paymentStatus]);
 
-  async function pagarActivacion() {
-    setLoadingCheckout(true);
-    const res = await fetch("/api/mercadopago/checkout", { method: "POST" });
+  async function suscribir(plan: PlanKey) {
+    setLoading(plan);
+    const res = await fetch("/api/mercadopago/crear-suscripcion", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ plan }),
+    });
     const data = await res.json();
     if (data.initPoint) window.location.href = data.initPoint;
-    else { setToast("Error al crear el pago"); setLoadingCheckout(false); }
-  }
-
-  async function activarSuscripcion() {
-    setLoadingSub(true);
-    const res = await fetch("/api/mercadopago/crear-suscripcion", { method: "POST" });
-    const data = await res.json();
-    if (data.initPoint) window.location.href = data.initPoint;
-    else { setToast("Error al crear la suscripción"); setLoadingSub(false); }
+    else { setToast({ msg: "Error al crear la suscripción", ok: false }); setLoading(null); }
   }
 
   const isActive = business.status === "active";
   const isTrial = business.status === "trial";
   const isSuspended = business.status === "suspended";
   const trialEnds = business.trial_ends_at ? new Date(business.trial_ends_at) : null;
-  const trialExpired = trialEnds ? trialEnds < new Date() : false;
   const hasActiveSub = subscription?.status === "authorized";
+  const currentPlan = business.plan as PlanKey;
+
+  const daysLeft = trialEnds
+    ? Math.max(0, Math.ceil((trialEnds.getTime() - Date.now()) / 86400000))
+    : null;
 
   return (
     <div className="space-y-6 max-w-2xl">
@@ -68,100 +74,102 @@ export function BillingClient({
       </div>
 
       {toast && (
-        <div className={`rounded-xl px-4 py-3 text-sm font-medium ${toast.startsWith("✅") ? "bg-green-500/15 text-green-400" : "bg-red-500/15 text-red-400"}`}>
-          {toast}
+        <div className={`rounded-xl px-4 py-3 text-sm font-medium ${toast.ok ? "bg-green-500/15 text-green-400" : "bg-red-500/15 text-red-400"}`}>
+          {toast.msg}
         </div>
       )}
 
       {/* Estado actual */}
-      <div className="card space-y-4">
+      <div className="card space-y-3">
         <p className="label">Estado de tu cuenta</p>
         <div className="flex items-center gap-3">
-          <div className={`h-3 w-3 rounded-full ${isActive ? "bg-green-400" : isSuspended ? "bg-red-400" : "bg-yellow-400"} animate-pulse`} />
+          <div className={`h-3 w-3 rounded-full animate-pulse ${isActive ? "bg-green-400" : isSuspended ? "bg-red-400" : "bg-yellow-400"}`} />
           <span className="font-bold text-paper text-lg">
-            {isActive ? "Activa" : isSuspended ? "Suspendida" : "Prueba gratuita"}
+            {isActive && hasActiveSub ? `Plan ${PLANES[currentPlan]?.name ?? business.plan} — Activo` :
+             isTrial && daysLeft !== null && daysLeft > 0 ? `Período de prueba — ${daysLeft} día${daysLeft !== 1 ? "s" : ""} restante${daysLeft !== 1 ? "s" : ""}` :
+             isSuspended ? "Suspendida" : "Prueba terminada"}
           </span>
         </div>
 
-        {isTrial && trialEnds && (
+        {isActive && hasActiveSub && subscription?.next_payment_at && (
           <p className="text-sm text-mist">
-            {trialExpired
-              ? "⚠️ Tu período de prueba ha terminado."
-              : `Tu prueba gratuita termina el ${trialEnds.toLocaleDateString("es-MX", { day: "numeric", month: "long" })}.`}
+            Próximo cobro: ${subscription.amount} MXN el{" "}
+            {new Date(subscription.next_payment_at).toLocaleDateString("es-MX", { day: "numeric", month: "long", year: "numeric" })}
           </p>
         )}
 
-        {isActive && trialEnds && (
+        {isTrial && daysLeft !== null && daysLeft > 0 && (
           <p className="text-sm text-mist">
-            {hasActiveSub
-              ? `Próximo cobro: $449 MXN el ${trialEnds.toLocaleDateString("es-MX", { day: "numeric", month: "long", year: "numeric" })}`
-              : `Acceso activo hasta el ${trialEnds.toLocaleDateString("es-MX", { day: "numeric", month: "long", year: "numeric" })}`}
+            Selecciona un plan para continuar después del período de prueba.
           </p>
         )}
       </div>
 
-      {/* Panel de pago */}
-      {!isActive && (
-        <div className="card border-2 border-magenta space-y-4">
-          <div>
-            <p className="font-black text-paper text-xl">Activa tu negocio</p>
-            <p className="text-mist text-sm mt-1">Pago único de activación + primer mes incluido</p>
+      {/* Seleccionar plan — trial activo o suspendido */}
+      {(isTrial || isSuspended || !hasActiveSub) && (
+        <div className="space-y-4">
+          <p className="font-bold text-paper">
+            {isTrial ? "Elige tu plan" : "Reactiva tu cuenta"}
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {(Object.entries(PLANES) as [PlanKey, { name: string; amount: number }][]).map(([key, plan]) => (
+              <div
+                key={key}
+                className={`card space-y-4 ${key === "pro" ? "border-2 border-magenta" : ""}`}
+              >
+                {key === "pro" && (
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-magenta/15 px-2.5 py-1 text-xs font-bold text-magenta uppercase tracking-wide">
+                    Más popular
+                  </span>
+                )}
+                <div>
+                  <p className="font-black text-paper text-lg">{plan.name}</p>
+                  <div className="flex items-baseline gap-1 mt-1">
+                    <span className="text-3xl font-black text-paper">${plan.amount}</span>
+                    <span className="text-mist text-sm">MXN / mes</span>
+                  </div>
+                </div>
+                <button
+                  onClick={() => suscribir(key)}
+                  disabled={loading !== null}
+                  className={`w-full py-2.5 rounded-lg font-bold text-sm disabled:opacity-60 transition-all ${
+                    key === "pro"
+                      ? "bg-magenta text-white hover:bg-magenta/90"
+                      : "border border-magenta text-magenta hover:bg-magenta/10"
+                  }`}
+                >
+                  {loading === key ? "Redirigiendo..." : isTrial ? "Seleccionar" : "Reactivar"}
+                </button>
+              </div>
+            ))}
           </div>
-
-          <div className="flex items-baseline gap-2">
-            <span className="text-4xl font-black text-paper">$1,499</span>
-            <span className="text-mist">MXN</span>
-          </div>
-
-          <ul className="space-y-2 text-sm text-mist">
-            <li>✓ Tarjetas de lealtad ilimitadas</li>
-            <li>✓ Sellos en tiempo real</li>
-            <li>✓ Notificaciones push</li>
-            <li>✓ Después solo $449/mes</li>
-          </ul>
-
-          <button onClick={pagarActivacion} disabled={loadingCheckout} className="btn-primary w-full py-3 font-bold disabled:opacity-60">
-            {loadingCheckout ? "Redirigiendo..." : "Pagar $1,499 con Mercado Pago"}
-          </button>
-          <p className="text-center text-xs text-mist">Tarjeta, OXXO o transferencia bancaria</p>
+          <p className="text-xs text-mist">
+            {isTrial ? "Se cobra automáticamente al terminar los 7 días de prueba." : ""}
+          </p>
         </div>
       )}
 
-      {/* Suscripción mensual — mostrar solo si ya pagaron la activación pero no tienen sub */}
-      {isActive && !hasActiveSub && (
-        <div className="card space-y-4">
-          <div>
-            <p className="font-bold text-paper">Activa pagos automáticos</p>
-            <p className="text-mist text-sm mt-1">
-              Configura tu suscripción mensual para que tu acceso se renueve automáticamente.
-            </p>
-          </div>
-          <div className="flex items-baseline gap-2">
-            <span className="text-3xl font-black text-paper">$449</span>
-            <span className="text-mist">MXN / mes</span>
-          </div>
-          <button onClick={activarSuscripcion} disabled={loadingSub} className="btn-primary w-full py-3 font-bold disabled:opacity-60">
-            {loadingSub ? "Redirigiendo..." : "Activar suscripción mensual"}
-          </button>
-        </div>
-      )}
-
-      {/* Suscripción activa */}
+      {/* Plan activo */}
       {isActive && hasActiveSub && (
         <div className="card space-y-3">
           <div className="flex items-center justify-between">
-            <p className="font-bold text-paper">Suscripción mensual</p>
+            <p className="font-bold text-paper">Tu suscripción</p>
             <span className="rounded-full bg-green-500/15 px-3 py-1 text-xs font-bold text-green-400">Activa</span>
           </div>
-          <p className="text-2xl font-black text-paper">$449 <span className="text-mist text-sm font-normal">/ mes</span></p>
-          {subscription?.next_payment_at && (
-            <p className="text-sm text-mist">
-              Próximo cobro: {new Date(subscription.next_payment_at).toLocaleDateString("es-MX", { day: "numeric", month: "long", year: "numeric" })}
-            </p>
-          )}
-          <p className="text-xs text-mist">Para cancelar tu suscripción, escríbenos por WhatsApp.</p>
+          <p className="text-2xl font-black text-paper">
+            ${subscription?.amount} <span className="text-mist text-sm font-normal">MXN / mes</span>
+          </p>
+          <p className="text-xs text-mist">
+            Para cancelar o cambiar de plan escríbenos por WhatsApp.
+          </p>
         </div>
       )}
+
+      <div className="pt-2">
+        <Link href="/fidelity/dashboard" className="text-sm text-mist hover:text-paper transition-colors">
+          ← Volver al dashboard
+        </Link>
+      </div>
     </div>
   );
 }
