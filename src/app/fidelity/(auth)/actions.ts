@@ -67,7 +67,7 @@ export async function registrarNegocio(
     phone: phone || null,
     status: "trial",
     plan: "basico",
-    monthly_price: 500,
+    monthly_price: 549,
   });
 
   if (bizError) {

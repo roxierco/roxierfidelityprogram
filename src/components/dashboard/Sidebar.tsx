@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 import { XMark } from "@/components/brand/XMark";
 import { cerrarSesion } from "@/app/fidelity/(auth)/actions";
 import { ThemeToggle } from "@/components/dashboard/ThemeToggle";
+import { relanzarTour } from "@/components/dashboard/OnboardingTour";
 
 const navItems = [
   { href: "/fidelity/dashboard", label: "Resumen", icon: "M3 3h7v7H3zM14 3h7v7h-7zM14 14h7v7h-7zM3 14h7v7H3z" },
@@ -99,6 +100,15 @@ export function Sidebar({
       </nav>
 
       <div className="border-t border-surface-border p-3 space-y-1">
+        <button
+          onClick={relanzarTour}
+          className="flex w-full items-center gap-3 rounded-brand px-3 py-2.5 text-sm font-semibold text-mist transition-colors hover:bg-near-black hover:text-paper"
+        >
+          <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M12 22C6.477 22 2 17.523 2 12S6.477 2 12 2s10 4.477 10 10-4.477 10-10 10zM12 8v4M12 16h.01" />
+          </svg>
+          Instrucciones
+        </button>
         <ThemeToggle />
         <form action={cerrarSesion}>
           <button type="submit" className="flex w-full items-center gap-3 rounded-brand px-3 py-2.5 text-sm font-semibold text-mist transition-colors hover:bg-near-black hover:text-paper">

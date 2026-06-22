@@ -46,21 +46,20 @@ export default async function ConfiguracionPage() {
       <div className="card mt-4 space-y-4">
         <Row label="Negocio" value={business.name} />
         <Row label="Correo" value={business.email} />
-        <Row label="Plan" value={business.plan} />
-        <Row label="Mensualidad" value={formatMXN(business.monthly_price)} />
+        <Row label="Plan" value={business.plan === "basico" ? "Básico" : business.plan === "pro" ? "Pro" : business.plan} />
+        <Row label="Mensualidad" value={business.plan === "basico" ? "$549 MXN" : business.plan === "pro" ? "$749 MXN" : formatMXN(business.monthly_price)} />
         <Row label="Estado" value={estadoLabel[business.status] ?? business.status} />
       </div>
 
       {business.status !== "active" && (
-        <div className="card mt-6">
+        <div className="card mt-6 space-y-3">
           <h3 className="font-bold text-paper">Activa tu suscripción</h3>
-          <p className="mt-1 text-sm text-mist">
-            Paga {formatMXN(business.monthly_price)} al mes con tarjeta vía Mercado Pago.
-            Puedes cancelar cuando quieras.
+          <p className="text-sm text-mist">
+            Elige tu plan y empieza con 7 días gratis. El cobro se hace automáticamente al terminar el período de prueba.
           </p>
-          <div className="mt-4">
-            <ActivarSuscripcion />
-          </div>
+          <a href="/fidelity/planes" className="btn-primary inline-block text-center py-3 px-6 text-sm font-bold">
+            Ver planes y activar
+          </a>
         </div>
       )}
     </div>

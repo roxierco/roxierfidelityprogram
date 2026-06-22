@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { Sidebar } from "./Sidebar";
 import { XMark } from "@/components/brand/XMark";
+import { OnboardingTour } from "./OnboardingTour";
 
 export function DashboardShell({
   children,
@@ -30,6 +31,7 @@ export function DashboardShell({
 
   return (
     <div className="flex min-h-screen bg-near-black">
+      <OnboardingTour />
 
       {/* Overlay oscuro móvil */}
       {mobileOpen && (
