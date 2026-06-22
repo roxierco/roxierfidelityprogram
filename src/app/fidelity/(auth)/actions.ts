@@ -43,9 +43,13 @@ export async function registrarNegocio(
   const supabase = await createClient();
 
   // 1. Crear la cuenta de usuario
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://roxier-fidelity.vercel.app";
   const { data: authData, error: authError } = await supabase.auth.signUp({
     email,
     password,
+    options: {
+      emailRedirectTo: `${appUrl}/auth/callback`,
+    },
   });
 
   if (authError || !authData.user) {
