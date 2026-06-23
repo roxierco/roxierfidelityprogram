@@ -2,6 +2,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { notFound } from "next/navigation";
 import { CustomerCardClient } from "./CustomerCardClient";
 import { isGoogleWalletConfigured } from "@/lib/google-wallet";
+import { isAppleWalletConfigured } from "@/lib/apple-wallet";
 
 export default async function CustomerCardPage({
   params,
@@ -63,6 +64,7 @@ export default async function CustomerCardPage({
       cardUrl={cardUrl}
       cardId={cardId}
       googleWalletEnabled={isGoogleWalletConfigured()}
+      appleWalletEnabled={isAppleWalletConfigured()}
       vapidPublicKey={process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY}
     />
   );
