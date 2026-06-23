@@ -323,12 +323,21 @@ export function TarjetasClient({
       {/* Editor */}
       {step === "editing" && editing !== null && (
         <section>
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-xl font-bold text-paper">
+          <div className="mb-4 flex items-center gap-3">
+            <button
+              onClick={() => { setStep(editing.id ? "list" : "selecting"); setEditing(null); }}
+              className="flex items-center justify-center rounded-xl border border-surface-border bg-surface p-2 text-mist hover:text-paper hover:border-white/20 transition-all"
+              aria-label="Regresar"
+            >
+              <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
+              </svg>
+            </button>
+            <h2 className="text-xl font-bold text-paper flex-1">
               {editing.id ? "Editar tarjeta" : editing.card_type === "cupon" ? "Nuevo cupón" : editing.card_type === "descuento" ? "Nueva tarjeta de descuento" : "Nueva tarjeta de sellos"}
             </h2>
             <button
-              onClick={() => { setStep(cards.length > 0 ? "list" : "selecting"); setEditing(null); }}
+              onClick={() => { setStep(editing.id ? "list" : "selecting"); setEditing(null); }}
               className="text-sm text-mist hover:text-paper"
             >
               Cancelar
