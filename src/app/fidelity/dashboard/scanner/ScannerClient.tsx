@@ -9,6 +9,8 @@ interface ScanResult {
   rewarded: boolean;
   rewardText: string;
   stampsRequired: number;
+  cardType: "sellos" | "cupon" | "descuento";
+  couponValue: string | null;
 }
 
 function playRewardSound() {
@@ -159,27 +161,59 @@ export function ScannerClient({ businessId, businessName }: { businessId: string
         </div>
       )}
 
-      {/* QR escaneado — confirmar sello */}
+      {/* QR escaneado — confirmar acción */}
       {scannedCustomerId && !result && (
         <div className="rounded-brand border border-surface-border bg-surface p-6 space-y-4">
           <div className="text-center">
             <div className="text-4xl mb-2">✅</div>
             <p className="font-bold text-paper">QR leído correctamente</p>
-            <p className="text-sm text-mist mt-1">¿Dar sello a este cliente?</p>
+            <p className="text-sm text-mist mt-1">
+              {scannedCardId ? "¿Confirmar acción para este cliente?" : "¿Dar sello a este cliente?"}
+            </p>
           </div>
           <div className="flex gap-3">
             <button onClick={() => setScannedCustomerId(null)} className="btn-secondary flex-1">
               Cancelar
             </button>
             <button onClick={darSello} disabled={stamping} className="btn-primary flex-1">
-              {stamping ? "Dando sello..." : "Dar sello ✓"}
+              {stamping ? "Procesando..." : "Confirmar ✓"}
             </button>
           </div>
         </div>
       )}
 
-      {/* Sello normal */}
-      {result && !result.rewarded && (
+      {/* Resultado: cupón canjeado */}
+      {result && result.cardType === "cupon" && (
+        <div className="rounded-brand border border-purple-500 bg-purple-500/10 p-6 space-y-3 text-center">
+          <div className="text-5xl">🎟️</div>
+          <div>
+            <p className="font-bold text-lg text-paper">{result.customer.full_name}</p>
+            <p className="text-purple-400 font-semibold mt-1">¡Cupón canjeado!</p>
+            {result.couponValue && <p className="text-sm text-mist mt-1">{result.couponValue}</p>}
+          </div>
+          <button onClick={() => { setResult(null); startScanner(); }} className="btn-primary w-full">
+            Escanear otro cliente
+          </button>
+        </div>
+      )}
+
+      {/* Resultado: descuento aplicado */}
+      {result && result.cardType === "descuento" && (
+        <div className="rounded-brand border border-green-500 bg-green-500/10 p-6 space-y-3 text-center">
+          <div className="text-5xl">%</div>
+          <div>
+            <p className="font-bold text-lg text-paper">{result.customer.full_name}</p>
+            <p className="text-green-400 font-semibold mt-1">¡Descuento aplicado!</p>
+            {result.couponValue && <p className="text-sm text-mist mt-1">{result.couponValue}</p>}
+          </div>
+          <button onClick={() => { setResult(null); startScanner(); }} className="btn-primary w-full">
+            Escanear otro cliente
+          </button>
+        </div>
+      )}
+
+      {/* Resultado: sello normal */}
+      {result && result.cardType === "sellos" && !result.rewarded && (
         <div className="rounded-brand border border-green-500 bg-green-500/10 p-6 space-y-3 text-center">
           <div className="text-5xl">✅</div>
           <div>
@@ -188,17 +222,14 @@ export function ScannerClient({ businessId, businessName }: { businessId: string
               Sello agregado · {result.customer.current_stamps}/{result.stampsRequired} sellos
             </p>
           </div>
-          <button
-            onClick={() => { setResult(null); startScanner(); }}
-            className="btn-primary w-full"
-          >
+          <button onClick={() => { setResult(null); startScanner(); }} className="btn-primary w-full">
             Escanear otro cliente
           </button>
         </div>
       )}
 
-      {/* Pantalla completa de recompensa */}
-      {result && result.rewarded && (
+      {/* Pantalla completa de recompensa (solo sellos) */}
+      {result && result.cardType === "sellos" && result.rewarded && (
         <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-yellow-400 animate-pulse-once">
           <div className="text-center px-8 space-y-6">
             <div className="text-8xl animate-bounce">🎉</div>
@@ -206,17 +237,13 @@ export function ScannerClient({ businessId, businessName }: { businessId: string
               <p className="text-3xl font-black text-yellow-900 leading-tight">
                 ¡RECOMPENSA<br />GANADA!
               </p>
-              <p className="mt-3 text-xl font-bold text-yellow-800">
-                {result.customer.full_name}
-              </p>
+              <p className="mt-3 text-xl font-bold text-yellow-800">{result.customer.full_name}</p>
             </div>
             <div className="rounded-2xl bg-yellow-900/20 px-6 py-4">
               <p className="text-xs font-semibold uppercase tracking-widest text-yellow-800 mb-1">Premio a entregar</p>
               <p className="text-2xl font-extrabold text-yellow-900">{result.rewardText}</p>
             </div>
-            <p className="text-sm text-yellow-800 opacity-75">
-              Entrega el premio al cliente y luego continúa.
-            </p>
+            <p className="text-sm text-yellow-800 opacity-75">Entrega el premio al cliente y luego continúa.</p>
             <button
               onClick={() => { setResult(null); startScanner(); }}
               className="w-full rounded-2xl bg-yellow-900 py-4 text-lg font-bold text-yellow-100 active:scale-95 transition-transform"

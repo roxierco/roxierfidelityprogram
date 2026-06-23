@@ -26,6 +26,8 @@ interface Card {
   bg_image_url: string | null;
   color_gradient_end: string | null;
   gradient_direction: string | null;
+  card_type: string | null;
+  coupon_value: string | null;
 }
 
 function cardBgStyle(card: Card | null): CSSProperties {
@@ -283,59 +285,116 @@ export function CustomerCardClient({
 
       <div className="w-full max-w-sm space-y-4">
 
-        {/* Tarjeta de lealtad */}
-        <div
-          className={`relative overflow-hidden rounded-2xl p-5 shadow-2xl transition-all duration-500 ${justStamped ? "scale-105" : ""}`}
-          style={{ ...cardBgStyle(card), color: text, border: `2px solid ${primary}` }}
-        >
-          {card?.bg_type === "image" && card?.bg_image_url && (
-            <div className="absolute inset-0 bg-black/45" />
-          )}
-          <div className="relative">
-            <div className="flex items-center gap-3 mb-4">
-              {card?.logo_url ? (
-                <img src={card.logo_url} alt="Logo" className="h-10 w-10 rounded-lg object-contain shadow" />
-              ) : (
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg font-bold text-sm shadow"
-                  style={{ backgroundColor: primary, color: bg }}>
-                  {business.name[0]}
+        {/* ── Cupón ── */}
+        {card?.card_type === "cupon" && (() => {
+          const isRedeemed = customer.rewards_redeemed > 0;
+          return (
+            <div className="relative overflow-hidden rounded-2xl shadow-2xl" style={{ ...cardBgStyle(card), color: text, border: `2px solid ${primary}` }}>
+              {card?.bg_type === "image" && card?.bg_image_url && <div className="absolute inset-0 bg-black/45" />}
+              <div className="relative p-5">
+                <div className="flex items-center gap-3 mb-4">
+                  {card?.logo_url
+                    ? <img src={card.logo_url} alt="Logo" className="h-10 w-10 rounded-lg object-contain shadow" />
+                    : <div className="flex h-10 w-10 items-center justify-center rounded-lg font-bold text-sm shadow" style={{ backgroundColor: primary, color: bg }}>{business.name[0]}</div>
+                  }
+                  <div>
+                    <p className="font-bold">{card?.title ?? "Cupón"}</p>
+                    <p className="text-xs" style={{ opacity: 0.6 }}>{customer.full_name}</p>
+                  </div>
+                  <span className={`ml-auto rounded-full px-3 py-1 text-xs font-black uppercase tracking-widest ${isRedeemed ? "bg-white/20 text-white/50" : "bg-white text-black"}`}>
+                    {isRedeemed ? "CANJEADO" : "VÁLIDO"}
+                  </span>
                 </div>
-              )}
-              <div>
-                <p className="font-bold">{card?.title ?? "Tarjeta de lealtad"}</p>
-                <p className="text-xs" style={{ opacity: 0.6 }}>{customer.full_name}</p>
-              </div>
-              {justStamped && <span className="ml-auto text-lg animate-bounce">✨</span>}
-            </div>
-
-            <p className="text-[10px] font-bold uppercase tracking-wider mb-2" style={{ opacity: 0.6 }}>
-              Sellos acumulados
-            </p>
-            <div className="flex flex-wrap gap-1.5 mb-3">
-              {Array.from({ length: stampsRequired }).map((_, i) => (
-                <div key={i}
-                  className={`flex h-8 w-8 items-center justify-center rounded-full border-2 font-bold transition-all duration-300 ${justStamped && i === progress - 1 ? "scale-125" : ""}`}
-                  style={{
-                    borderColor: primary,
-                    backgroundColor: i < progress ? primary : "transparent",
-                    color: i < progress ? bg : primary,
-                    fontSize: stampIcon.length > 1 ? "10px" : "14px",
-                  }}
-                >
-                  {i < progress ? stampIcon : ""}
+                <div className="rounded-xl bg-white/10 p-4 text-center mb-4">
+                  <p className="text-[10px] font-bold uppercase tracking-widest mb-1" style={{ opacity: 0.6 }}>Oferta especial</p>
+                  <p className={`text-2xl font-extrabold ${isRedeemed ? "line-through opacity-40" : ""}`}>{card.coupon_value ?? "Beneficio especial"}</p>
                 </div>
-              ))}
-            </div>
-
-            <div className="flex items-end justify-between">
-              <div>
-                <p className="text-[10px] font-bold uppercase tracking-wider" style={{ opacity: 0.6 }}>Recompensa</p>
-                <p className="text-sm font-semibold">{card?.reward_text ?? "Premio especial"}</p>
+                {isRedeemed && (
+                  <p className="text-center text-xs opacity-50">Este cupón ya fue canjeado</p>
+                )}
               </div>
-              <p className="text-xs font-bold" style={{ opacity: 0.8 }}>{progress}/{stampsRequired}</p>
+            </div>
+          );
+        })()}
+
+        {/* ── Descuento ── */}
+        {card?.card_type === "descuento" && (
+          <div className="relative overflow-hidden rounded-2xl shadow-2xl" style={{ ...cardBgStyle(card), color: text, border: `2px solid ${primary}` }}>
+            {card?.bg_type === "image" && card?.bg_image_url && <div className="absolute inset-0 bg-black/45" />}
+            <div className="relative p-5">
+              <div className="flex items-center gap-3 mb-4">
+                {card?.logo_url
+                  ? <img src={card.logo_url} alt="Logo" className="h-10 w-10 rounded-lg object-contain shadow" />
+                  : <div className="flex h-10 w-10 items-center justify-center rounded-lg font-bold text-sm shadow" style={{ backgroundColor: primary, color: bg }}>{business.name[0]}</div>
+                }
+                <div>
+                  <p className="font-bold">{card?.title ?? "Tarjeta de descuento"}</p>
+                  <p className="text-xs" style={{ opacity: 0.6 }}>{customer.full_name}</p>
+                </div>
+                {justStamped && <span className="ml-auto text-lg animate-bounce">✨</span>}
+              </div>
+              <div className="rounded-xl bg-white/10 p-4 text-center">
+                <p className="text-[10px] font-bold uppercase tracking-widest mb-1" style={{ opacity: 0.6 }}>Tu descuento</p>
+                <p className="text-2xl font-extrabold">{card.coupon_value ?? "Descuento especial"}</p>
+                <p className="text-xs mt-1" style={{ opacity: 0.5 }}>Muestra el QR al cajero en cada visita</p>
+              </div>
             </div>
           </div>
-        </div>
+        )}
+
+        {/* ── Tarjeta de sellos (default) ── */}
+        {(!card?.card_type || card?.card_type === "sellos") && (
+          <div
+            className={`relative overflow-hidden rounded-2xl p-5 shadow-2xl transition-all duration-500 ${justStamped ? "scale-105" : ""}`}
+            style={{ ...cardBgStyle(card), color: text, border: `2px solid ${primary}` }}
+          >
+            {card?.bg_type === "image" && card?.bg_image_url && (
+              <div className="absolute inset-0 bg-black/45" />
+            )}
+            <div className="relative">
+              <div className="flex items-center gap-3 mb-4">
+                {card?.logo_url ? (
+                  <img src={card.logo_url} alt="Logo" className="h-10 w-10 rounded-lg object-contain shadow" />
+                ) : (
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg font-bold text-sm shadow"
+                    style={{ backgroundColor: primary, color: bg }}>
+                    {business.name[0]}
+                  </div>
+                )}
+                <div>
+                  <p className="font-bold">{card?.title ?? "Tarjeta de lealtad"}</p>
+                  <p className="text-xs" style={{ opacity: 0.6 }}>{customer.full_name}</p>
+                </div>
+                {justStamped && <span className="ml-auto text-lg animate-bounce">✨</span>}
+              </div>
+              <p className="text-[10px] font-bold uppercase tracking-wider mb-2" style={{ opacity: 0.6 }}>
+                Sellos acumulados
+              </p>
+              <div className="flex flex-wrap gap-1.5 mb-3">
+                {Array.from({ length: stampsRequired }).map((_, i) => (
+                  <div key={i}
+                    className={`flex h-8 w-8 items-center justify-center rounded-full border-2 font-bold transition-all duration-300 ${justStamped && i === progress - 1 ? "scale-125" : ""}`}
+                    style={{
+                      borderColor: primary,
+                      backgroundColor: i < progress ? primary : "transparent",
+                      color: i < progress ? bg : primary,
+                      fontSize: stampIcon.length > 1 ? "10px" : "14px",
+                    }}
+                  >
+                    {i < progress ? stampIcon : ""}
+                  </div>
+                ))}
+              </div>
+              <div className="flex items-end justify-between">
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-wider" style={{ opacity: 0.6 }}>Recompensa</p>
+                  <p className="text-sm font-semibold">{card?.reward_text ?? "Premio especial"}</p>
+                </div>
+                <p className="text-xs font-bold" style={{ opacity: 0.8 }}>{progress}/{stampsRequired}</p>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* QR Code */}
         <div className="flex flex-col items-center gap-3 rounded-2xl bg-white p-6 shadow-2xl">

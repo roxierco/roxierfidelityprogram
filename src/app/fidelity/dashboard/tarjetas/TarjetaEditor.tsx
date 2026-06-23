@@ -464,11 +464,12 @@ export function TarjetaEditor({
   async function guardar() {
     setSaving(true);
     const supabase = createClient();
+    const cardType = card.card_type ?? "sellos";
     const payload = {
       business_id: businessId,
       title: card.title,
-      reward_text: card.reward_text,
-      stamps_required: card.stamps_required,
+      reward_text: card.reward_text ?? (cardType === "cupon" ? "Cupón canjeado" : cardType === "descuento" ? "Descuento aplicado" : "Un producto gratis"),
+      stamps_required: cardType === "cupon" ? 1 : cardType === "descuento" ? 1 : (card.stamps_required ?? 10),
       color_primary: card.color_primary,
       color_background: card.color_background,
       text_color: card.text_color,
@@ -479,6 +480,8 @@ export function TarjetaEditor({
       bg_image_url: card.bg_image_url ?? null,
       bg_image_position: card.bg_image_position ?? null,
       stamp_icon: card.stamp_icon ?? "✓",
+      card_type: cardType,
+      coupon_value: card.coupon_value ?? null,
     };
 
     let savedCardId = card.id;
@@ -559,32 +562,84 @@ export function TarjetaEditor({
               </div>
             </div>
 
-            {/* Título y recompensa */}
-            <div className="card space-y-4">
-              <div>
-                <label className="label">Nombre de la tarjeta</label>
-                <input className="input mt-1" placeholder="Ej: Club Café Premium"
-                  value={card.title ?? ""} onChange={(e) => update("title", e.target.value)} />
-              </div>
-              <div>
-                <label className="label">Recompensa</label>
-                <input className="input mt-1" placeholder="Ej: Un café gratis ☕"
-                  value={card.reward_text ?? ""} onChange={(e) => update("reward_text", e.target.value)} />
-                <p className="mt-1 text-xs text-mist">Lo que gana el cliente al completar la tarjeta</p>
-              </div>
-              <div>
-                <label className="label">Sellos para completar</label>
-                <div className="mt-1 flex items-center gap-3">
-                  <input type="range" min={3} max={20} value={card.stamps_required ?? 10}
-                    onChange={(e) => update("stamps_required", parseInt(e.target.value))}
-                    className="flex-1 accent-magenta" />
-                  <span className="w-10 text-center text-lg font-black text-paper">{card.stamps_required ?? 10}</span>
+            {/* Campos de Cupón */}
+            {(card.card_type === "cupon") && (
+              <div className="card space-y-4">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-lg">🎟️</span>
+                  <p className="font-bold text-paper text-sm">Configuración del cupón</p>
+                  <span className="rounded-full bg-magenta/10 px-2 py-0.5 text-[10px] font-bold text-magenta uppercase tracking-wider">Un solo uso</span>
                 </div>
-                <div className="mt-2 flex justify-between text-[10px] text-mist">
-                  <span>3 sellos</span><span>20 sellos</span>
+                <div>
+                  <label className="label">Nombre del cupón</label>
+                  <input className="input mt-1" placeholder="Ej: Cupón bienvenida"
+                    value={card.title ?? ""} onChange={(e) => update("title", e.target.value)} />
+                </div>
+                <div>
+                  <label className="label">¿Qué ofrece el cupón?</label>
+                  <input className="input mt-1" placeholder="Ej: 20% de descuento, Café gratis, 2x1 en postres..."
+                    value={card.coupon_value ?? ""} onChange={(e) => update("coupon_value", e.target.value)} />
+                  <p className="mt-1 text-xs text-mist">Esto es lo que verá el cliente en su cupón</p>
+                </div>
+                <div className="rounded-xl bg-amber-500/10 border border-amber-500/20 p-3 text-xs text-amber-400">
+                  ℹ️ El cupón solo se puede canjear una vez por cliente. Después queda marcado como CANJEADO.
                 </div>
               </div>
-            </div>
+            )}
+
+            {/* Campos de Descuento */}
+            {(card.card_type === "descuento") && (
+              <div className="card space-y-4">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-lg">%</span>
+                  <p className="font-bold text-paper text-sm">Configuración del descuento</p>
+                  <span className="rounded-full bg-green-500/10 px-2 py-0.5 text-[10px] font-bold text-green-400 uppercase tracking-wider">Usos ilimitados</span>
+                </div>
+                <div>
+                  <label className="label">Nombre de la tarjeta</label>
+                  <input className="input mt-1" placeholder="Ej: Tarjeta de cliente frecuente"
+                    value={card.title ?? ""} onChange={(e) => update("title", e.target.value)} />
+                </div>
+                <div>
+                  <label className="label">Descuento que ofreces</label>
+                  <input className="input mt-1" placeholder="Ej: 15% de descuento en toda la tienda"
+                    value={card.coupon_value ?? ""} onChange={(e) => update("coupon_value", e.target.value)} />
+                  <p className="mt-1 text-xs text-mist">El cliente muestra el QR para obtener el descuento en cada visita</p>
+                </div>
+                <div className="rounded-xl bg-green-500/10 border border-green-500/20 p-3 text-xs text-green-400">
+                  ℹ️ El cliente puede usar esta tarjeta en cada visita — sin límite de usos.
+                </div>
+              </div>
+            )}
+
+            {/* Campos de Sellos */}
+            {(!card.card_type || card.card_type === "sellos") && (
+              <div className="card space-y-4">
+                <div>
+                  <label className="label">Nombre de la tarjeta</label>
+                  <input className="input mt-1" placeholder="Ej: Club Café Premium"
+                    value={card.title ?? ""} onChange={(e) => update("title", e.target.value)} />
+                </div>
+                <div>
+                  <label className="label">Recompensa</label>
+                  <input className="input mt-1" placeholder="Ej: Un café gratis ☕"
+                    value={card.reward_text ?? ""} onChange={(e) => update("reward_text", e.target.value)} />
+                  <p className="mt-1 text-xs text-mist">Lo que gana el cliente al completar la tarjeta</p>
+                </div>
+                <div>
+                  <label className="label">Sellos para completar</label>
+                  <div className="mt-1 flex items-center gap-3">
+                    <input type="range" min={3} max={20} value={card.stamps_required ?? 10}
+                      onChange={(e) => update("stamps_required", parseInt(e.target.value))}
+                      className="flex-1 accent-magenta" />
+                    <span className="w-10 text-center text-lg font-black text-paper">{card.stamps_required ?? 10}</span>
+                  </div>
+                  <div className="mt-2 flex justify-between text-[10px] text-mist">
+                    <span>3 sellos</span><span>20 sellos</span>
+                  </div>
+                </div>
+              </div>
+            )}
 
           </div>
         )}

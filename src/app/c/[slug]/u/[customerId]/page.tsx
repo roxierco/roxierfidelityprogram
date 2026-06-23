@@ -35,7 +35,7 @@ export default async function CustomerCardPage({
   if (cardId) {
     const { data } = await supabase
       .from("loyalty_cards")
-      .select("title, stamps_required, reward_text, color_primary, color_background, text_color, logo_url, bg_type, color_gradient_end, gradient_direction, bg_image_url, bg_image_position, stamp_icon")
+      .select("title, stamps_required, reward_text, color_primary, color_background, text_color, logo_url, bg_type, color_gradient_end, gradient_direction, bg_image_url, bg_image_position, stamp_icon, card_type, coupon_value")
       .eq("id", cardId)
       .eq("business_id", customer.business_id)
       .single();
@@ -44,7 +44,7 @@ export default async function CustomerCardPage({
   if (!card) {
     const { data } = await supabase
       .from("loyalty_cards")
-      .select("title, stamps_required, reward_text, color_primary, color_background, text_color, logo_url, bg_type, color_gradient_end, gradient_direction, bg_image_url, bg_image_position, stamp_icon")
+      .select("title, stamps_required, reward_text, color_primary, color_background, text_color, logo_url, bg_type, color_gradient_end, gradient_direction, bg_image_url, bg_image_position, stamp_icon, card_type, coupon_value")
       .eq("business_id", customer.business_id)
       .eq("is_active", true)
       .order("created_at", { ascending: false })

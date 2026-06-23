@@ -6,16 +6,17 @@ import { QRCodeSVG } from "qrcode.react";
 import { TarjetaEditor } from "./TarjetaEditor";
 import type { LoyaltyCard } from "@/types/database";
 
-function defaultCard(businessId: string): Partial<LoyaltyCard> {
-  return {
+function defaultCard(businessId: string, type: CardTypeKey = "sellos"): Partial<LoyaltyCard> {
+  const base = {
     business_id: businessId,
-    title: "Tarjeta de lealtad",
     color_primary: "#FF2E63",
     color_background: "#0E0E10",
     text_color: "#F5F4F2",
-    stamps_required: 10,
-    reward_text: "Un producto gratis",
+    card_type: type as LoyaltyCard["card_type"],
   };
+  if (type === "cupon") return { ...base, title: "Cupón especial", coupon_value: "20% de descuento", stamps_required: 1, reward_text: "Cupón canjeado" };
+  if (type === "descuento") return { ...base, title: "Descuento especial", coupon_value: "15% de descuento en tu próxima compra", stamps_required: 1, reward_text: "Descuento aplicado" };
+  return { ...base, title: "Tarjeta de lealtad", stamps_required: 10, reward_text: "Un producto gratis" };
 }
 
 // ── Selector de tipo de tarjeta ──────────────────────────────────
@@ -33,7 +34,7 @@ const CARD_TYPES: {
     key: "cupon",
     title: "Cupón",
     description: "Ofrece cupones digitales de un solo uso para atraer nuevos clientes.",
-    available: false,
+    available: true,
     icon: (
       <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth={1.5}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 6v.75m0 3v.75m0 3v.75m0 3V18m-9-5.25h5.25M7.5 15h3M3.375 5.25c-.621 0-1.125.504-1.125 1.125v3.026a2.999 2.999 0 010 5.198v3.026c0 .621.504 1.125 1.125 1.125h17.25c.621 0 1.125-.504 1.125-1.125v-3.026a3 3 0 010-5.198V6.375c0-.621-.504-1.125-1.125-1.125H3.375z" />
@@ -66,7 +67,7 @@ const CARD_TYPES: {
     key: "descuento",
     title: "Descuento",
     description: "Ofrece descuentos exclusivos en tus productos o servicios y haz que tus clientes vuelvan una y otra vez.",
-    available: false,
+    available: true,
     icon: (
       <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth={1.5}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M9 14.25l6-6m4.5-3.493V21.75l-3.75-1.5-3.75 1.5-3.75-1.5-3.75 1.5V4.757c0-1.108.806-2.057 1.907-2.185a48.507 48.507 0 0111.186 0c1.1.128 1.907 1.077 1.907 2.185zM9.75 9h.008v.008H9.75V9zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm4.125 4.5h.008v.008h-.008V13.5zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
@@ -283,10 +284,8 @@ export function TarjetasClient({
   }
 
   function handleTypeSelected(type: CardTypeKey) {
-    if (type === "sellos") {
-      setEditing(defaultCard(businessId));
-      setStep("editing");
-    }
+    setEditing(defaultCard(businessId, type));
+    setStep("editing");
   }
 
   function startNew() {
@@ -326,7 +325,7 @@ export function TarjetasClient({
         <section>
           <div className="mb-4 flex items-center justify-between">
             <h2 className="text-xl font-bold text-paper">
-              {editing.id ? "Editar tarjeta" : "Nueva tarjeta de sellos"}
+              {editing.id ? "Editar tarjeta" : editing.card_type === "cupon" ? "Nuevo cupón" : editing.card_type === "descuento" ? "Nueva tarjeta de descuento" : "Nueva tarjeta de sellos"}
             </h2>
             <button
               onClick={() => { setStep(cards.length > 0 ? "list" : "selecting"); setEditing(null); }}

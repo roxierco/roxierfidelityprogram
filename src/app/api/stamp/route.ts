@@ -55,7 +55,7 @@ export async function POST(req: NextRequest) {
   if (cardId && uuidRegex.test(cardId)) {
     const { data } = await admin
       .from("loyalty_cards")
-      .select("stamps_required, reward_text")
+      .select("stamps_required, reward_text, card_type, coupon_value")
       .eq("id", cardId)
       .eq("business_id", businessId)
       .eq("is_active", true)
@@ -65,13 +65,18 @@ export async function POST(req: NextRequest) {
   if (!card) {
     const { data } = await admin
       .from("loyalty_cards")
-      .select("stamps_required, reward_text")
+      .select("stamps_required, reward_text, card_type, coupon_value")
       .eq("business_id", businessId)
       .eq("is_active", true)
       .order("created_at", { ascending: false })
       .limit(1)
       .maybeSingle();
     card = data;
+  }
+
+  // Cupón: bloquear si ya fue canjeado
+  if (card?.card_type === "cupon" && customer.rewards_redeemed > 0) {
+    return NextResponse.json({ error: "Este cupón ya fue canjeado" }, { status: 409 });
   }
 
   const stampsRequired = card?.stamps_required ?? 10;
@@ -177,5 +182,7 @@ export async function POST(req: NextRequest) {
     rewarded,
     rewardText: card?.reward_text ?? "",
     stampsRequired,
+    cardType: card?.card_type ?? "sellos",
+    couponValue: card?.coupon_value ?? null,
   });
 }

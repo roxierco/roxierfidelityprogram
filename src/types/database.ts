@@ -23,6 +23,8 @@ export interface Business {
   updated_at: string;
 }
 
+export type CardType = "sellos" | "cupon" | "descuento";
+
 export interface LoyaltyCard {
   id: string;
   business_id: string;
@@ -35,6 +37,8 @@ export interface LoyaltyCard {
   stamps_required: number;
   reward_text: string;
   is_active: boolean;
+  card_type: CardType;
+  coupon_value: string | null;
   // Personalización avanzada del fondo
   bg_type: "solid" | "gradient" | "image";
   color_gradient_end: string | null;
