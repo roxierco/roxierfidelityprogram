@@ -1,11 +1,10 @@
 import type { Metadata } from "next";
-import { Syne } from "next/font/google";
+import { Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 
-// Syne es la tipografía oficial de Roxier
-const syne = Syne({
+const syne = Plus_Jakarta_Sans({
   subsets: ["latin"],
-  weight: ["400", "600", "700", "800"],
+  weight: ["400", "500", "600", "700", "800"],
   variable: "--font-syne",
   display: "swap",
 });
@@ -29,7 +28,6 @@ export default function RootLayout({
 }) {
   return (
     <html lang="es-MX" className={syne.variable}>
-      {/* Aplica el tema antes de que React hidrate para evitar flash */}
       <head>
         <script
           dangerouslySetInnerHTML={{
