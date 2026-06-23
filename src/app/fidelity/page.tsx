@@ -182,6 +182,9 @@ export default function FidelityLanding() {
             <Link href="#como-funciona" className="hidden text-sm font-medium text-white/50 hover:text-white transition-colors sm:block">
               Cómo funciona
             </Link>
+            <Link href="#precios" className="hidden text-sm font-medium text-white/50 hover:text-white transition-colors sm:block">
+              Precios
+            </Link>
             <Link href="/fidelity/login" className="text-sm font-semibold text-white/70 hover:text-white transition-colors">
               Iniciar sesión
             </Link>
@@ -335,6 +338,133 @@ export default function FidelityLanding() {
                 <p className="text-sm text-white/45 leading-relaxed">{feat.text}</p>
               </div>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── Precios ────────────────────────────────────────────────── */}
+      <section id="precios" className="relative py-28 overflow-hidden">
+        <div className="pointer-events-none absolute left-1/2 top-0 -translate-x-1/2 h-[500px] w-[700px] rounded-full bg-[#FF2E63]/8 blur-[120px]" />
+        <div className="mx-auto max-w-6xl px-6 relative z-10">
+
+          <div className="text-center mb-4">
+            <p className="text-xs font-bold uppercase tracking-widest text-[#FF2E63] mb-4">Planes y precios</p>
+            <h2 className="text-4xl font-extrabold text-white mb-4">
+              Cuesta menos que un empleado.<br />
+              <span className="bg-gradient-to-r from-[#FF2E63] to-[#ff6b91] bg-clip-text text-transparent">
+                Trabaja 24/7 sin quejarse.
+              </span>
+            </h2>
+            <p className="text-white/40 text-lg max-w-lg mx-auto">
+              Sin contratos anuales. Sin cuota de instalación. Cancela cuando quieras.
+            </p>
+          </div>
+
+          {/* Badge de prueba gratis */}
+          <div className="flex justify-center mb-12">
+            <div className="inline-flex items-center gap-2 rounded-full bg-white/[0.05] border border-white/10 px-5 py-2.5">
+              <svg className="h-4 w-4 text-[#FF2E63]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <span className="text-sm font-semibold text-white/70">7 días gratis en ambos planes — tarjeta requerida, cobro al término</span>
+            </div>
+          </div>
+
+          {/* Cards de planes */}
+          <div className="grid gap-6 md:grid-cols-2 max-w-3xl mx-auto">
+
+            {/* Plan Básico */}
+            <div className="relative rounded-2xl border border-white/[0.08] bg-white/[0.03] p-8 flex flex-col">
+              <div className="mb-6">
+                <p className="text-xs font-bold uppercase tracking-widest text-white/40 mb-1">Plan</p>
+                <h3 className="text-2xl font-extrabold text-white mb-1">Básico</h3>
+                <p className="text-white/40 text-sm">Todo lo que necesitas para empezar</p>
+              </div>
+              <div className="flex items-end gap-1 mb-8">
+                <span className="text-5xl font-extrabold text-white">$549</span>
+                <span className="text-white/40 text-sm mb-2">/mes MXN</span>
+              </div>
+              <ul className="space-y-3 mb-8 flex-1">
+                {[
+                  "1 tarjeta de lealtad activa",
+                  "Clientes ilimitados",
+                  "QR para sellos en segundos",
+                  "Guardado en Google Wallet",
+                  "Notificaciones push",
+                  "Promociones a clientes",
+                  "Dashboard con analytics",
+                ].map((f) => (
+                  <li key={f} className="flex items-center gap-2.5 text-sm text-white/70">
+                    <svg className="h-4 w-4 flex-shrink-0 text-[#FF2E63]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
+                    {f}
+                  </li>
+                ))}
+              </ul>
+              <Link href="/fidelity/registro"
+                className="w-full rounded-xl border border-white/15 py-3 text-center text-sm font-bold text-white hover:border-white/30 hover:bg-white/[0.05] transition-all">
+                Probar 7 días gratis
+              </Link>
+            </div>
+
+            {/* Plan Pro — destacado */}
+            <div className="relative rounded-2xl border border-[#FF2E63]/50 bg-gradient-to-b from-[#FF2E63]/10 to-transparent p-8 flex flex-col">
+              {/* Badge popular */}
+              <div className="absolute -top-3.5 left-1/2 -translate-x-1/2">
+                <span className="inline-block rounded-full bg-[#FF2E63] px-4 py-1 text-[10px] font-extrabold uppercase tracking-widest text-white shadow-lg shadow-[#FF2E63]/30">
+                  Más popular
+                </span>
+              </div>
+              <div className="mb-6">
+                <p className="text-xs font-bold uppercase tracking-widest text-[#FF2E63]/70 mb-1">Plan</p>
+                <h3 className="text-2xl font-extrabold text-white mb-1">Pro</h3>
+                <p className="text-white/40 text-sm">Para negocios que quieren más impacto</p>
+              </div>
+              <div className="flex items-end gap-1 mb-8">
+                <span className="text-5xl font-extrabold text-white">$749</span>
+                <span className="text-white/40 text-sm mb-2">/mes MXN</span>
+              </div>
+              <ul className="space-y-3 mb-8 flex-1">
+                {[
+                  "3 tarjetas de lealtad activas",
+                  "Clientes ilimitados",
+                  "QR para sellos en segundos",
+                  "Guardado en Google Wallet",
+                  "Notificaciones push",
+                  "Promociones a clientes",
+                  "Dashboard con analytics",
+                  "Soporte prioritario por WhatsApp",
+                ].map((f) => (
+                  <li key={f} className="flex items-center gap-2.5 text-sm text-white/70">
+                    <svg className="h-4 w-4 flex-shrink-0 text-[#FF2E63]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
+                    {f}
+                  </li>
+                ))}
+              </ul>
+              <Link href="/fidelity/registro"
+                className="w-full rounded-xl bg-[#FF2E63] py-3 text-center text-sm font-bold text-white hover:bg-[#e0254f] transition-all shadow-lg shadow-[#FF2E63]/25">
+                Probar 7 días gratis
+              </Link>
+            </div>
+          </div>
+
+          {/* Garantía / tranquilidad */}
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-6 mt-12 text-sm text-white/30">
+            <span className="flex items-center gap-2">
+              <svg className="h-4 w-4 text-white/20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
+              Sin contrato de permanencia
+            </span>
+            <span className="flex items-center gap-2">
+              <svg className="h-4 w-4 text-white/20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" /></svg>
+              Pago seguro vía Mercado Pago
+            </span>
+            <span className="flex items-center gap-2">
+              <svg className="h-4 w-4 text-white/20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" /></svg>
+              Cancela cuando quieras
+            </span>
           </div>
         </div>
       </section>
