@@ -1,22 +1,51 @@
 import Link from "next/link";
 import { RoxierLogo } from "@/components/brand/XMark";
 
-// Tarjeta de ejemplo reutilizable
+function QRMockup() {
+  return (
+    <svg viewBox="0 0 33 33" fill="currentColor" className="h-full w-full">
+      {/* Esquina superior izquierda */}
+      <rect x="0" y="0" width="9" height="9" />
+      <rect x="1" y="1" width="7" height="7" fill="white" />
+      <rect x="2" y="2" width="5" height="5" />
+      {/* Esquina superior derecha */}
+      <rect x="24" y="0" width="9" height="9" />
+      <rect x="25" y="1" width="7" height="7" fill="white" />
+      <rect x="26" y="2" width="5" height="5" />
+      {/* Esquina inferior izquierda */}
+      <rect x="0" y="24" width="9" height="9" />
+      <rect x="1" y="25" width="7" height="7" fill="white" />
+      <rect x="2" y="26" width="5" height="5" />
+      {/* Datos simulados */}
+      <rect x="11" y="0" width="2" height="2" /><rect x="14" y="0" width="2" height="2" /><rect x="17" y="0" width="2" height="2" /><rect x="20" y="0" width="2" height="2" />
+      <rect x="11" y="3" width="2" height="2" /><rect x="15" y="3" width="2" height="2" /><rect x="19" y="3" width="2" height="2" />
+      <rect x="11" y="6" width="2" height="2" /><rect x="14" y="6" width="2" height="2" /><rect x="17" y="6" width="2" height="2" /><rect x="21" y="6" width="2" height="2" />
+      <rect x="0" y="11" width="2" height="2" /><rect x="3" y="11" width="2" height="2" /><rect x="6" y="11" width="2" height="2" /><rect x="10" y="11" width="2" height="2" /><rect x="13" y="11" width="2" height="2" /><rect x="16" y="11" width="2" height="2" /><rect x="19" y="11" width="2" height="2" /><rect x="23" y="11" width="2" height="2" /><rect x="26" y="11" width="2" height="2" /><rect x="30" y="11" width="2" height="2" />
+      <rect x="0" y="14" width="2" height="2" /><rect x="4" y="14" width="2" height="2" /><rect x="8" y="14" width="2" height="2" /><rect x="12" y="14" width="2" height="2" /><rect x="17" y="14" width="2" height="2" /><rect x="21" y="14" width="2" height="2" /><rect x="25" y="14" width="2" height="2" /><rect x="29" y="14" width="2" height="2" />
+      <rect x="2" y="17" width="2" height="2" /><rect x="6" y="17" width="2" height="2" /><rect x="10" y="17" width="2" height="2" /><rect x="14" y="17" width="2" height="2" /><rect x="18" y="17" width="2" height="2" /><rect x="22" y="17" width="2" height="2" /><rect x="27" y="17" width="2" height="2" /><rect x="31" y="17" width="2" height="2" />
+      <rect x="0" y="20" width="2" height="2" /><rect x="4" y="20" width="2" height="2" /><rect x="9" y="20" width="2" height="2" /><rect x="13" y="20" width="2" height="2" /><rect x="17" y="20" width="2" height="2" /><rect x="20" y="20" width="2" height="2" /><rect x="24" y="20" width="2" height="2" /><rect x="28" y="20" width="2" height="2" />
+      <rect x="11" y="24" width="2" height="2" /><rect x="15" y="24" width="2" height="2" /><rect x="19" y="25" width="2" height="2" /><rect x="23" y="24" width="2" height="2" /><rect x="28" y="24" width="2" height="2" /><rect x="31" y="24" width="2" height="2" />
+      <rect x="11" y="27" width="2" height="2" /><rect x="14" y="27" width="2" height="2" /><rect x="18" y="27" width="2" height="2" /><rect x="22" y="27" width="2" height="2" /><rect x="26" y="27" width="2" height="2" /><rect x="30" y="27" width="2" height="2" />
+      <rect x="11" y="30" width="2" height="2" /><rect x="16" y="30" width="2" height="2" /><rect x="20" y="30" width="2" height="2" /><rect x="24" y="30" width="2" height="2" /><rect x="28" y="31" width="2" height="2" />
+    </svg>
+  );
+}
+
 function CardDemo({
-  bg,
+  image,
   accent,
-  textColor = "white",
   business,
+  category,
   initial,
   reward,
   stamped,
   total,
   icon,
 }: {
-  bg: string;
+  image: string;
   accent: string;
-  textColor?: string;
   business: string;
+  category: string;
   initial: string;
   reward: string;
   stamped: number;
@@ -24,41 +53,56 @@ function CardDemo({
   icon: string;
 }) {
   return (
-    <div className="relative rounded-2xl p-5 shadow-xl text-left flex-shrink-0 w-64" style={{ background: bg, color: textColor }}>
-      <div className="flex items-center gap-2.5 mb-4">
-        <div className="flex h-9 w-9 items-center justify-center rounded-lg text-sm font-black" style={{ background: accent, color: bg }}>
-          {initial}
-        </div>
-        <div>
-          <p className="text-[9px] font-bold uppercase tracking-widest opacity-50">Tarjeta de fidelidad</p>
-          <p className="font-bold text-sm leading-tight">{business}</p>
-        </div>
-        <div className="ml-auto text-xs font-bold opacity-50">{stamped}/{total}</div>
-      </div>
+    <div className="relative rounded-2xl overflow-hidden flex-shrink-0 w-64 h-80 shadow-2xl text-white">
+      {/* Imagen de fondo */}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src={image} alt={business} className="absolute inset-0 w-full h-full object-cover" />
+      {/* Overlay oscuro */}
+      <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/40 to-black/80" />
 
-      <p className="text-[9px] font-bold uppercase tracking-widest opacity-40 mb-1.5">Sellos</p>
-      <div className="flex flex-wrap gap-1.5 mb-4">
-        {Array.from({ length: total }).map((_, i) => (
-          <div key={i} className="flex h-7 w-7 items-center justify-center rounded-full border-2 text-xs font-black"
-            style={{
-              borderColor: i < stamped ? accent : `${textColor}30`,
-              background: i < stamped ? accent : "transparent",
-              color: i < stamped ? bg : `${textColor}30`,
-            }}>
-            {i < stamped ? icon : ""}
+      {/* Contenido */}
+      <div className="relative h-full flex flex-col p-4">
+        {/* Header */}
+        <div className="flex items-center gap-2.5 mb-3">
+          <div className="flex h-9 w-9 items-center justify-center rounded-lg text-sm font-black flex-shrink-0" style={{ background: accent, color: "white" }}>
+            {initial}
           </div>
-        ))}
-      </div>
-
-      <div className="flex items-center justify-between">
-        <div>
-          <p className="text-[9px] font-bold uppercase tracking-widest opacity-40">Recompensa</p>
-          <p className="text-sm font-bold">{reward}</p>
+          <div className="min-w-0">
+            <p className="font-bold text-sm leading-tight truncate">{business}</p>
+            <p className="text-[9px] font-bold uppercase tracking-widest text-white/50">{category}</p>
+          </div>
         </div>
-        <div className="flex h-11 w-11 items-center justify-center rounded-xl opacity-20">
-          <svg viewBox="0 0 24 24" className="h-7 w-7" fill="currentColor">
-            <path d="M3 3h7v7H3zM14 3h7v7h-7zM14 14h7v7h-7zM3 14h7v7H3z" />
-          </svg>
+
+        {/* QR central */}
+        <div className="flex flex-1 items-center justify-center">
+          <div className="bg-white rounded-2xl p-3 shadow-xl">
+            <div className="h-20 w-20 text-black">
+              <QRMockup />
+            </div>
+            <p className="text-center text-[8px] font-bold text-black/40 uppercase tracking-widest mt-1.5">Escanear</p>
+          </div>
+        </div>
+
+        {/* Footer: sellos + recompensa */}
+        <div className="mt-3 space-y-2">
+          <div className="flex items-center gap-1 flex-wrap">
+            {Array.from({ length: total }).map((_, i) => (
+              <div key={i}
+                className="flex h-5 w-5 items-center justify-center rounded-full border text-[9px] font-black transition-all"
+                style={{
+                  borderColor: i < stamped ? accent : "rgba(255,255,255,0.3)",
+                  background: i < stamped ? accent : "transparent",
+                  color: i < stamped ? "white" : "rgba(255,255,255,0.3)",
+                }}>
+                {i < stamped ? icon : ""}
+              </div>
+            ))}
+            <span className="ml-auto text-[9px] font-bold text-white/40">{stamped}/{total}</span>
+          </div>
+          <div className="flex items-center justify-between">
+            <p className="text-xs font-bold text-white/80">{reward}</p>
+            <div className="h-2 w-2 rounded-full animate-pulse" style={{ background: accent }} />
+          </div>
         </div>
       </div>
     </div>
@@ -66,12 +110,61 @@ function CardDemo({
 }
 
 const CARD_EXAMPLES = [
-  { bg: "#1C0A00", accent: "#D97706", business: "La Taquería del Centro", initial: "T", reward: "🌮 Taco gratis", stamped: 7, total: 10, icon: "★" },
-  { bg: "#0C1A2E", accent: "#3B82F6", business: "Roxier Coffee", initial: "R", reward: "☕ Café gratis", stamped: 4, total: 8, icon: "✓" },
-  { bg: "#0D2016", accent: "#16A34A", business: "Barbería El Estilo", initial: "E", reward: "✂️ Corte gratis", stamped: 2, total: 6, icon: "★" },
-  { bg: "#130020", accent: "#A855F7", business: "Spa Serenidad", initial: "S", reward: "💆 Masaje gratis", stamped: 5, total: 8, icon: "♥" },
-  { bg: "#1A0010", accent: "#EC4899", business: "Pastelería Dulce", initial: "D", reward: "🎂 Pastel gratis", stamped: 9, total: 12, icon: "★" },
-  { bg: "#FFFFFF", accent: "#0E0E10", textColor: "#0E0E10", business: "Gym FitZone", initial: "F", reward: "🏋️ Mes gratis", stamped: 3, total: 10, icon: "✓" },
+  {
+    image: "https://images.unsplash.com/photo-1559925393-8be0ec4767c8?w=400&q=80",
+    accent: "#D97706",
+    business: "La Taquería del Centro",
+    category: "Restaurante",
+    initial: "T",
+    reward: "🌮 Taco gratis",
+    stamped: 7,
+    total: 10,
+    icon: "★",
+  },
+  {
+    image: "https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=400&q=80",
+    accent: "#FF2E63",
+    business: "Roxier Coffee",
+    category: "Cafetería",
+    initial: "R",
+    reward: "☕ Café gratis",
+    stamped: 4,
+    total: 8,
+    icon: "✓",
+  },
+  {
+    image: "https://images.unsplash.com/photo-1503951914875-452162b0f3f1?w=400&q=80",
+    accent: "#EAB308",
+    business: "Barbería El Estilo",
+    category: "Barbería",
+    initial: "E",
+    reward: "✂️ Corte gratis",
+    stamped: 3,
+    total: 6,
+    icon: "★",
+  },
+  {
+    image: "https://images.unsplash.com/photo-1544161515-4ab6ce6db874?w=400&q=80",
+    accent: "#A855F7",
+    business: "Spa Serenidad",
+    category: "Spa & Bienestar",
+    initial: "S",
+    reward: "💆 Masaje gratis",
+    stamped: 5,
+    total: 8,
+    icon: "♥",
+  },
+  {
+    image: "https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=400&q=80",
+    accent: "#EC4899",
+    business: "Pastelería Dulce",
+    category: "Pastelería",
+    initial: "D",
+    reward: "🎂 Pastel gratis",
+    stamped: 9,
+    total: 12,
+    icon: "★",
+  },
 ];
 
 export default function FidelityLanding() {
@@ -101,7 +194,7 @@ export default function FidelityLanding() {
       </header>
 
       {/* ── Hero ──────────────────────────────────────────────────── */}
-      <section className="relative mx-auto max-w-6xl px-6 pt-20 pb-32 text-center">
+      <section className="relative mx-auto max-w-6xl px-6 pt-20 pb-28 text-center">
         <div className="pointer-events-none absolute left-1/2 top-0 -translate-x-1/2 h-[600px] w-[800px] rounded-full bg-[#FF2E63]/10 blur-[120px]" />
 
         <div className="relative z-10">
@@ -138,43 +231,34 @@ export default function FidelityLanding() {
           </div>
           <p className="mt-4 text-sm text-white/30">7 días gratis · Sin compromisos · Cancela cuando quieras</p>
         </div>
+      </section>
 
-        {/* Tarjeta hero */}
-        <div className="relative mx-auto mt-20 max-w-sm">
-          <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-[#FF2E63]/40 to-purple-600/20 blur-2xl scale-110" />
-          <div className="relative rounded-3xl bg-gradient-to-br from-[#FF2E63] to-[#8B0028] p-6 shadow-2xl text-left">
-            <div className="flex items-center gap-3 mb-5">
-              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-white/20 text-white font-black text-lg">R</div>
-              <div>
-                <p className="text-[10px] font-bold uppercase tracking-widest text-white/60">Tarjeta de fidelidad</p>
-                <p className="font-bold text-white text-base">Roxier Coffee</p>
-              </div>
-              <div className="ml-auto text-xs font-bold text-white/60">6 / 10</div>
-            </div>
-            <p className="text-[10px] font-bold uppercase tracking-widest text-white/50 mb-2">Sellos</p>
-            <div className="flex flex-wrap gap-2 mb-5">
-              {Array.from({ length: 10 }).map((_, i) => (
-                <div key={i} className={`flex h-8 w-8 items-center justify-center rounded-full border-2 text-xs font-black transition-all ${i < 6 ? "border-white bg-white text-[#FF2E63]" : "border-white/30 text-white/30"}`}>
-                  {i < 6 ? "✓" : ""}
-                </div>
-              ))}
-            </div>
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-[10px] font-bold uppercase tracking-widest text-white/50">Recompensa</p>
-                <p className="text-sm font-bold text-white">☕ Café gratis</p>
-              </div>
-              <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-white/10 text-white/60">
-                <svg viewBox="0 0 24 24" className="h-8 w-8" fill="currentColor">
-                  <path d="M3 3h7v7H3zM14 3h7v7h-7zM14 14h7v7h-7zM3 14h7v7H3z" />
-                </svg>
-              </div>
-            </div>
+      {/* ── Galería de tarjetas con imagen ────────────────────────── */}
+      <section id="ejemplos" className="py-20 overflow-hidden">
+        <div className="mx-auto max-w-6xl px-6 mb-12 text-center">
+          <p className="text-xs font-bold uppercase tracking-widest text-[#FF2E63] mb-3">Para cualquier negocio</p>
+          <h2 className="text-4xl font-extrabold text-white mb-4">Así se ve tu tarjeta</h2>
+          <p className="text-white/40 text-lg max-w-xl mx-auto">
+            Tus clientes escanean el QR, acumulan sellos y reciben su recompensa — todo desde su celular.
+          </p>
+        </div>
+
+        <div className="relative">
+          <div className="flex gap-5 px-6 overflow-x-auto pb-4 scrollbar-hide md:justify-center">
+            {CARD_EXAMPLES.map((card, i) => (
+              <CardDemo key={i} {...card} />
+            ))}
           </div>
-          <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2 rounded-full bg-white/10 border border-white/20 backdrop-blur-sm px-4 py-2">
-            <div className="h-4 w-4 rounded-full bg-[#4285F4]" />
-            <span className="text-xs font-semibold text-white/80">Guardado en Google Wallet</span>
-          </div>
+          <div className="pointer-events-none absolute left-0 top-0 bottom-4 w-20 bg-gradient-to-r from-[#09090B] to-transparent md:hidden" />
+          <div className="pointer-events-none absolute right-0 top-0 bottom-4 w-20 bg-gradient-to-l from-[#09090B] to-transparent md:hidden" />
+        </div>
+
+        <div className="text-center mt-10">
+          <p className="text-white/30 text-sm mb-4">Elige colores, íconos y recompensas según tu negocio</p>
+          <Link href="/fidelity/registro"
+            className="inline-flex items-center gap-2 rounded-full border border-[#FF2E63]/40 px-6 py-3 text-sm font-bold text-[#FF2E63] hover:bg-[#FF2E63]/10 transition-all">
+            Crea la tuya gratis →
+          </Link>
         </div>
       </section>
 
@@ -195,34 +279,6 @@ export default function FidelityLanding() {
         </div>
       </section>
 
-      {/* ── Ejemplos de tarjetas ───────────────────────────────────── */}
-      <section id="ejemplos" className="py-28 overflow-hidden">
-        <div className="mx-auto max-w-6xl px-6 mb-12 text-center">
-          <p className="text-xs font-bold uppercase tracking-widest text-[#FF2E63] mb-3">Para cualquier negocio</p>
-          <h2 className="text-4xl font-extrabold text-white mb-4">Así se ve en tu negocio</h2>
-          <p className="text-white/40 text-lg max-w-xl mx-auto">Personaliza colores, íconos y recompensas. Cada tarjeta es única para tu marca.</p>
-        </div>
-
-        {/* Scroll horizontal de tarjetas */}
-        <div className="relative">
-          <div className="flex gap-5 px-6 overflow-x-auto pb-6 scrollbar-hide md:justify-center md:flex-wrap md:overflow-visible">
-            {CARD_EXAMPLES.map((card, i) => (
-              <CardDemo key={i} {...card} />
-            ))}
-          </div>
-          {/* Gradiente en los bordes para indicar scroll */}
-          <div className="pointer-events-none absolute left-0 top-0 bottom-6 w-16 bg-gradient-to-r from-[#09090B] to-transparent md:hidden" />
-          <div className="pointer-events-none absolute right-0 top-0 bottom-6 w-16 bg-gradient-to-l from-[#09090B] to-transparent md:hidden" />
-        </div>
-
-        <div className="text-center mt-10">
-          <Link href="/fidelity/registro"
-            className="inline-flex items-center gap-2 rounded-full border border-[#FF2E63]/40 px-6 py-3 text-sm font-bold text-[#FF2E63] hover:bg-[#FF2E63]/10 transition-all">
-            Crea la tuya gratis →
-          </Link>
-        </div>
-      </section>
-
       {/* ── Cómo funciona ──────────────────────────────────────────── */}
       <section id="como-funciona" className="mx-auto max-w-6xl px-6 py-28">
         <div className="text-center mb-16">
@@ -233,7 +289,7 @@ export default function FidelityLanding() {
         <div className="grid gap-6 md:grid-cols-3">
           {[
             { num: "01", icon: "M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z", title: "Diseña tu tarjeta", text: "Crea tu tarjeta de lealtad digital con tu logo, colores y recompensas en menos de 5 minutos." },
-            { num: "02", icon: "M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8H2a2 2 0 00-2 2v10a2 2 0 002 2h16a2 2 0 002-2v-4a2 2 0 00-2-2h-1m-3-6V4a2 2 0 00-2-2H6a2 2 0 00-2 2v10", title: "Tus clientes escanean", text: "El cliente escanea un QR en tu negocio y su tarjeta queda guardada en Google Wallet al instante." },
+            { num: "02", icon: "M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8H2a2 2 0 00-2 2v10a2 2 0 002 2h16a2 2 0 002-2v-4a2 2 0 00-2-2h-1m-3-6V4a2 2 0 00-2-2H6a2 2 0 00-2 2v10", title: "Tus clientes escanean", text: "El cliente escanea el QR en tu negocio y su tarjeta queda guardada en Google Wallet al instante." },
             { num: "03", icon: "M13 10V3L4 14h7v7l9-11h-7z", title: "Sella y recompensa", text: "Escanea su tarjeta en cada visita. Al completarla, le llega una notificación con su premio automáticamente." },
           ].map((step) => (
             <div key={step.num} className="group relative rounded-2xl border border-white/[0.08] bg-white/[0.03] p-8 hover:border-[#FF2E63]/30 hover:bg-white/[0.05] transition-all">
@@ -260,7 +316,6 @@ export default function FidelityLanding() {
             <p className="text-xs font-bold uppercase tracking-widest text-[#FF2E63] mb-3">Todo incluido</p>
             <h2 className="text-4xl font-extrabold text-white">Herramientas que tu negocio necesita</h2>
           </div>
-
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {[
               { icon: "M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z", title: "Google Wallet integrado", text: "Tus clientes guardan su tarjeta directamente en Google Wallet con un toque." },
@@ -315,7 +370,6 @@ export default function FidelityLanding() {
           <p className="text-sm text-white/20">© {new Date().getFullYear()} Roxier Co.</p>
         </div>
       </footer>
-
     </div>
   );
 }
