@@ -350,13 +350,13 @@ export default function FidelityLanding() {
           <div className="text-center mb-4">
             <p className="text-xs font-bold uppercase tracking-widest text-[#FF2E63] mb-4">Planes y precios</p>
             <h2 className="text-4xl font-extrabold text-white mb-4">
-              Cuesta menos que un empleado.<br />
+              Invierte en lealtad,<br />
               <span className="bg-gradient-to-r from-[#FF2E63] to-[#ff6b91] bg-clip-text text-transparent">
-                Trabaja 24/7 sin quejarse.
+                no en publicidad.
               </span>
             </h2>
             <p className="text-white/40 text-lg max-w-lg mx-auto">
-              Sin contratos anuales. Sin cuota de instalación. Cancela cuando quieras.
+              Un cliente fiel vale más que diez nuevos. Por eso lo hacemos sencillo y accesible para cualquier negocio.
             </p>
           </div>
 
