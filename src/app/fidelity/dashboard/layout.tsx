@@ -25,6 +25,14 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
   const hasSubscription = subscription?.status === "authorized";
 
+  const { data: adminRow } = await admin
+    .from("admin_users")
+    .select("id")
+    .eq("id", user.id)
+    .maybeSingle();
+
+  const isAdmin = !!adminRow;
+
   return (
     <DashboardShell
       businessName={business.name}
@@ -32,6 +40,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
       businessStatus={business.status}
       trialEndsAt={business.trial_ends_at ?? null}
       hasSubscription={hasSubscription}
+      isAdmin={isAdmin}
     >
       {children}
     </DashboardShell>

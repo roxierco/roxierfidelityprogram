@@ -43,6 +43,7 @@ export function DashboardShell({
   businessStatus,
   trialEndsAt,
   hasSubscription,
+  isAdmin = false,
 }: {
   children: React.ReactNode;
   businessName: string;
@@ -50,6 +51,7 @@ export function DashboardShell({
   businessStatus: string;
   trialEndsAt: string | null;
   hasSubscription: boolean;
+  isAdmin?: boolean;
 }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const pathname = usePathname();
@@ -63,7 +65,7 @@ export function DashboardShell({
     return () => { document.body.style.overflow = ""; };
   }, [mobileOpen]);
 
-  const showBanner = businessStatus !== "active" || !hasSubscription;
+  const showBanner = !isAdmin && (businessStatus !== "active" || !hasSubscription);
 
   return (
     <div className="flex min-h-screen bg-near-black">
