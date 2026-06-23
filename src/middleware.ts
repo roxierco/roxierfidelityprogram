@@ -25,6 +25,10 @@ export async function middleware(req: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.redirect(new URL("/fidelity/login", req.url));
 
+  // Admins y cuentas de desarrollo pasan directo sin chequeo de pago
+  const { data: isAdmin } = await supabase.rpc("is_admin");
+  if (isAdmin) return res;
+
   const { data: business } = await supabase
     .from("businesses")
     .select("status")
