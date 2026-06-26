@@ -1,5 +1,4 @@
 import { createClient } from "@/lib/supabase/server";
-import { formatMXN } from "@/lib/utils";
 import type { DashboardMetrics } from "@/types/database";
 
 export default async function DashboardHome() {
@@ -39,7 +38,11 @@ export default async function DashboardHome() {
         <MetricCard label="Recompensas canjeadas" value={metrics.rewardsRedeemed.toString()} />
         <MetricCard label="Clientes nuevos (mes)" value={metrics.newCustomers.toString()} accent />
         <MetricCard label="Clientes recurrentes" value={metrics.returningCustomers.toString()} />
-        <MetricCard label="Ingresos estimados" value={formatMXN(metrics.estimatedRevenue)} accent />
+        <MetricCard
+          label="Tasa de retención"
+          value={metrics.totalCustomers > 0 ? `${Math.round((metrics.returningCustomers / metrics.totalCustomers) * 100)}%` : "—"}
+          accent
+        />
       </div>
 
       {/* Gráfica de visitas */}
@@ -182,7 +185,6 @@ async function calcularMetricas(supabase: any, businessId: string): Promise<Dash
     rewardsRedeemed,
     newCustomers: newCustomers ?? 0,
     returningCustomers: returning,
-    estimatedRevenue: returning * 150,
   };
 }
 

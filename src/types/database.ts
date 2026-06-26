@@ -96,5 +96,4 @@ export interface DashboardMetrics {
   rewardsRedeemed: number;
   newCustomers: number;
   returningCustomers: number;
-  estimatedRevenue: number;
 }
