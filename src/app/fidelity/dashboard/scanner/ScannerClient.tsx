@@ -7,6 +7,7 @@ interface ScanResult {
   success: boolean;
   customer: { id: string; full_name: string; current_stamps: number };
   rewarded: boolean;
+  nearReward: boolean;
   rewardText: string;
   stampsRequired: number;
   cardType: "sellos" | "cupon" | "descuento";
@@ -214,13 +215,18 @@ export function ScannerClient({ businessId, businessName }: { businessId: string
 
       {/* Resultado: sello normal */}
       {result && result.cardType === "sellos" && !result.rewarded && (
-        <div className="rounded-brand border border-green-500 bg-green-500/10 p-6 space-y-3 text-center">
-          <div className="text-5xl">✅</div>
+        <div className={`rounded-brand border p-6 space-y-3 text-center ${result.nearReward ? "border-yellow-500 bg-yellow-500/10" : "border-green-500 bg-green-500/10"}`}>
+          <div className="text-5xl">{result.nearReward ? "🎯" : "✅"}</div>
           <div>
             <p className="font-bold text-lg text-paper">{result.customer.full_name}</p>
-            <p className="text-green-400 font-semibold mt-1">
+            <p className={`font-semibold mt-1 ${result.nearReward ? "text-yellow-400" : "text-green-400"}`}>
               Sello agregado · {result.customer.current_stamps}/{result.stampsRequired} sellos
             </p>
+            {result.nearReward && (
+              <p className="text-yellow-300 text-sm mt-2 font-bold">
+                ¡Solo le falta 1 sello para ganar su premio!
+              </p>
+            )}
           </div>
           <button onClick={() => { setResult(null); startScanner(); }} className="btn-primary w-full">
             Escanear otro cliente

@@ -176,10 +176,13 @@ export async function POST(req: NextRequest) {
     })().catch(() => null);
   }
 
+  const nearReward = !rewarded && finalStamps === stampsRequired - 1;
+
   return NextResponse.json({
     success: true,
     customer: { ...customer, current_stamps: finalStamps },
     rewarded,
+    nearReward,
     rewardText: card?.reward_text ?? "",
     stampsRequired,
     cardType: card?.card_type ?? "sellos",

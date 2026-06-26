@@ -11,8 +11,9 @@ import { relanzarTour } from "@/components/dashboard/OnboardingTour";
 const navItems = [
   { href: "/fidelity/dashboard", label: "Resumen", icon: "M3 3h7v7H3zM14 3h7v7h-7zM14 14h7v7h-7zM3 14h7v7H3z" },
   { href: "/fidelity/dashboard/tarjetas", label: "Mis tarjetas", icon: "M3 5h18v14H3zM3 10h18" },
-  { href: "/fidelity/dashboard/promociones", label: "Promociones", icon: "M20 12l-8 8-8-8 8-8z" },
+  { href: "/fidelity/dashboard/scanner", label: "Escaner QR", icon: "M3 3h5v5H3zM16 3h5v5h-5zM3 16h5v5H3zM16 16h2v2h-2zM16 20h2v2h-2zM18 18h2v2h-2zM14 18h2v2h-2zM14 20h2v2h-2zM14 14h2v2h-2zM8 14h2v2H8z" },
   { href: "/fidelity/dashboard/clientes", label: "Clientes", icon: "M12 12a4 4 0 100-8 4 4 0 000 8zM4 20a8 8 0 0116 0" },
+  { href: "/fidelity/dashboard/promociones", label: "Promociones", icon: "M20 12l-8 8-8-8 8-8z" },
   { href: "/fidelity/dashboard/notificaciones", label: "Notificaciones", icon: "M12 22a2 2 0 002-2H10a2 2 0 002 2zM18 16V11a6 6 0 10-12 0v5l-2 2h16z" },
   { href: "/fidelity/dashboard/configuracion", label: "Configuración", icon: "M12 15a3 3 0 100-6 3 3 0 000 6zM19 12a7 7 0 00-.1-1l2-1.5-2-3.5-2.4 1a7 7 0 00-1.7-1L14.5 2h-5l-.3 2.5a7 7 0 00-1.7 1l-2.4-1-2 3.5L2.6 11a7 7 0 000 2l-2 1.5 2 3.5 2.4-1a7 7 0 001.7 1l.3 2.5h5l.3-2.5a7 7 0 001.7-1l2.4 1 2-3.5-2-1.5a7 7 0 00.1-1z" },
 ];
