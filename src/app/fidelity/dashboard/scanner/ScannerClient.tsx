@@ -48,14 +48,29 @@ export function ScannerClient({ businessId, businessName }: { businessId: string
     const name = (err as { name?: string })?.name ?? "";
     const msg = String((err as { message?: string })?.message ?? "");
     if (name === "NotAllowedError" || name === "PermissionDeniedError")
-      return "Permiso de cámara denegado. En Chrome ve a la barra de dirección → ícono de candado → Cámara → Permitir, y recarga la página.";
+      return "Permiso de cámara denegado. Haz clic en el candado de la barra de dirección → Cámara → Permitir → recarga la página.";
     if (name === "NotFoundError" || name === "DevicesNotFoundError")
-      return "No se encontró ninguna cámara en este dispositivo.";
+      return "No se encontró ninguna cámara. Conecta una webcam e intenta de nuevo.";
     if (name === "NotReadableError" || name === "TrackStartError")
-      return "La cámara está siendo usada por otra aplicación. Ciérrala e intenta de nuevo.";
-    if (name === "OverconstrainedError")
-      return "La cámara no soporta la configuración requerida. Intenta de nuevo.";
-    return `Error de cámara: ${msg || name || "desconocido"}`;
+      return "La cámara está ocupada por otra aplicación (Zoom, Teams, etc.). Ciérrala e intenta de nuevo.";
+    return `Error al abrir cámara: ${name || msg || "desconocido"}`;
+  }
+
+  function clearContainer() {
+    // html5-qrcode deja elementos en el DOM al fallar; hay que limpiarlos antes de reintentar
+    const el = document.getElementById("qr-reader");
+    if (el) el.innerHTML = "";
+  }
+
+  async function tryStart(constraints: MediaTrackConstraints, fps: number): Promise<Html5Qrcode> {
+    clearContainer();
+    const qr = new Html5Qrcode("qr-reader", {
+      formatsToSupport: [Html5QrcodeSupportedFormats.QR_CODE],
+      experimentalFeatures: { useBarCodeDetectorIfSupported: true },
+      verbose: false,
+    });
+    await qr.start(constraints, { fps }, (text) => handleScan(text, qr), undefined);
+    return qr;
   }
 
   async function startScanner() {
@@ -64,51 +79,34 @@ export function ScannerClient({ businessId, businessName }: { businessId: string
     setScannedCustomerId(null);
     setScannedCardId(null);
 
-    const qr = new Html5Qrcode("qr-reader", {
-      formatsToSupport: [Html5QrcodeSupportedFormats.QR_CODE],
-      experimentalFeatures: { useBarCodeDetectorIfSupported: true },
-      verbose: false,
-    });
-    scannerRef.current = qr;
-
-    const config = { fps: 30, disableFlip: false };
-
-    // Intento 1: cámara trasera + alta resolución (ideal para móvil)
-    try {
-      await qr.start(
-        { facingMode: { ideal: "environment" }, width: { ideal: 1280 }, height: { ideal: 720 } } as MediaTrackConstraints,
-        config,
-        (decodedText) => handleScan(decodedText, qr),
-        undefined,
-      );
-      setScanning(true);
-      return;
-    } catch { /* seguir al siguiente intento */ }
-
-    // Intento 2: cualquier cámara disponible (funciona en desktop)
-    try {
-      await qr.start(
-        { facingMode: { ideal: "environment" } } as MediaTrackConstraints,
-        { fps: 20 },
-        (decodedText) => handleScan(decodedText, qr),
-        undefined,
-      );
-      setScanning(true);
-      return;
-    } catch { /* seguir al siguiente intento */ }
-
-    // Intento 3: mínimo absoluto — sin restricciones, usa cualquier cámara
-    try {
-      await qr.start(
-        { } as MediaTrackConstraints,
-        { fps: 15 },
-        (decodedText) => handleScan(decodedText, qr),
-        undefined,
-      );
-      setScanning(true);
-    } catch (err) {
-      setError(cameraErrorMessage(err));
+    // Parar instancia anterior si existe
+    if (scannerRef.current) {
+      await scannerRef.current.stop().catch(() => null);
+      scannerRef.current = null;
     }
+
+    const attempts: [MediaTrackConstraints, number][] = [
+      // Móvil: cámara trasera con buena resolución
+      [{ facingMode: { ideal: "environment" }, width: { ideal: 1280 }, height: { ideal: 720 } } as MediaTrackConstraints, 30],
+      // Desktop/tablet: sin preferencia de lado
+      [{ facingMode: { ideal: "user" } } as MediaTrackConstraints, 20],
+      // Último recurso: cualquier cámara sin restricciones
+      [{} as MediaTrackConstraints, 15],
+    ];
+
+    let lastErr: unknown;
+    for (const [constraints, fps] of attempts) {
+      try {
+        const qr = await tryStart(constraints, fps);
+        scannerRef.current = qr;
+        setScanning(true);
+        return;
+      } catch (err) {
+        lastErr = err;
+      }
+    }
+
+    setError(cameraErrorMessage(lastErr));
   }
 
   async function stopScanner() {
