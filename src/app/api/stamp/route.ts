@@ -30,7 +30,7 @@ export async function POST(req: NextRequest) {
   // SEGURIDAD: verificar que el businessId pertenece al usuario autenticado
   const { data: ownedBusiness } = await admin
     .from("businesses")
-    .select("id, slug")
+    .select("id, slug, name")
     .eq("id", businessId)
     .eq("owner_id", user.id)
     .single();
@@ -153,8 +153,11 @@ export async function POST(req: NextRequest) {
         .eq("serial_number", serialNumber);
 
       if (registrations?.length) {
+        const apnsNotif = rewarded
+          ? { body: `🎉 ¡Ganaste tu premio: ${card?.reward_text ?? "Premio"}! Preséntalo en ${(ownedBusiness as { id: string; slug: string; name: string }).name}.` }
+          : { body: "¡Tu visita se ha registrado con un sello nuevo en tu tarjeta de lealtad!" };
         await Promise.allSettled(
-          registrations.map((r) => sendApnsPassUpdate(r.push_token)),
+          registrations.map((r) => sendApnsPassUpdate(r.push_token, apnsNotif)),
         );
         // Marcar como actualizado para que Apple sepa que hay nueva versión
         await admin

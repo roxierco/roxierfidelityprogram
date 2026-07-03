@@ -321,13 +321,20 @@ function signManifest(manifestStr: string): Buffer {
 
 // ─── APNS push para actualizar passes en Apple Wallet ────────────────────────
 
-export async function sendApnsPassUpdate(pushToken: string): Promise<void> {
+export async function sendApnsPassUpdate(
+  pushToken: string,
+  notification?: { body: string },
+): Promise<void> {
   const decodePem = (b64: string) =>
     Buffer.from(b64, "base64").toString("utf-8").replace(/\r\n/g, "\n").replace(/\r/g, "\n");
 
   const cert = decodePem(process.env.APPLE_WALLET_CERTIFICATE!);
   const key = decodePem(process.env.APPLE_WALLET_PRIVATE_KEY!);
   const topic = process.env.APPLE_WALLET_PASS_TYPE_ID!;
+
+  const payload = notification
+    ? JSON.stringify({ aps: { alert: notification.body, sound: "default" } })
+    : JSON.stringify({});
 
   return new Promise((resolve, reject) => {
     const session = connect("https://api.push.apple.com", { cert, key });
@@ -337,12 +344,13 @@ export async function sendApnsPassUpdate(pushToken: string): Promise<void> {
       ":method": "POST",
       ":path": `/3/device/${pushToken}`,
       "apns-topic": topic,
-      "apns-push-type": "background",
-      "apns-priority": "5",
+      "apns-push-type": notification ? "alert" : "background",
+      "apns-priority": notification ? "10" : "5",
       "content-type": "application/json",
+      "content-length": String(Buffer.byteLength(payload)),
     });
 
-    req.write(JSON.stringify({}));
+    req.write(payload);
     req.end();
 
     req.on("response", (headers) => {

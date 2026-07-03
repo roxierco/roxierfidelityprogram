@@ -8,8 +8,8 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ pass
 
   const auth = req.headers.get("authorization")?.replace("ApplePass ", "");
 
-  // serialNumber = "{customerId}-{cardId}"
-  const dashIdx = serialNumber.indexOf("-", serialNumber.indexOf("-", serialNumber.indexOf("-", serialNumber.indexOf("-") + 1) + 1) + 1) + 1;
+  // serialNumber = "{customerId}-{cardId}", cada UUID tiene 4 guiones internos → separador es el 5to guión
+  const dashIdx = serialNumber.indexOf("-", serialNumber.indexOf("-", serialNumber.indexOf("-", serialNumber.indexOf("-", serialNumber.indexOf("-") + 1) + 1) + 1) + 1) + 1;
   const customerId = serialNumber.slice(0, dashIdx - 1);
   const cardId = serialNumber.slice(dashIdx);
 
