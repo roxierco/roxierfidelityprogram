@@ -474,11 +474,21 @@ export function TarjetaEditor({
     };
 
     let savedCardId = card.id;
+    const isNewCard = !card.id;
     if (card.id) {
       await supabase.from("loyalty_cards").update(payload).eq("id", card.id);
     } else {
       const { data } = await supabase.from("loyalty_cards").insert(payload).select().single();
       if (data) { setCard(data); savedCardId = data.id; }
+    }
+
+    // Nueva tarjeta → resetear sellos de todos los clientes del negocio a 0
+    if (isNewCard) {
+      await fetch("/api/reset-stamps", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ businessId }),
+      }).catch(() => null);
     }
 
     if (savedCardId) {
