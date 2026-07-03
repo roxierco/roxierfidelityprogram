@@ -44,69 +44,53 @@ export function ScannerClient({ businessId, businessName }: { businessId: string
   const [scannedCustomerId, setScannedCustomerId] = useState<string | null>(null);
   const [scannedCardId, setScannedCardId] = useState<string | null>(null);
 
-  function cameraErrorMessage(err: unknown): string {
-    const name = (err as { name?: string })?.name ?? "";
-    const msg = String((err as { message?: string })?.message ?? "");
-    if (name === "NotAllowedError" || name === "PermissionDeniedError")
-      return "Permiso de cámara denegado. Haz clic en el candado de la barra de dirección → Cámara → Permitir → recarga la página.";
-    if (name === "NotFoundError" || name === "DevicesNotFoundError")
-      return "No se encontró ninguna cámara. Conecta una webcam e intenta de nuevo.";
-    if (name === "NotReadableError" || name === "TrackStartError")
-      return "La cámara está ocupada por otra aplicación (Zoom, Teams, etc.). Ciérrala e intenta de nuevo.";
-    return `Error al abrir cámara: ${name || msg || "desconocido"}`;
-  }
-
-  function clearContainer() {
-    // html5-qrcode deja elementos en el DOM al fallar; hay que limpiarlos antes de reintentar
-    const el = document.getElementById("qr-reader");
-    if (el) el.innerHTML = "";
-  }
-
-  async function tryStart(constraints: MediaTrackConstraints, config: { fps: number; qrbox?: { width: number; height: number }; aspectRatio?: number; disableFlip?: boolean }): Promise<Html5Qrcode> {
-    clearContainer();
-    const qr = new Html5Qrcode("qr-reader", {
-      formatsToSupport: [Html5QrcodeSupportedFormats.QR_CODE],
-      experimentalFeatures: { useBarCodeDetectorIfSupported: true },
-      verbose: false,
-    });
-    await qr.start(constraints, config, (text) => handleScan(text, qr), undefined);
-    return qr;
-  }
-
   async function startScanner() {
     setError("");
     setResult(null);
     setScannedCustomerId(null);
     setScannedCardId(null);
 
-    // Parar instancia anterior si existe
-    if (scannerRef.current) {
-      await scannerRef.current.stop().catch(() => null);
-      scannerRef.current = null;
-    }
+    const qr = new Html5Qrcode("qr-reader", {
+      formatsToSupport: [Html5QrcodeSupportedFormats.QR_CODE],
+      experimentalFeatures: { useBarCodeDetectorIfSupported: true },
+      verbose: false,
+    });
+    scannerRef.current = qr;
 
-    const boxSize = Math.min(280, Math.round((window.innerWidth - 48) * 0.85));
-    const scanConfig = { fps: 20, qrbox: { width: boxSize, height: boxSize }, aspectRatio: 1.0, disableFlip: false };
+    // Tamaño del área de escaneo: 80% del ancho de pantalla hasta 320px
+    const boxSize = Math.min(320, Math.round(window.innerWidth * 0.8));
 
-    const attempts: [MediaTrackConstraints, number][] = [
-      [{ facingMode: { ideal: "environment" }, width: { ideal: 1280 }, height: { ideal: 720 } } as MediaTrackConstraints, 20],
-      [{ facingMode: { ideal: "user" } } as MediaTrackConstraints, 15],
-      [{} as MediaTrackConstraints, 15],
-    ];
-
-    let lastErr: unknown;
-    for (const [constraints] of attempts) {
+    try {
+      await qr.start(
+        {
+          facingMode: { ideal: "environment" },
+          width: { ideal: 1280 },
+          height: { ideal: 720 },
+        } as MediaTrackConstraints,
+        {
+          fps: 20,
+          qrbox: { width: boxSize, height: boxSize },
+          aspectRatio: 1.0,
+          disableFlip: false,
+        },
+        (decodedText) => handleScan(decodedText, qr),
+        undefined,
+      );
+      setScanning(true);
+    } catch {
+      // Fallback sin constraints avanzadas
       try {
-        const qr = await tryStart(constraints, scanConfig);
-        scannerRef.current = qr;
+        await qr.start(
+          { facingMode: "environment" },
+          { fps: 20, qrbox: { width: boxSize, height: boxSize } },
+          (decodedText) => handleScan(decodedText, qr),
+          undefined,
+        );
         setScanning(true);
-        return;
-      } catch (err) {
-        lastErr = err;
+      } catch {
+        setError("No se pudo acceder a la cámara. Verifica los permisos.");
       }
     }
-
-    setError(cameraErrorMessage(lastErr));
   }
 
   async function stopScanner() {
@@ -180,25 +164,8 @@ export function ScannerClient({ businessId, businessName }: { businessId: string
 
       {/* Cámara */}
       {!result && !scannedCustomerId && (
-        <div className="overflow-hidden rounded-2xl border border-surface-border bg-near-black">
-          {/* Viewport de la cámara */}
-          <div className="relative">
-            <div id="qr-reader" className="w-full [&>video]:w-full [&>video]:rounded-none [&>#qr-reader__dashboard_section]:hidden [&>#qr-reader__header]:hidden" style={{ minHeight: scanning ? 320 : 0 }} />
-            {/* Overlay con línea de escaneo animada */}
-            {scanning && (
-              <div className="pointer-events-none absolute inset-0 flex flex-col">
-                {/* Línea de escaneo */}
-                <div className="absolute inset-x-0 h-0.5 bg-magenta shadow-[0_0_8px_2px_rgba(225,0,255,0.6)] animate-scan-line" />
-                {/* Esquinas estilo WhatsApp */}
-                <div className="absolute inset-6">
-                  <div className="absolute left-0 top-0 h-8 w-8 border-l-2 border-t-2 border-magenta rounded-tl-lg" />
-                  <div className="absolute right-0 top-0 h-8 w-8 border-r-2 border-t-2 border-magenta rounded-tr-lg" />
-                  <div className="absolute left-0 bottom-0 h-8 w-8 border-l-2 border-b-2 border-magenta rounded-bl-lg" />
-                  <div className="absolute right-0 bottom-0 h-8 w-8 border-r-2 border-b-2 border-magenta rounded-br-lg" />
-                </div>
-              </div>
-            )}
-          </div>
+        <div className="rounded-brand border border-surface-border bg-surface overflow-hidden">
+          <div id="qr-reader" className="w-full" style={{ minHeight: scanning ? 300 : 0 }} />
           {!scanning && (
             <div className="p-6 flex flex-col items-center gap-3">
               <div className="h-16 w-16 rounded-full bg-magenta/10 flex items-center justify-center text-3xl">
