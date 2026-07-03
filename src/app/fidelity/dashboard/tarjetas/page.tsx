@@ -16,6 +16,7 @@ export default async function TarjetasPage() {
     .from("loyalty_cards")
     .select("*")
     .eq("business_id", business!.id)
+    .eq("is_active", true)
     .order("created_at", { ascending: false });
 
   return (
