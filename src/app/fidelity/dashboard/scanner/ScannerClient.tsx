@@ -62,14 +62,14 @@ export function ScannerClient({ businessId, businessName }: { businessId: string
     if (el) el.innerHTML = "";
   }
 
-  async function tryStart(constraints: MediaTrackConstraints, fps: number): Promise<Html5Qrcode> {
+  async function tryStart(constraints: MediaTrackConstraints, config: { fps: number; qrbox?: { width: number; height: number }; aspectRatio?: number; disableFlip?: boolean }): Promise<Html5Qrcode> {
     clearContainer();
     const qr = new Html5Qrcode("qr-reader", {
       formatsToSupport: [Html5QrcodeSupportedFormats.QR_CODE],
       experimentalFeatures: { useBarCodeDetectorIfSupported: true },
       verbose: false,
     });
-    await qr.start(constraints, { fps }, (text) => handleScan(text, qr), undefined);
+    await qr.start(constraints, config, (text) => handleScan(text, qr), undefined);
     return qr;
   }
 
@@ -85,19 +85,19 @@ export function ScannerClient({ businessId, businessName }: { businessId: string
       scannerRef.current = null;
     }
 
+    const boxSize = Math.min(280, Math.round((window.innerWidth - 48) * 0.85));
+    const scanConfig = { fps: 20, qrbox: { width: boxSize, height: boxSize }, aspectRatio: 1.0, disableFlip: false };
+
     const attempts: [MediaTrackConstraints, number][] = [
-      // Móvil: cámara trasera con buena resolución
-      [{ facingMode: { ideal: "environment" }, width: { ideal: 1280 }, height: { ideal: 720 } } as MediaTrackConstraints, 30],
-      // Desktop/tablet: sin preferencia de lado
-      [{ facingMode: { ideal: "user" } } as MediaTrackConstraints, 20],
-      // Último recurso: cualquier cámara sin restricciones
+      [{ facingMode: { ideal: "environment" }, width: { ideal: 1280 }, height: { ideal: 720 } } as MediaTrackConstraints, 20],
+      [{ facingMode: { ideal: "user" } } as MediaTrackConstraints, 15],
       [{} as MediaTrackConstraints, 15],
     ];
 
     let lastErr: unknown;
-    for (const [constraints, fps] of attempts) {
+    for (const [constraints] of attempts) {
       try {
-        const qr = await tryStart(constraints, fps);
+        const qr = await tryStart(constraints, scanConfig);
         scannerRef.current = qr;
         setScanning(true);
         return;
@@ -183,7 +183,7 @@ export function ScannerClient({ businessId, businessName }: { businessId: string
         <div className="overflow-hidden rounded-2xl border border-surface-border bg-near-black">
           {/* Viewport de la cámara */}
           <div className="relative">
-            <div id="qr-reader" className="w-full [&>video]:w-full [&>video]:rounded-none [&>img]:hidden [&_canvas]:hidden" style={{ minHeight: scanning ? 340 : 0 }} />
+            <div id="qr-reader" className="w-full [&>video]:w-full [&>video]:rounded-none [&>#qr-reader__dashboard_section]:hidden [&>#qr-reader__header]:hidden" style={{ minHeight: scanning ? 320 : 0 }} />
             {/* Overlay con línea de escaneo animada */}
             {scanning && (
               <div className="pointer-events-none absolute inset-0 flex flex-col">
