@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Html5Qrcode } from "html5-qrcode";
+import { Html5Qrcode, Html5QrcodeSupportedFormats } from "html5-qrcode";
 
 interface ScanResult {
   success: boolean;
@@ -50,19 +50,46 @@ export function ScannerClient({ businessId, businessName }: { businessId: string
     setScannedCustomerId(null);
     setScannedCardId(null);
 
-    const qr = new Html5Qrcode("qr-reader");
+    const qr = new Html5Qrcode("qr-reader", {
+      formatsToSupport: [Html5QrcodeSupportedFormats.QR_CODE],
+      experimentalFeatures: { useBarCodeDetectorIfSupported: true },
+      verbose: false,
+    });
     scannerRef.current = qr;
+
+    // Tamaño del área de escaneo: 80% del ancho de pantalla hasta 320px
+    const boxSize = Math.min(320, Math.round(window.innerWidth * 0.8));
 
     try {
       await qr.start(
-        { facingMode: "environment" },
-        { fps: 10, qrbox: { width: 250, height: 250 } },
+        {
+          facingMode: { ideal: "environment" },
+          width: { ideal: 1280 },
+          height: { ideal: 720 },
+        } as MediaTrackConstraints,
+        {
+          fps: 20,
+          qrbox: { width: boxSize, height: boxSize },
+          aspectRatio: 1.0,
+          disableFlip: false,
+        },
         (decodedText) => handleScan(decodedText, qr),
         undefined,
       );
       setScanning(true);
     } catch {
-      setError("No se pudo acceder a la cámara. Verifica los permisos.");
+      // Fallback sin constraints avanzadas
+      try {
+        await qr.start(
+          { facingMode: "environment" },
+          { fps: 20, qrbox: { width: boxSize, height: boxSize } },
+          (decodedText) => handleScan(decodedText, qr),
+          undefined,
+        );
+        setScanning(true);
+      } catch {
+        setError("No se pudo acceder a la cámara. Verifica los permisos.");
+      }
     }
   }
 
