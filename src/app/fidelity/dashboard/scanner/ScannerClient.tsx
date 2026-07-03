@@ -68,11 +68,12 @@ export function ScannerClient({ businessId, businessName }: { businessId: string
     try {
       // facingMode ideal: selecciona cámara trasera en móvil, usa la disponible en desktop
       // UN solo intento — evita el bug de doble-start del state machine de html5-qrcode
-      // "environment" como string duro fuerza la cámara trasera en iOS/Android
-      // En desktop sin facingMode, el navegador ignora el constraint y usa la cámara disponible
+      // Si se pasa videoConstraints en config, html5-qrcode LO USA EN VEZ del facingMode
+      // del primer argumento — por eso se ignoraba "environment". Sin videoConstraints en config,
+      // usa correctamente { facingMode: "environment" } que fuerza la cámara trasera en iOS/Android.
       await qr.start(
         { facingMode: "environment" } as MediaTrackConstraints,
-        { fps: 25, videoConstraints: { width: { ideal: 1280 }, height: { ideal: 720 } } },
+        { fps: 25 },
         (text) => handleScan(text, qr),
         undefined,
       );
