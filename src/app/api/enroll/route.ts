@@ -1,10 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { rateLimit, getClientIp } from "@/lib/rate-limit";
 
 const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export async function POST(req: NextRequest) {
+  // 10 registros por IP cada 10 minutos — previene creación masiva de clientes falsos
+  if (!rateLimit(getClientIp(req), "enroll", 10, 10 * 60 * 1000)) {
+    return NextResponse.json({ error: "Demasiadas solicitudes. Intenta más tarde." }, { status: 429 });
+  }
+
   const body = await req.json();
   const { businessId, name, email, phone } = body;
 

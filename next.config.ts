@@ -7,23 +7,41 @@ import type { NextConfig } from "next";
  * más comunes (clickjacking, MIME sniffing, fugas de referrer, etc.).
  * Estas cabeceras se aplican a TODAS las rutas de la aplicación.
  */
+// Dominios de Supabase necesarios para auth, realtime y storage
+const supabaseHosts = "https://*.supabase.co wss://*.supabase.co https://*.supabase.in wss://*.supabase.in";
+// Dominios de MercadoPago (checkout, SDK y API)
+const mpHosts = "https://sdk.mercadopago.com https://api.mercadopago.com https://www.mercadopago.com https://www.mercadopago.com.mx https://www.mercadopago.com.ar https://secure.mlstatic.com";
+
+const csp = [
+  "default-src 'self'",
+  // Next.js necesita unsafe-inline para sus scripts de hidratación
+  `script-src 'self' 'unsafe-inline' ${mpHosts}`,
+  "style-src 'self' 'unsafe-inline'",
+  `img-src 'self' data: blob: ${supabaseHosts} https://secure.mlstatic.com`,
+  `connect-src 'self' ${supabaseHosts} ${mpHosts} https://api.push.apple.com`,
+  "font-src 'self' data:",
+  // Solo MercadoPago puede cargar iframes (checkout)
+  `frame-src ${mpHosts}`,
+  "object-src 'none'",
+  "base-uri 'self'",
+  `form-action 'self' ${mpHosts}`,
+  "upgrade-insecure-requests",
+].join("; ");
+
 const securityHeaders = [
-  // Evita que el navegador "adivine" el tipo de archivo (previene ataques MIME)
   { key: "X-Content-Type-Options", value: "nosniff" },
-  // Impide que la app se cargue dentro de un <iframe> de otro sitio (anti-clickjacking)
   { key: "X-Frame-Options", value: "SAMEORIGIN" },
-  // Controla cuánta información de origen se envía a otros sitios
   { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
-  // Fuerza HTTPS durante 2 años (solo activa en producción con dominio real)
+  { key: "X-DNS-Prefetch-Control", value: "off" },
   {
     key: "Strict-Transport-Security",
     value: "max-age=63072000; includeSubDomains; preload",
   },
-  // Restringe permisos del navegador que la app no necesita
   {
     key: "Permissions-Policy",
     value: "camera=(self), microphone=(), geolocation=(), browsing-topics=()",
   },
+  { key: "Content-Security-Policy", value: csp },
 ];
 
 const nextConfig: NextConfig = {

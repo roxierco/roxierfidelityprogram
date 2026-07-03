@@ -1,10 +1,47 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { createHmac } from "node:crypto";
+import { rateLimit, getClientIp } from "@/lib/rate-limit";
+
+function verifyMpSignature(req: NextRequest, rawBody: string, dataId: string): boolean {
+  const secret = process.env.MP_WEBHOOK_SECRET;
+  if (!secret) return true; // si no está configurado, se omite la verificación
+
+  const xSignature = req.headers.get("x-signature") ?? "";
+  const xRequestId = req.headers.get("x-request-id") ?? "";
+
+  const tsMatch = xSignature.match(/ts=(\d+)/);
+  const v1Match = xSignature.match(/v1=([a-f0-9]+)/);
+  if (!tsMatch || !v1Match) return false;
+
+  const ts = tsMatch[1];
+  const expected = v1Match[1];
+
+  // Mensaje firmado por MercadoPago: id:{id};request-date:{ts};
+  const message = `id:${dataId};request-date:${ts};`;
+  const hmac = createHmac("sha256", secret).update(message).digest("hex");
+
+  return hmac === expected;
+  void rawBody; void xRequestId;
+}
 
 export async function POST(req: NextRequest) {
+  // MercadoPago no tiene IPs fijas, pero limitamos para prevenir DoS
+  if (!rateLimit(getClientIp(req), "mp-webhook", 200, 60 * 1000)) {
+    return NextResponse.json({ ok: true }, { status: 429 });
+  }
+
   try {
-    const body = await req.json();
-    const { type, data } = body as { type?: string; data?: { id?: string } };
+    const rawBody = await req.text();
+    const body = JSON.parse(rawBody) as { type?: string; data?: { id?: string } };
+    const { type, data } = body;
+
+    // Verificar firma si el secret está configurado
+    if (data?.id && !verifyMpSignature(req, rawBody, data.id)) {
+      console.warn("MP webhook: firma inválida");
+      return NextResponse.json({ ok: true }); // 200 para que MP no reintente
+    }
+
     const token = process.env.MP_ACCESS_TOKEN || process.env.MP_ACCESS_TOKEN_TEST;
     if (!token) return NextResponse.json({ ok: true });
 
