@@ -68,9 +68,10 @@ export function ScannerClient({ businessId, businessName }: { businessId: string
     try {
       // facingMode ideal: selecciona cámara trasera en móvil, usa la disponible en desktop
       // UN solo intento — evita el bug de doble-start del state machine de html5-qrcode
+      // html5-qrcode solo acepta 1 clave en el objeto de constraints
       await qr.start(
-        { facingMode: { ideal: "environment" }, width: { ideal: 1280 }, height: { ideal: 720 } } as MediaTrackConstraints,
-        { fps: 25 },
+        { facingMode: { ideal: "environment" } } as MediaTrackConstraints,
+        { fps: 25, videoConstraints: { width: { ideal: 1280 }, height: { ideal: 720 } } },
         (text) => handleScan(text, qr),
         undefined,
       );
