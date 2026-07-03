@@ -2,6 +2,7 @@ import JSZip from "jszip";
 import forge from "node-forge";
 import { createHash, createHmac, timingSafeEqual } from "node:crypto";
 import { deflateSync } from "node:zlib";
+import { connect } from "node:http2";
 
 export function isAppleWalletConfigured(): boolean {
   return !!(
@@ -316,4 +317,39 @@ function signManifest(manifestStr: string): Buffer {
 
   const der = forge.asn1.toDer(p7.toAsn1()).getBytes();
   return Buffer.from(der, "binary");
+}
+
+// ─── APNS push para actualizar passes en Apple Wallet ────────────────────────
+
+export async function sendApnsPassUpdate(pushToken: string): Promise<void> {
+  const decodePem = (b64: string) =>
+    Buffer.from(b64, "base64").toString("utf-8").replace(/\r\n/g, "\n").replace(/\r/g, "\n");
+
+  const cert = decodePem(process.env.APPLE_WALLET_CERTIFICATE!);
+  const key = decodePem(process.env.APPLE_WALLET_PRIVATE_KEY!);
+  const topic = process.env.APPLE_WALLET_PASS_TYPE_ID!;
+
+  return new Promise((resolve, reject) => {
+    const session = connect("https://api.push.apple.com", { cert, key });
+    session.on("error", reject);
+
+    const req = session.request({
+      ":method": "POST",
+      ":path": `/3/device/${pushToken}`,
+      "apns-topic": topic,
+      "apns-push-type": "background",
+      "apns-priority": "5",
+      "content-type": "application/json",
+    });
+
+    req.write(JSON.stringify({}));
+    req.end();
+
+    req.on("response", (headers) => {
+      session.close();
+      headers[":status"] === 200 ? resolve() : reject(new Error(`APNS ${headers[":status"]}`));
+    });
+
+    req.on("error", (err) => { session.close(); reject(err); });
+  });
 }

@@ -57,32 +57,28 @@ export function ScannerClient({ businessId, businessName }: { businessId: string
     });
     scannerRef.current = qr;
 
-    // Tamaño del área de escaneo: 80% del ancho de pantalla hasta 320px
-    const boxSize = Math.min(320, Math.round(window.innerWidth * 0.8));
-
     try {
       await qr.start(
         {
           facingMode: { ideal: "environment" },
-          width: { ideal: 1280 },
-          height: { ideal: 720 },
+          width: { ideal: 1920 },
+          height: { ideal: 1080 },
         } as MediaTrackConstraints,
         {
-          fps: 20,
-          qrbox: { width: boxSize, height: boxSize },
-          aspectRatio: 1.0,
+          fps: 30,
+          // Sin qrbox = escanea todo el frame, como WhatsApp
           disableFlip: false,
+          aspectRatio: window.innerHeight / window.innerWidth,
         },
         (decodedText) => handleScan(decodedText, qr),
         undefined,
       );
       setScanning(true);
     } catch {
-      // Fallback sin constraints avanzadas
       try {
         await qr.start(
           { facingMode: "environment" },
-          { fps: 20, qrbox: { width: boxSize, height: boxSize } },
+          { fps: 20 },
           (decodedText) => handleScan(decodedText, qr),
           undefined,
         );
@@ -164,8 +160,25 @@ export function ScannerClient({ businessId, businessName }: { businessId: string
 
       {/* Cámara */}
       {!result && !scannedCustomerId && (
-        <div className="rounded-brand border border-surface-border bg-surface overflow-hidden">
-          <div id="qr-reader" className="w-full" style={{ minHeight: scanning ? 300 : 0 }} />
+        <div className="overflow-hidden rounded-2xl border border-surface-border bg-near-black">
+          {/* Viewport de la cámara */}
+          <div className="relative">
+            <div id="qr-reader" className="w-full [&>video]:w-full [&>video]:rounded-none [&>img]:hidden [&_canvas]:hidden" style={{ minHeight: scanning ? 340 : 0 }} />
+            {/* Overlay con línea de escaneo animada */}
+            {scanning && (
+              <div className="pointer-events-none absolute inset-0 flex flex-col">
+                {/* Línea de escaneo */}
+                <div className="absolute inset-x-0 h-0.5 bg-magenta shadow-[0_0_8px_2px_rgba(225,0,255,0.6)] animate-scan-line" />
+                {/* Esquinas estilo WhatsApp */}
+                <div className="absolute inset-6">
+                  <div className="absolute left-0 top-0 h-8 w-8 border-l-2 border-t-2 border-magenta rounded-tl-lg" />
+                  <div className="absolute right-0 top-0 h-8 w-8 border-r-2 border-t-2 border-magenta rounded-tr-lg" />
+                  <div className="absolute left-0 bottom-0 h-8 w-8 border-l-2 border-b-2 border-magenta rounded-bl-lg" />
+                  <div className="absolute right-0 bottom-0 h-8 w-8 border-r-2 border-b-2 border-magenta rounded-br-lg" />
+                </div>
+              </div>
+            )}
+          </div>
           {!scanning && (
             <div className="p-6 flex flex-col items-center gap-3">
               <div className="h-16 w-16 rounded-full bg-magenta/10 flex items-center justify-center text-3xl">

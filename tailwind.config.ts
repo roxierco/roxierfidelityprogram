@@ -49,11 +49,17 @@ const config: Config = {
           "45%": { transform: "scale(1.02)" },
           "60%": { transform: "scale(1)" },
         },
+        "scan-line": {
+          "0%": { top: "0%" },
+          "50%": { top: "100%" },
+          "100%": { top: "0%" },
+        },
       },
       animation: {
         "fade-up": "fade-up 0.5s cubic-bezier(0.22, 1, 0.36, 1) forwards",
         "fade-in": "fade-in 0.4s ease forwards",
         "pulse-once": "pulse-once 0.6s ease-out forwards",
+        "scan-line": "scan-line 2s ease-in-out infinite",
       },
     },
   },

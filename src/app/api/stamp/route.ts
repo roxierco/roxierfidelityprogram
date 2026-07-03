@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { isGoogleWalletConfigured, syncAfterStamp } from "@/lib/google-wallet";
+import { isAppleWalletConfigured, sendApnsPassUpdate } from "@/lib/apple-wallet";
 import { isPushConfigured, sendPush } from "@/lib/web-push";
 
 export async function POST(req: NextRequest) {
@@ -142,7 +143,29 @@ export async function POST(req: NextRequest) {
     }).catch(() => null);
   }
 
-  // 3. Web Push al navegador del cliente
+  // 3. Apple Wallet APNS push
+  if (isAppleWalletConfigured() && cardId) {
+    (async () => {
+      const serialNumber = `${customerId}-${cardId}`;
+      const { data: registrations } = await admin
+        .from("apple_wallet_registrations")
+        .select("push_token")
+        .eq("serial_number", serialNumber);
+
+      if (registrations?.length) {
+        await Promise.allSettled(
+          registrations.map((r) => sendApnsPassUpdate(r.push_token)),
+        );
+        // Marcar como actualizado para que Apple sepa que hay nueva versión
+        await admin
+          .from("apple_wallet_registrations")
+          .update({ updated_at: new Date().toISOString() })
+          .eq("serial_number", serialNumber);
+      }
+    })().catch(() => null);
+  }
+
+  // 4. Web Push al navegador del cliente
   if (isPushConfigured()) {
     (async () => {
       const { data: subs } = await admin
