@@ -155,21 +155,21 @@ export async function POST(req: NextRequest) {
       console.log(`[apple-wallet] serial=${serialNumber} registrations=${registrations?.length ?? 0}`);
 
       if (registrations?.length) {
-        // Actualizar updated_at ANTES del push para que iOS encuentre el registro
-        // cuando consulte GET /v1/devices/.../registrations inmediatamente tras recibir el push
-        await admin
-          .from("apple_wallet_registrations")
-          .update({ updated_at: new Date().toISOString() })
-          .eq("serial_number", serialNumber);
-
         const businessName = (ownedBusiness as { id: string; slug: string; name: string }).name;
         const notifText = rewarded
           ? `🎉 ¡Ganaste tu premio en ${businessName}: ${card?.reward_text ?? "Premio"}!`
           : `¡Tu visita se ha registrado con un sello nuevo en tu tarjeta de lealtad!`;
 
-        const results = await Promise.allSettled(
-          registrations.map((r) => sendApnsPassUpdate(r.push_token, notifText)),
-        );
+        // DB update y APNS en paralelo: iOS tarda ~500ms en procesar el push,
+        // tiempo suficiente para que la DB quede lista antes de que consulte registrations
+        const [, ...pushResults] = await Promise.allSettled([
+          admin
+            .from("apple_wallet_registrations")
+            .update({ updated_at: new Date().toISOString() })
+            .eq("serial_number", serialNumber),
+          ...registrations.map((r) => sendApnsPassUpdate(r.push_token, notifText)),
+        ]);
+        const results = pushResults;
         results.forEach((r, i) => {
           if (r.status === "rejected") {
             console.error(`[apple-wallet] push ${i} failed:`, r.reason);
