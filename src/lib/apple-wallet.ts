@@ -229,30 +229,28 @@ function buildPassJson(data: LoyaltyPassData, hasStrip: boolean): object {
           textAlignment: "PKTextAlignmentRight",
         },
       ],
-      primaryFields: [
+      secondaryFields: [
         {
           key: "member",
           label: "MIEMBRO",
           value: data.customerName,
         },
-      ],
-      secondaryFields: [
         {
           key: "progress",
           label: "PROGRESO",
-          value: stampBar.length <= 10 ? stampBar : `${Math.min(data.currentStamps, data.stampsRequired)} de ${data.stampsRequired}`,
+          value: stampBar.length <= 8 ? stampBar : `${Math.min(data.currentStamps, data.stampsRequired)} de ${data.stampsRequired}`,
         },
         {
-          key: "reward",
-          label: "PREMIO",
-          value: data.rewardText,
+          key: "remaining",
+          label: remaining === 0 ? "ESTADO" : "FALTAN",
+          value: remaining === 0 ? "🎉 Premio listo" : `${remaining} sello${remaining !== 1 ? "s" : ""}`,
         },
       ],
       auxiliaryFields: [
         {
-          key: "remaining",
-          label: remaining === 0 ? "ESTADO" : "FALTAN",
-          value: remaining === 0 ? "🎉 ¡Premio listo!" : `${remaining} sello${remaining !== 1 ? "s" : ""}`,
+          key: "reward",
+          label: "PREMIO",
+          value: data.rewardText,
         },
       ],
       backFields: [

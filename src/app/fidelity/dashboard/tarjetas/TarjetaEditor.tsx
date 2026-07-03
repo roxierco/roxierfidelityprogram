@@ -183,85 +183,62 @@ function StampRow({ stamps, filledCount, icon, primary, onDark }: {
 // ── Vista previa Wallet estilo Apple ────────────────────────────
 function AppleWalletPreview({ card }: { card: Partial<LoyaltyCard> }) {
   const stamps = card.stamps_required ?? 10;
-  const icon = card.stamp_icon ?? "✓";
   const filledCount = Math.min(3, stamps);
-  const isFullCover = card.bg_type === "image" && !!card.bg_image_url &&
-    (!card.bg_image_position || card.bg_image_position === "cover");
+  const bg = card.color_background ?? "#1a1a2e";
   const primary = card.color_primary ?? "#FF2E63";
+  const text = card.text_color ?? "#ffffff";
+  const hasStrip = !!card.apple_wallet_strip_url;
+  const stampBar = "●".repeat(filledCount) + "○".repeat(Math.max(0, Math.min(stamps, 10) - filledCount));
 
-  if (isFullCover) {
-    return (
-      <div className="w-full relative overflow-hidden rounded-[20px] shadow-2xl" style={{ fontFamily: "-apple-system, sans-serif" }}>
-        <img src={card.bg_image_url!} alt="" className="absolute inset-0 h-full w-full object-cover" />
-        <div className="absolute inset-0 bg-black/55" />
-        <div className="relative p-5 space-y-4">
-          <div className="flex items-center gap-3">
-            {card.logo_url
-              ? <img src={card.logo_url} alt="" className="h-10 w-10 rounded-xl object-contain" style={{ backgroundColor: "rgba(255,255,255,0.15)" }} />
-              : <div className="flex h-10 w-10 items-center justify-center rounded-xl font-black text-sm" style={{ backgroundColor: primary }}>{card.title?.[0] ?? "?"}</div>
-            }
-            <div>
-              <p className="text-[10px] font-semibold uppercase tracking-widest text-white/50">Tarjeta de fidelidad</p>
-              <p className="font-bold text-white truncate">{card.title}</p>
-            </div>
-          </div>
-          <div>
-            <p className="mb-2 text-[9px] font-bold uppercase tracking-widest text-white/50">Sellos acumulados</p>
-            <StampRow stamps={stamps} filledCount={filledCount} icon={icon} primary={primary} onDark={true} />
-          </div>
-          <div className="flex justify-between">
-            <div>
-              <p className="text-[9px] font-bold uppercase tracking-widest text-white/50">Recompensa</p>
-              <p className="text-sm font-semibold text-white">{card.reward_text}</p>
-            </div>
-            <div className="text-right">
-              <p className="text-[9px] font-bold uppercase tracking-widest text-white/50">Progreso</p>
-              <p className="text-sm font-semibold text-white">{filledCount} / {stamps}</p>
-            </div>
-          </div>
-          {/* QR con cuadro blanco */}
-          <div className="flex flex-col items-center gap-1.5 rounded-xl bg-white p-3 shadow-lg">
-            <div className="h-16 w-16"><QRPlaceholder color="#0E0E10" /></div>
-            <p className="text-[10px] text-gray-400">Muestra este código al cajero</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // Layout estándar (sin imagen fondo completo)
   return (
-    <div className="w-full overflow-hidden rounded-[20px] shadow-2xl" style={{ fontFamily: "-apple-system, sans-serif" }}>
-      <div className="relative h-32 overflow-hidden" style={cardBgStyle(card)}>
-        <div className="absolute inset-0 bg-black/20" />
-        <div className="relative flex h-full items-end gap-3 p-4">
+    <div className="w-full overflow-hidden rounded-[20px] shadow-2xl border border-white/10" style={{ fontFamily: "-apple-system, BlinkMacSystemFont, sans-serif", backgroundColor: bg }}>
+      {/* Header — logo + nombre + sellos */}
+      <div className="flex items-center justify-between px-4 pt-4 pb-2">
+        <div className="flex items-center gap-2">
           {card.logo_url
-            ? <img src={card.logo_url} alt="" className="h-10 w-10 rounded-xl object-contain shadow-md" style={{ backgroundColor: "rgba(255,255,255,0.15)" }} />
-            : <div className="flex h-10 w-10 items-center justify-center rounded-xl text-sm font-black shadow-md" style={{ backgroundColor: primary }}>{card.title?.[0] ?? "?"}</div>
+            ? <img src={card.logo_url} alt="" className="h-9 w-9 rounded-lg object-contain" style={{ backgroundColor: "rgba(255,255,255,0.1)" }} />
+            : <div className="h-9 w-9 rounded-lg flex items-center justify-center font-black text-xs" style={{ backgroundColor: primary, color: bg }}>{(card.title ?? "?")[0]}</div>
           }
-          <div>
-            <p className="text-[10px] font-semibold uppercase tracking-widest text-white/70">Tarjeta de fidelidad</p>
-            <p className="font-bold text-white truncate">{card.title}</p>
-          </div>
+          <span className="text-sm font-bold truncate max-w-[120px]" style={{ color: text }}>{card.title ?? "Tu negocio"}</span>
+        </div>
+        <div className="text-right">
+          <p className="text-[9px] font-bold uppercase tracking-widest" style={{ color: text, opacity: 0.5 }}>SELLOS</p>
+          <p className="text-lg font-black leading-none" style={{ color: text }}>{filledCount}/{stamps}</p>
         </div>
       </div>
-      <div className="bg-white px-5 py-4">
-        <p className="mb-2 text-[9px] font-bold uppercase tracking-widest text-gray-400">Sellos</p>
-        <StampRow stamps={stamps} filledCount={filledCount} icon={icon} primary={primary} onDark={false} />
-        <div className="mt-3 flex justify-between">
-          <div>
-            <p className="text-[9px] font-bold uppercase tracking-widest text-gray-400">Recompensa</p>
-            <p className="text-sm font-semibold text-gray-800">{card.reward_text}</p>
-          </div>
-          <div className="text-right">
-            <p className="text-[9px] font-bold uppercase tracking-widest text-gray-400">Progreso</p>
-            <p className="text-sm font-semibold text-gray-800">{filledCount} / {stamps}</p>
-          </div>
+
+      {/* Strip image o banda de color */}
+      {hasStrip
+        ? <img src={card.apple_wallet_strip_url!} alt="" className="w-full object-cover" style={{ height: 100 }} />
+        : <div className="w-full" style={{ height: 100, background: `linear-gradient(to right, ${bg}, ${primary}40)` }} />
+      }
+
+      {/* Campos secundarios */}
+      <div className="px-4 py-3 grid grid-cols-3 gap-2">
+        <div>
+          <p className="text-[9px] font-bold uppercase tracking-widest mb-0.5" style={{ color: text, opacity: 0.5 }}>MIEMBRO</p>
+          <p className="text-xs font-semibold truncate" style={{ color: text }}>Carlos</p>
+        </div>
+        <div>
+          <p className="text-[9px] font-bold uppercase tracking-widest mb-0.5" style={{ color: text, opacity: 0.5 }}>PROGRESO</p>
+          <p className="text-[10px] font-semibold" style={{ color: text }}>{stamps <= 8 ? stampBar : `${filledCount} de ${stamps}`}</p>
+        </div>
+        <div>
+          <p className="text-[9px] font-bold uppercase tracking-widest mb-0.5" style={{ color: text, opacity: 0.5 }}>FALTAN</p>
+          <p className="text-xs font-semibold" style={{ color: primary }}>{Math.max(0, stamps - filledCount)} sellos</p>
         </div>
       </div>
-      <div className="border-t border-dashed border-gray-200 bg-white px-5 pb-4 pt-3 flex flex-col items-center gap-1">
-        <div className="h-16 w-16"><QRPlaceholder color="#0E0E10" /></div>
-        <p className="text-[10px] text-gray-400">Muestra este código al cajero</p>
+
+      {/* Premio */}
+      <div className="px-4 pb-3">
+        <p className="text-[9px] font-bold uppercase tracking-widest mb-0.5" style={{ color: text, opacity: 0.5 }}>PREMIO</p>
+        <p className="text-xs font-semibold truncate" style={{ color: text }}>{card.reward_text ?? "Un producto gratis"}</p>
+      </div>
+
+      {/* QR */}
+      <div className="mx-4 mb-4 flex flex-col items-center rounded-xl bg-white py-3 px-3 gap-1">
+        <div className="h-14 w-14"><QRPlaceholder color="#0E0E10" /></div>
+        <p className="text-[9px] text-gray-400">Muestra al cajero</p>
       </div>
     </div>
   );
