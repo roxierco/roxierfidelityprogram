@@ -46,6 +46,7 @@ export interface LoyaltyCard {
   bg_image_url: string | null;
   bg_image_position: "top" | "center" | "bottom" | "cover" | null;
   stamp_icon: string | null;
+  apple_wallet_strip_url: string | null;
   created_at: string;
   updated_at: string;
 }

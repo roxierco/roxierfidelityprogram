@@ -43,6 +43,7 @@ export interface LoyaltyPassData {
   colorPrimary: string;
   colorText: string;
   logoUrl: string | null;
+  stripUrl: string | null;
 }
 
 // ─── PNG generator (no external deps) ───────────────────────────────────────
@@ -155,13 +156,16 @@ async function fetchLogo(url: string): Promise<Buffer | null> {
 // ─── Pass generation ─────────────────────────────────────────────────────────
 
 export async function generateLoyaltyPass(data: LoyaltyPassData): Promise<Buffer> {
-  const strip = progressStripPng(750, 246, data.colorBackground, data.colorPrimary, data.currentStamps, data.stampsRequired);
   const icon = solidPng(87, 87, data.colorPrimary);
   const icon2x = solidPng(174, 174, data.colorPrimary);
 
   let logoBuf: Buffer | null = null;
   if (data.logoUrl) logoBuf = await fetchLogo(data.logoUrl);
-  const logo = logoBuf ?? solidPng(160, 50, data.colorPrimary, 0); // transparent fallback
+  const logo = logoBuf ?? solidPng(160, 50, data.colorPrimary, 0);
+
+  let stripBuf: Buffer | null = null;
+  if (data.stripUrl) stripBuf = await fetchLogo(data.stripUrl);
+  const strip = stripBuf ?? progressStripPng(750, 246, data.colorBackground, data.colorPrimary, data.currentStamps, data.stampsRequired);
 
   const passJson = buildPassJson(data, true);
 

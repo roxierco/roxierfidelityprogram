@@ -413,9 +413,11 @@ export function TarjetaEditor({
   const [saved, setSaved] = useState(false);
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [uploadingBg, setUploadingBg] = useState(false);
+  const [uploadingStrip, setUploadingStrip] = useState(false);
   const [section, setSection] = useState<"info" | "design">("info");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const bgInputRef = useRef<HTMLInputElement>(null);
+  const stripInputRef = useRef<HTMLInputElement>(null);
 
   const bgType = card.bg_type ?? "solid";
 
@@ -446,6 +448,15 @@ export function TarjetaEditor({
     const url = await uploadFile(file, "logo");
     if (url) update("logo_url", url);
     setUploadingLogo(false);
+  }
+
+  async function subirStrip(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file || file.size > 3 * 1024 * 1024) return;
+    setUploadingStrip(true);
+    const url = await uploadFile(file, "strip");
+    if (url) update("apple_wallet_strip_url", url);
+    setUploadingStrip(false);
   }
 
   async function subirFondo(e: React.ChangeEvent<HTMLInputElement>) {
@@ -480,6 +491,7 @@ export function TarjetaEditor({
       bg_image_url: card.bg_image_url ?? null,
       bg_image_position: card.bg_image_position ?? null,
       stamp_icon: card.stamp_icon ?? "✓",
+      apple_wallet_strip_url: card.apple_wallet_strip_url ?? null,
       card_type: cardType,
       coupon_value: card.coupon_value ?? null,
     };
@@ -802,6 +814,38 @@ export function TarjetaEditor({
               )}
             </div>
 
+          </div>
+        )}
+
+        {/* Apple Wallet strip */}
+        {section === "design" && (
+          <div className="card space-y-3">
+            <div className="flex items-center gap-2">
+              <svg viewBox="0 0 24 24" className="h-4 w-4 text-mist" fill="currentColor"><path d="M12.152 6.896c-.948 0-2.415-1.078-3.96-1.04-2.04.027-3.91 1.183-4.961 3.014-2.117 3.675-.546 9.103 1.519 12.09 1.013 1.459 2.208 3.09 3.792 3.039 1.52-.065 2.09-.987 3.935-.987 1.831 0 2.35.987 3.96.948 1.637-.026 2.676-1.48 3.676-2.948 1.156-1.688 1.636-3.325 1.662-3.415-.039-.013-3.182-1.221-3.22-4.857-.026-3.04 2.48-4.494 2.597-4.559-1.429-2.09-3.623-2.324-4.39-2.376-2-.156-3.675 1.09-4.61 1.09zM15.53 3.83c.843-1.012 1.4-2.427 1.245-3.83-1.207.052-2.662.805-3.532 1.818-.78.896-1.454 2.338-1.273 3.714 1.338.104 2.715-.688 3.559-1.701"/></svg>
+              <p className="text-sm font-bold text-paper">Imagen para Apple Wallet</p>
+            </div>
+            <p className="text-xs text-mist">Banner que aparece dentro del pass de Apple Wallet. Recomendado: 750×246 px, JPG o PNG.</p>
+            <input ref={stripInputRef} type="file" accept="image/jpeg,image/png" onChange={subirStrip} className="hidden" />
+            {card.apple_wallet_strip_url ? (
+              <div className="relative overflow-hidden rounded-xl">
+                <img src={card.apple_wallet_strip_url} alt="Strip" className="h-20 w-full object-cover" />
+                <div className="absolute inset-0 flex items-center justify-center gap-2 bg-black/50 opacity-0 hover:opacity-100 transition-opacity">
+                  <button type="button" onClick={() => stripInputRef.current?.click()} disabled={uploadingStrip}
+                    className="rounded-full bg-white px-3 py-1 text-xs font-bold text-black">
+                    {uploadingStrip ? "..." : "Cambiar"}
+                  </button>
+                  <button type="button" onClick={() => update("apple_wallet_strip_url", null as unknown as string)}
+                    className="rounded-full bg-red-500 px-3 py-1 text-xs font-bold text-white">
+                    Quitar
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <button type="button" onClick={() => stripInputRef.current?.click()} disabled={uploadingStrip}
+                className="w-full rounded-xl border-2 border-dashed border-surface-border py-6 text-sm text-mist hover:border-magenta hover:text-magenta transition-colors">
+                {uploadingStrip ? "Subiendo..." : "+ Subir imagen de banner"}
+              </button>
+            )}
           </div>
         )}
 
