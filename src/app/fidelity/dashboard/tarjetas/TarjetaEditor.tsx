@@ -183,7 +183,7 @@ function StampRow({ stamps, filledCount, icon, primary, onDark }: {
 // ── Vista previa Wallet estilo Apple ────────────────────────────
 function AppleWalletPreview({ card }: { card: Partial<LoyaltyCard> }) {
   const stamps = card.stamps_required ?? 10;
-  const filledCount = Math.min(3, stamps);
+  const filledCount = Math.min(1, stamps);
   const bg = card.color_background ?? "#1a1a2e";
   const primary = card.color_primary ?? "#FF2E63";
   const text = card.text_color ?? "#ffffff";
