@@ -75,11 +75,14 @@ export function ScannerClient({ businessId, businessName }: { businessId: string
       return;
     }
 
-    // Preferir cámara trasera en móvil; en desktop usar la disponible
+    // En móvil la cámara trasera suele ser la primera (index 0), la frontal la última
+    // Buscar por label primero, si no hay label usar cameras[0]
     const backCamera = cameras.find(c =>
       /back|rear|trasera|environment/i.test(c.label)
+    ) ?? cameras.find(c =>
+      !/front|frontal|user|selfie/i.test(c.label) && c.label !== ""
     );
-    const cameraId = (backCamera ?? cameras[cameras.length - 1]).id;
+    const cameraId = (backCamera ?? cameras[0]).id;
 
     const container = document.getElementById("qr-reader");
     if (container) container.innerHTML = "";
