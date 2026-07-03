@@ -30,7 +30,7 @@ export async function GET(req: NextRequest) {
   const [{ data: card }, { data: business }] = await Promise.all([
     admin
       .from("loyalty_cards")
-      .select("title, stamps_required, reward_text")
+      .select("title, stamps_required, reward_text, color_primary, color_background, text_color")
       .eq("id", cardId)
       .eq("business_id", customer.business_id)
       .eq("is_active", true)
@@ -57,6 +57,9 @@ export async function GET(req: NextRequest) {
       stampsRequired: card.stamps_required,
       rewardText: card.reward_text,
       cardUrl,
+      colorBackground: card.color_background ?? "#14141e",
+      colorPrimary: card.color_primary ?? "#e100ff",
+      colorText: card.text_color ?? "#ffffff",
     });
 
     return new NextResponse(new Uint8Array(passBuffer), {

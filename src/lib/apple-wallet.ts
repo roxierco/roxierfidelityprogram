@@ -52,6 +52,9 @@ export interface LoyaltyPassData {
   stampsRequired: number;
   rewardText: string;
   cardUrl: string;
+  colorBackground: string;
+  colorPrimary: string;
+  colorText: string;
 }
 
 export async function generateLoyaltyPass(data: LoyaltyPassData): Promise<Buffer> {
@@ -85,6 +88,14 @@ export async function generateLoyaltyPass(data: LoyaltyPassData): Promise<Buffer
   return zip.generateAsync({ type: "nodebuffer", compression: "STORE" });
 }
 
+function hexToRgb(hex: string): string {
+  const h = hex.replace("#", "");
+  const r = parseInt(h.substring(0, 2), 16);
+  const g = parseInt(h.substring(2, 4), 16);
+  const b = parseInt(h.substring(4, 6), 16);
+  return `rgb(${r}, ${g}, ${b})`;
+}
+
 function buildPassJson(data: LoyaltyPassData): object {
   const authToken = generateAuthToken(data.customerId, data.cardId);
   const appUrl = process.env.NEXT_PUBLIC_APP_URL!;
@@ -99,9 +110,9 @@ function buildPassJson(data: LoyaltyPassData): object {
     organizationName: data.businessName,
     description: data.cardTitle,
     logoText: data.businessName,
-    foregroundColor: "rgb(255, 255, 255)",
-    backgroundColor: "rgb(20, 20, 30)",
-    labelColor: "rgb(160, 160, 180)",
+    foregroundColor: hexToRgb(data.colorText),
+    backgroundColor: hexToRgb(data.colorBackground),
+    labelColor: hexToRgb(data.colorText) ,
     storeCard: {
       headerFields: [
         {
