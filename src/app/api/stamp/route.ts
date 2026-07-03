@@ -155,16 +155,21 @@ export async function POST(req: NextRequest) {
       console.log(`[apple-wallet] serial=${serialNumber} registrations=${registrations?.length ?? 0}`);
 
       if (registrations?.length) {
-        const [, ...pushResults] = await Promise.allSettled([
-          admin
-            .from("apple_wallet_registrations")
-            .update({ updated_at: new Date().toISOString() })
-            .eq("serial_number", serialNumber),
-          ...registrations.map((r) => sendApnsPassUpdate(r.push_token)),
-        ]);
-        const results = pushResults;
+        // DB update PRIMERO — iOS puede responder al push en <500ms.
+        // Si actualizamos en paralelo, iOS consulta GET registrations antes de que
+        // updated_at esté committeado y devuelve vacío → el pass no se actualiza.
+        await admin
+          .from("apple_wallet_registrations")
+          .update({ updated_at: new Date().toISOString() })
+          .eq("serial_number", serialNumber);
+
+        const results = await Promise.allSettled(
+          registrations.map((r) => sendApnsPassUpdate(r.push_token)),
+        );
         results.forEach((r, i) => {
-          if (r.status === "rejected") {
+          if (r.status === "fulfilled") {
+            console.log(`[apple-wallet] push ${i} OK`);
+          } else {
             console.error(`[apple-wallet] push ${i} failed:`, r.reason);
           }
         });
