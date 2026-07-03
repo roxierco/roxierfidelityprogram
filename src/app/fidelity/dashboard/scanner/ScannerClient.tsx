@@ -56,34 +56,6 @@ export function ScannerClient({ businessId, businessName }: { businessId: string
       scannerRef.current = null;
     }
 
-    const scanConfig = {
-      fps: 25,
-      // Sin qrbox = escanea todo el frame, sin cuadro visible
-      videoConstraints: { width: { ideal: 1280 }, height: { ideal: 720 } },
-    };
-
-    // Obtener lista de cámaras disponibles (evita el bug de estado de html5-qrcode con constraints)
-    let cameras: { id: string; label: string }[] = [];
-    try {
-      cameras = await Html5Qrcode.getCameras();
-    } catch (e) {
-      setError(`No se encontró cámara: ${String(e)}`);
-      return;
-    }
-    if (!cameras.length) {
-      setError("No se encontró ninguna cámara en este dispositivo.");
-      return;
-    }
-
-    // En móvil la cámara trasera suele ser la primera (index 0), la frontal la última
-    // Buscar por label primero, si no hay label usar cameras[0]
-    const backCamera = cameras.find(c =>
-      /back|rear|trasera|environment/i.test(c.label)
-    ) ?? cameras.find(c =>
-      !/front|frontal|user|selfie/i.test(c.label) && c.label !== ""
-    );
-    const cameraId = (backCamera ?? cameras[0]).id;
-
     const container = document.getElementById("qr-reader");
     if (container) container.innerHTML = "";
 
@@ -94,7 +66,14 @@ export function ScannerClient({ businessId, businessName }: { businessId: string
     scannerRef.current = qr;
 
     try {
-      await qr.start(cameraId, scanConfig, (text) => handleScan(text, qr), undefined);
+      // facingMode ideal: selecciona cámara trasera en móvil, usa la disponible en desktop
+      // UN solo intento — evita el bug de doble-start del state machine de html5-qrcode
+      await qr.start(
+        { facingMode: { ideal: "environment" }, width: { ideal: 1280 }, height: { ideal: 720 } } as MediaTrackConstraints,
+        { fps: 25 },
+        (text) => handleScan(text, qr),
+        undefined,
+      );
       setScanning(true);
     } catch (e) {
       const msg = String((e as { message?: string })?.message ?? e ?? "desconocido");
