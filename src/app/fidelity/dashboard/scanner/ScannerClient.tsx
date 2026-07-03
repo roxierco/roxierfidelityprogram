@@ -50,6 +50,21 @@ export function ScannerClient({ businessId, businessName }: { businessId: string
     setScannedCustomerId(null);
     setScannedCardId(null);
 
+    // Probar acceso a cámara directamente antes de usar html5-qrcode
+    if (!navigator.mediaDevices?.getUserMedia) {
+      setError("ERROR: Este navegador no soporta acceso a cámara. Prueba Chrome o Safari.");
+      return;
+    }
+    try {
+      const testStream = await navigator.mediaDevices.getUserMedia({ video: true });
+      testStream.getTracks().forEach(t => t.stop());
+    } catch (e) {
+      const name = (e as { name?: string })?.name ?? "desconocido";
+      const msg = (e as { message?: string })?.message ?? "";
+      setError(`ERROR DE CÁMARA [${name}]: ${msg}. Revisa permisos en el ícono de candado.`);
+      return;
+    }
+
     const qr = new Html5Qrcode("qr-reader", {
       formatsToSupport: [Html5QrcodeSupportedFormats.QR_CODE],
       experimentalFeatures: { useBarCodeDetectorIfSupported: true },
@@ -77,7 +92,7 @@ export function ScannerClient({ businessId, businessName }: { businessId: string
         undefined,
       );
       setScanning(true);
-    } catch {
+    } catch (e1) {
       // Fallback sin constraints avanzadas
       try {
         await qr.start(
@@ -87,8 +102,10 @@ export function ScannerClient({ businessId, businessName }: { businessId: string
           undefined,
         );
         setScanning(true);
-      } catch {
-        setError("No se pudo acceder a la cámara. Verifica los permisos.");
+      } catch (e2) {
+        const n1 = (e1 as { name?: string })?.name ?? "";
+        const n2 = (e2 as { name?: string })?.name ?? "";
+        setError(`html5-qrcode falló [${n1}/${n2}]. getUserMedia ok pero lib falla.`);
       }
     }
   }
