@@ -56,8 +56,11 @@ export function ScannerClient({ businessId, businessName }: { businessId: string
       scannerRef.current = null;
     }
 
-    const boxSize = Math.min(300, Math.round(window.innerWidth * 0.75));
-    const scanConfig = { fps: 20, qrbox: { width: boxSize, height: boxSize } };
+    const scanConfig = {
+      fps: 25,
+      // Sin qrbox = escanea todo el frame, sin cuadro visible
+      videoConstraints: { width: { ideal: 1280 }, height: { ideal: 720 } },
+    };
 
     // Obtener lista de cámaras disponibles (evita el bug de estado de html5-qrcode con constraints)
     let cameras: { id: string; label: string }[] = [];
@@ -167,8 +170,29 @@ export function ScannerClient({ businessId, businessName }: { businessId: string
 
       {/* Cámara */}
       {!result && !scannedCustomerId && (
-        <div className="rounded-brand border border-surface-border bg-surface overflow-hidden">
-          <div id="qr-reader" className="w-full" style={{ minHeight: scanning ? 300 : 0 }} />
+        <div className="rounded-2xl overflow-hidden bg-near-black border border-surface-border">
+          {/* Vista de cámara full-frame */}
+          <div className="relative">
+            <div
+              id="qr-reader"
+              className="w-full [&>video]:w-full [&>video]:block [&>*:not(video)]:hidden"
+              style={{ minHeight: scanning ? 320 : 0 }}
+            />
+            {/* Overlay: esquinas estilo WhatsApp */}
+            {scanning && (
+              <div className="pointer-events-none absolute inset-0">
+                {/* Línea de escaneo animada */}
+                <div className="absolute inset-x-8 h-0.5 bg-magenta shadow-[0_0_10px_2px_rgba(255,46,99,0.7)] animate-scan-line" />
+                {/* Esquinas */}
+                <div className="absolute inset-8">
+                  <div className="absolute left-0 top-0 h-7 w-7 border-l-2 border-t-2 border-white rounded-tl-md" />
+                  <div className="absolute right-0 top-0 h-7 w-7 border-r-2 border-t-2 border-white rounded-tr-md" />
+                  <div className="absolute left-0 bottom-0 h-7 w-7 border-l-2 border-b-2 border-white rounded-bl-md" />
+                  <div className="absolute right-0 bottom-0 h-7 w-7 border-r-2 border-b-2 border-white rounded-br-md" />
+                </div>
+              </div>
+            )}
+          </div>
           {!scanning && (
             <div className="p-6 flex flex-col items-center gap-3">
               <div className="h-16 w-16 rounded-full bg-magenta/10 flex items-center justify-center text-3xl">
@@ -183,7 +207,7 @@ export function ScannerClient({ businessId, businessName }: { businessId: string
             </div>
           )}
           {scanning && (
-            <div className="p-4 flex justify-center">
+            <div className="p-3 flex justify-center">
               <button onClick={stopScanner} className="btn-secondary !py-2 text-sm">
                 Cancelar
               </button>
