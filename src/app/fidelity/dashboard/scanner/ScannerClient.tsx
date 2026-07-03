@@ -44,6 +44,20 @@ export function ScannerClient({ businessId, businessName }: { businessId: string
   const [scannedCustomerId, setScannedCustomerId] = useState<string | null>(null);
   const [scannedCardId, setScannedCardId] = useState<string | null>(null);
 
+  function cameraErrorMessage(err: unknown): string {
+    const name = (err as { name?: string })?.name ?? "";
+    const msg = String((err as { message?: string })?.message ?? "");
+    if (name === "NotAllowedError" || name === "PermissionDeniedError")
+      return "Permiso de cámara denegado. En Chrome ve a la barra de dirección → ícono de candado → Cámara → Permitir, y recarga la página.";
+    if (name === "NotFoundError" || name === "DevicesNotFoundError")
+      return "No se encontró ninguna cámara en este dispositivo.";
+    if (name === "NotReadableError" || name === "TrackStartError")
+      return "La cámara está siendo usada por otra aplicación. Ciérrala e intenta de nuevo.";
+    if (name === "OverconstrainedError")
+      return "La cámara no soporta la configuración requerida. Intenta de nuevo.";
+    return `Error de cámara: ${msg || name || "desconocido"}`;
+  }
+
   async function startScanner() {
     setError("");
     setResult(null);
@@ -57,35 +71,43 @@ export function ScannerClient({ businessId, businessName }: { businessId: string
     });
     scannerRef.current = qr;
 
+    const config = { fps: 30, disableFlip: false };
+
+    // Intento 1: cámara trasera + alta resolución (ideal para móvil)
     try {
       await qr.start(
-        {
-          facingMode: { ideal: "environment" },
-          width: { ideal: 1920 },
-          height: { ideal: 1080 },
-        } as MediaTrackConstraints,
-        {
-          fps: 30,
-          // Sin qrbox = escanea todo el frame, como WhatsApp
-          disableFlip: false,
-          aspectRatio: window.innerHeight / window.innerWidth,
-        },
+        { facingMode: { ideal: "environment" }, width: { ideal: 1280 }, height: { ideal: 720 } } as MediaTrackConstraints,
+        config,
         (decodedText) => handleScan(decodedText, qr),
         undefined,
       );
       setScanning(true);
-    } catch {
-      try {
-        await qr.start(
-          { facingMode: "environment" },
-          { fps: 20 },
-          (decodedText) => handleScan(decodedText, qr),
-          undefined,
-        );
-        setScanning(true);
-      } catch {
-        setError("No se pudo acceder a la cámara. Verifica los permisos.");
-      }
+      return;
+    } catch { /* seguir al siguiente intento */ }
+
+    // Intento 2: cualquier cámara disponible (funciona en desktop)
+    try {
+      await qr.start(
+        { facingMode: { ideal: "environment" } } as MediaTrackConstraints,
+        { fps: 20 },
+        (decodedText) => handleScan(decodedText, qr),
+        undefined,
+      );
+      setScanning(true);
+      return;
+    } catch { /* seguir al siguiente intento */ }
+
+    // Intento 3: mínimo absoluto — sin restricciones, usa cualquier cámara
+    try {
+      await qr.start(
+        { } as MediaTrackConstraints,
+        { fps: 15 },
+        (decodedText) => handleScan(decodedText, qr),
+        undefined,
+      );
+      setScanning(true);
+    } catch (err) {
+      setError(cameraErrorMessage(err));
     }
   }
 
