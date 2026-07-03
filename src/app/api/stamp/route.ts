@@ -162,8 +162,13 @@ export async function POST(req: NextRequest) {
           .update({ updated_at: new Date().toISOString() })
           .eq("serial_number", serialNumber);
 
+        const businessName = (ownedBusiness as { id: string; slug: string; name: string }).name;
+        const notifText = rewarded
+          ? `🎉 ¡Ganaste tu premio en ${businessName}: ${card?.reward_text ?? "Premio"}!`
+          : `¡Tu visita se ha registrado con un sello nuevo en tu tarjeta de lealtad!`;
+
         const results = await Promise.allSettled(
-          registrations.map((r) => sendApnsPassUpdate(r.push_token)),
+          registrations.map((r) => sendApnsPassUpdate(r.push_token, notifText)),
         );
         results.forEach((r, i) => {
           if (r.status === "rejected") {
