@@ -17,18 +17,25 @@ export async function POST(req: NextRequest, { params }: { params: Promise<Param
   );
 
   if (!auth || !verifyAuthToken(auth, customerId, cardId)) {
+    console.error(`[apple-wallet] register 401 — serial=${serialNumber} customerId=${customerId} cardId=${cardId}`);
     return new NextResponse(null, { status: 401 });
   }
 
   const { pushToken } = await req.json().catch(() => ({}));
-  if (!pushToken) return new NextResponse(null, { status: 400 });
+  if (!pushToken) {
+    console.error("[apple-wallet] register 400 — missing pushToken");
+    return new NextResponse(null, { status: 400 });
+  }
 
   const admin = createAdminClient();
-  await admin.from("apple_wallet_registrations").upsert({
+  const { error } = await admin.from("apple_wallet_registrations").upsert({
     device_library_id: deviceId,
     push_token: pushToken,
     serial_number: serialNumber,
   }, { onConflict: "device_library_id,serial_number" });
+
+  if (error) console.error("[apple-wallet] register DB error:", error);
+  else console.log(`[apple-wallet] registered device=${deviceId.slice(0, 8)}... serial=${serialNumber}`);
 
   return new NextResponse(null, { status: 201 });
 }

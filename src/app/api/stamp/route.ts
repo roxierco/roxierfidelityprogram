@@ -152,20 +152,26 @@ export async function POST(req: NextRequest) {
         .select("push_token")
         .eq("serial_number", serialNumber);
 
+      console.log(`[apple-wallet] serial=${serialNumber} registrations=${registrations?.length ?? 0}`);
+
       if (registrations?.length) {
-        const apnsNotif = rewarded
-          ? { body: `🎉 ¡Ganaste tu premio: ${card?.reward_text ?? "Premio"}! Preséntalo en ${(ownedBusiness as { id: string; slug: string; name: string }).name}.` }
-          : { body: "¡Tu visita se ha registrado con un sello nuevo en tu tarjeta de lealtad!" };
-        await Promise.allSettled(
-          registrations.map((r) => sendApnsPassUpdate(r.push_token, apnsNotif)),
-        );
-        // Marcar como actualizado para que Apple sepa que hay nueva versión
+        // Actualizar updated_at ANTES del push para que iOS encuentre el registro
+        // cuando consulte GET /v1/devices/.../registrations inmediatamente tras recibir el push
         await admin
           .from("apple_wallet_registrations")
           .update({ updated_at: new Date().toISOString() })
           .eq("serial_number", serialNumber);
+
+        const results = await Promise.allSettled(
+          registrations.map((r) => sendApnsPassUpdate(r.push_token)),
+        );
+        results.forEach((r, i) => {
+          if (r.status === "rejected") {
+            console.error(`[apple-wallet] push ${i} failed:`, r.reason);
+          }
+        });
       }
-    })().catch(() => null);
+    })().catch((e) => console.error("[apple-wallet] unexpected error:", e));
   }
 
   // 4. Web Push al navegador del cliente

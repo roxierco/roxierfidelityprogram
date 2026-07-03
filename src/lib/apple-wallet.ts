@@ -321,10 +321,7 @@ function signManifest(manifestStr: string): Buffer {
 
 // ─── APNS push para actualizar passes en Apple Wallet ────────────────────────
 
-export async function sendApnsPassUpdate(
-  pushToken: string,
-  notification?: { body: string },
-): Promise<void> {
+export async function sendApnsPassUpdate(pushToken: string): Promise<void> {
   const decodePem = (b64: string) =>
     Buffer.from(b64, "base64").toString("utf-8").replace(/\r\n/g, "\n").replace(/\r/g, "\n");
 
@@ -332,20 +329,21 @@ export async function sendApnsPassUpdate(
   const key = decodePem(process.env.APPLE_WALLET_PRIVATE_KEY!);
   const topic = process.env.APPLE_WALLET_PASS_TYPE_ID!;
 
-  const payload = notification
-    ? JSON.stringify({ aps: { alert: notification.body, sound: "default" } })
-    : JSON.stringify({});
+  // Wallet pass updates usan payload vacío + background type.
+  // iOS muestra la notificación del sistema ("Tarjeta actualizada") si el usuario
+  // tiene notificaciones de Wallet activadas. No se puede personalizar el texto.
+  const payload = "{}";
 
   return new Promise((resolve, reject) => {
     const session = connect("https://api.push.apple.com", { cert, key });
-    session.on("error", reject);
+    session.on("error", (err) => { console.error("[APNS] session error:", err); reject(err); });
 
     const req = session.request({
       ":method": "POST",
       ":path": `/3/device/${pushToken}`,
       "apns-topic": topic,
-      "apns-push-type": notification ? "alert" : "background",
-      "apns-priority": notification ? "10" : "5",
+      "apns-push-type": "background",
+      "apns-priority": "5",
       "content-type": "application/json",
       "content-length": String(Buffer.byteLength(payload)),
     });
@@ -355,9 +353,16 @@ export async function sendApnsPassUpdate(
 
     req.on("response", (headers) => {
       session.close();
-      headers[":status"] === 200 ? resolve() : reject(new Error(`APNS ${headers[":status"]}`));
+      const status = headers[":status"];
+      if (status === 200) {
+        resolve();
+      } else {
+        const err = new Error(`APNS status ${status}`);
+        console.error("[APNS] push rejected:", status, pushToken.slice(0, 8) + "...");
+        reject(err);
+      }
     });
 
-    req.on("error", (err) => { session.close(); reject(err); });
+    req.on("error", (err) => { session.close(); console.error("[APNS] req error:", err); reject(err); });
   });
 }
