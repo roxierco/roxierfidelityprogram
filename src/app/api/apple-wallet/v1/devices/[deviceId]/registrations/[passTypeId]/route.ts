@@ -14,7 +14,14 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ devi
     .eq("device_library_id", deviceId);
 
   if (since) {
-    query = query.gte("updated_at", new Date(since).toISOString());
+    // Apple puede mandar un ISO string o un Unix timestamp en segundos como string.
+    // new Date("1720043650") devuelve Invalid Date → RangeError en toISOString().
+    const asNum = Number(since);
+    const sinceDate = isNaN(asNum) ? new Date(since) : new Date(asNum * 1000);
+    if (!isNaN(sinceDate.getTime())) {
+      query = query.gte("updated_at", sinceDate.toISOString());
+    }
+    // Si el formato es desconocido, devolvemos todos los passes del dispositivo
   }
 
   const { data } = await query;
