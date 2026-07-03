@@ -155,19 +155,12 @@ export async function POST(req: NextRequest) {
       console.log(`[apple-wallet] serial=${serialNumber} registrations=${registrations?.length ?? 0}`);
 
       if (registrations?.length) {
-        const businessName = (ownedBusiness as { id: string; slug: string; name: string }).name;
-        const notifText = rewarded
-          ? `🎉 ¡Ganaste tu premio en ${businessName}: ${card?.reward_text ?? "Premio"}!`
-          : `¡Tu visita se ha registrado con un sello nuevo en tu tarjeta de lealtad!`;
-
-        // DB update y APNS en paralelo: iOS tarda ~500ms en procesar el push,
-        // tiempo suficiente para que la DB quede lista antes de que consulte registrations
         const [, ...pushResults] = await Promise.allSettled([
           admin
             .from("apple_wallet_registrations")
             .update({ updated_at: new Date().toISOString() })
             .eq("serial_number", serialNumber),
-          ...registrations.map((r) => sendApnsPassUpdate(r.push_token, notifText)),
+          ...registrations.map((r) => sendApnsPassUpdate(r.push_token)),
         ]);
         const results = pushResults;
         results.forEach((r, i) => {

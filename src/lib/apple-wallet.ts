@@ -321,7 +321,7 @@ function signManifest(manifestStr: string): Buffer {
 
 // ─── APNS push para actualizar passes en Apple Wallet ────────────────────────
 
-export async function sendApnsPassUpdate(pushToken: string, notification: string): Promise<void> {
+export async function sendApnsPassUpdate(pushToken: string): Promise<void> {
   const decodePem = (b64: string) =>
     Buffer.from(b64, "base64").toString("utf-8").replace(/\r\n/g, "\n").replace(/\r/g, "\n");
 
@@ -329,11 +329,9 @@ export async function sendApnsPassUpdate(pushToken: string, notification: string
   const key = decodePem(process.env.APPLE_WALLET_PRIVATE_KEY!);
   const topic = process.env.APPLE_WALLET_PASS_TYPE_ID!;
 
-  // alert + priority 10 = entrega inmediata Y muestra notificación con texto personalizado.
-  // PassKit intercepta todos los pushes al Pass Type ID topic → también actualiza el pass.
-  const payload = JSON.stringify({
-    aps: { alert: notification, sound: "default" },
-  });
+  // Apple exige background + payload {} para Wallet pass updates.
+  // Con alert el push llega como notificación normal y PassKit NO actualiza el pass.
+  const payload = "{}";
 
   return new Promise((resolve, reject) => {
     const session = connect("https://api.push.apple.com", { cert, key });
@@ -343,8 +341,8 @@ export async function sendApnsPassUpdate(pushToken: string, notification: string
       ":method": "POST",
       ":path": `/3/device/${pushToken}`,
       "apns-topic": topic,
-      "apns-push-type": "alert",
-      "apns-priority": "10",
+      "apns-push-type": "background",
+      "apns-priority": "5",
       "content-type": "application/json",
       "content-length": String(Buffer.byteLength(payload)),
     });
