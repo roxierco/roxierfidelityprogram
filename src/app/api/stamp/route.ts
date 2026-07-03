@@ -56,7 +56,7 @@ export async function POST(req: NextRequest) {
   if (cardId && uuidRegex.test(cardId)) {
     const { data } = await admin
       .from("loyalty_cards")
-      .select("stamps_required, reward_text, card_type, coupon_value")
+      .select("id, stamps_required, reward_text, card_type, coupon_value")
       .eq("id", cardId)
       .eq("business_id", businessId)
       .eq("is_active", true)
@@ -66,7 +66,7 @@ export async function POST(req: NextRequest) {
   if (!card) {
     const { data } = await admin
       .from("loyalty_cards")
-      .select("stamps_required, reward_text, card_type, coupon_value")
+      .select("id, stamps_required, reward_text, card_type, coupon_value")
       .eq("business_id", businessId)
       .eq("is_active", true)
       .order("created_at", { ascending: false })
@@ -144,9 +144,11 @@ export async function POST(req: NextRequest) {
   }
 
   // 3. Apple Wallet APNS push
-  if (isAppleWalletConfigured() && cardId) {
+  // Usar cardId del request o el id de la tarjeta activa si el QR no trae ?card=
+  const walletCardId = cardId ?? (card as { id?: string } | null)?.id ?? null;
+  if (isAppleWalletConfigured() && walletCardId) {
     (async () => {
-      const serialNumber = `${customerId}-${cardId}`;
+      const serialNumber = `${customerId}-${walletCardId}`;
       const { data: registrations } = await admin
         .from("apple_wallet_registrations")
         .select("push_token")
