@@ -50,55 +50,49 @@ export function ScannerClient({ businessId, businessName }: { businessId: string
     setScannedCustomerId(null);
     setScannedCardId(null);
 
-    // Limpiar instancia anterior sin dejarla colgada
+    // Parar instancia anterior si existe
     if (scannerRef.current) {
       await scannerRef.current.stop().catch(() => null);
       scannerRef.current = null;
     }
+
+    const boxSize = Math.min(300, Math.round(window.innerWidth * 0.75));
+    const scanConfig = { fps: 20, qrbox: { width: boxSize, height: boxSize } };
+
+    // Obtener lista de cámaras disponibles (evita el bug de estado de html5-qrcode con constraints)
+    let cameras: { id: string; label: string }[] = [];
+    try {
+      cameras = await Html5Qrcode.getCameras();
+    } catch (e) {
+      setError(`No se encontró cámara: ${String(e)}`);
+      return;
+    }
+    if (!cameras.length) {
+      setError("No se encontró ninguna cámara en este dispositivo.");
+      return;
+    }
+
+    // Preferir cámara trasera en móvil; en desktop usar la disponible
+    const backCamera = cameras.find(c =>
+      /back|rear|trasera|environment/i.test(c.label)
+    );
+    const cameraId = (backCamera ?? cameras[cameras.length - 1]).id;
+
     const container = document.getElementById("qr-reader");
     if (container) container.innerHTML = "";
 
     const qr = new Html5Qrcode("qr-reader", {
       formatsToSupport: [Html5QrcodeSupportedFormats.QR_CODE],
-      // experimentalFeatures deshabilitado — BarcodeDetector causa fallo silencioso en Chrome desktop
       verbose: false,
     });
     scannerRef.current = qr;
 
-    // Tamaño del área de escaneo: 80% del ancho de pantalla hasta 320px
-    const boxSize = Math.min(320, Math.round(window.innerWidth * 0.8));
-
     try {
-      await qr.start(
-        {
-          facingMode: { ideal: "environment" },
-          width: { ideal: 1280 },
-          height: { ideal: 720 },
-        } as MediaTrackConstraints,
-        {
-          fps: 20,
-          qrbox: { width: boxSize, height: boxSize },
-          aspectRatio: 1.0,
-          disableFlip: false,
-        },
-        (decodedText) => handleScan(decodedText, qr),
-        undefined,
-      );
+      await qr.start(cameraId, scanConfig, (text) => handleScan(text, qr), undefined);
       setScanning(true);
-    } catch (e1) {
-      // Fallback sin constraints avanzadas
-      try {
-        await qr.start(
-          { facingMode: "environment" },
-          { fps: 20, qrbox: { width: boxSize, height: boxSize } },
-          (decodedText) => handleScan(decodedText, qr),
-          undefined,
-        );
-        setScanning(true);
-      } catch (e2) {
-        const msg = String((e2 as { message?: string })?.message ?? e2 ?? "desconocido");
-        setError(`Error del escáner: ${msg}. Recarga la página e intenta de nuevo.`);
-      }
+    } catch (e) {
+      const msg = String((e as { message?: string })?.message ?? e ?? "desconocido");
+      setError(`Error al iniciar cámara: ${msg}`);
     }
   }
 
