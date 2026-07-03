@@ -50,24 +50,17 @@ export function ScannerClient({ businessId, businessName }: { businessId: string
     setScannedCustomerId(null);
     setScannedCardId(null);
 
-    // Probar acceso a cámara directamente antes de usar html5-qrcode
-    if (!navigator.mediaDevices?.getUserMedia) {
-      setError("ERROR: Este navegador no soporta acceso a cámara. Prueba Chrome o Safari.");
-      return;
+    // Limpiar instancia anterior sin dejarla colgada
+    if (scannerRef.current) {
+      await scannerRef.current.stop().catch(() => null);
+      scannerRef.current = null;
     }
-    try {
-      const testStream = await navigator.mediaDevices.getUserMedia({ video: true });
-      testStream.getTracks().forEach(t => t.stop());
-    } catch (e) {
-      const name = (e as { name?: string })?.name ?? "desconocido";
-      const msg = (e as { message?: string })?.message ?? "";
-      setError(`ERROR DE CÁMARA [${name}]: ${msg}. Revisa permisos en el ícono de candado.`);
-      return;
-    }
+    const container = document.getElementById("qr-reader");
+    if (container) container.innerHTML = "";
 
     const qr = new Html5Qrcode("qr-reader", {
       formatsToSupport: [Html5QrcodeSupportedFormats.QR_CODE],
-      experimentalFeatures: { useBarCodeDetectorIfSupported: true },
+      // experimentalFeatures deshabilitado — BarcodeDetector causa fallo silencioso en Chrome desktop
       verbose: false,
     });
     scannerRef.current = qr;
@@ -103,9 +96,8 @@ export function ScannerClient({ businessId, businessName }: { businessId: string
         );
         setScanning(true);
       } catch (e2) {
-        const n1 = (e1 as { name?: string })?.name ?? "";
-        const n2 = (e2 as { name?: string })?.name ?? "";
-        setError(`html5-qrcode falló [${n1}/${n2}]. getUserMedia ok pero lib falla.`);
+        const msg = String((e2 as { message?: string })?.message ?? e2 ?? "desconocido");
+        setError(`Error del escáner: ${msg}. Recarga la página e intenta de nuevo.`);
       }
     }
   }
