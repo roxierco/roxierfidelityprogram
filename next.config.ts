@@ -14,13 +14,16 @@ const mpHosts = "https://sdk.mercadopago.com https://api.mercadopago.com https:/
 
 const csp = [
   "default-src 'self'",
-  // Next.js necesita unsafe-inline para sus scripts de hidratación
-  `script-src 'self' 'unsafe-inline' ${mpHosts}`,
+  // Next.js necesita unsafe-inline; html5-qrcode/ZXing necesita unsafe-eval para su WASM
+  `script-src 'self' 'unsafe-inline' 'unsafe-eval' ${mpHosts}`,
   "style-src 'self' 'unsafe-inline'",
   `img-src 'self' data: blob: ${supabaseHosts} https://secure.mlstatic.com`,
-  `connect-src 'self' ${supabaseHosts} ${mpHosts} https://api.push.apple.com`,
+  // blob: necesario para streams de cámara; wss: para Supabase Realtime
+  `connect-src 'self' blob: ${supabaseHosts} ${mpHosts} https://api.push.apple.com`,
   "font-src 'self' data:",
-  // Solo MercadoPago puede cargar iframes (checkout)
+  // blob: y worker: para web workers del escáner QR
+  "worker-src 'self' blob:",
+  "media-src 'self' blob:",
   `frame-src ${mpHosts}`,
   "object-src 'none'",
   "base-uri 'self'",
