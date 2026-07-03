@@ -37,7 +37,7 @@ export async function GET(req: NextRequest) {
       .single(),
     admin
       .from("businesses")
-      .select("name, slug")
+      .select("name, slug, logo_url")
       .eq("id", customer.business_id)
       .single(),
   ]);
@@ -60,6 +60,7 @@ export async function GET(req: NextRequest) {
       colorBackground: card.color_background ?? "#14141e",
       colorPrimary: card.color_primary ?? "#e100ff",
       colorText: card.text_color ?? "#ffffff",
+      logoUrl: business.logo_url ?? null,
     });
 
     return new NextResponse(new Uint8Array(passBuffer), {
