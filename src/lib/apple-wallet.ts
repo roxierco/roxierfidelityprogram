@@ -236,7 +236,7 @@ function buildPassJson(data: LoyaltyPassData, hasStrip: boolean): object {
         {
           key: "progress",
           label: "PROGRESO",
-          value: stampBar.length <= 12 ? stampBar : `${data.currentStamps} de ${data.stampsRequired}`,
+          value: stampBar.length <= 10 ? stampBar : `${Math.min(data.currentStamps, data.stampsRequired)} de ${data.stampsRequired}`,
         },
         {
           key: "reward",
@@ -247,8 +247,8 @@ function buildPassJson(data: LoyaltyPassData, hasStrip: boolean): object {
       auxiliaryFields: [
         {
           key: "remaining",
-          label: remaining === 0 ? "🎉 ¡LISTO PARA CANJEAR!" : "FALTAN",
-          value: remaining === 0 ? data.rewardText : `${remaining} sello${remaining !== 1 ? "s" : ""}`,
+          label: remaining === 0 ? "ESTADO" : "FALTAN",
+          value: remaining === 0 ? "🎉 ¡Premio listo!" : `${remaining} sello${remaining !== 1 ? "s" : ""}`,
         },
       ],
       backFields: [
