@@ -156,13 +156,15 @@ function buildPassJson(data: LoyaltyPassData): object {
 
 // Generates a detached PKCS7/CMS signature of the manifest — required by Apple.
 function signManifest(manifestStr: string): Buffer {
-  const certPem = process.env.APPLE_WALLET_CERTIFICATE!.replace(/\\n/g, "\n");
-  const keyPem = process.env.APPLE_WALLET_PRIVATE_KEY!.replace(/\\n/g, "\n");
-  const wwdrPem = process.env.APPLE_WALLET_WWDR_CERTIFICATE!.replace(/\\n/g, "\n");
+  const decodePem = (b64: string) => Buffer.from(b64, "base64").toString("utf-8").replace(/\r\n/g, "\n").replace(/\r/g, "\n");
+  const certPem = decodePem(process.env.APPLE_WALLET_CERTIFICATE!);
+  const keyPem = decodePem(process.env.APPLE_WALLET_PRIVATE_KEY!);
+  const wwdrPem = decodePem(process.env.APPLE_WALLET_WWDR_CERTIFICATE!);
 
-  const cert = forge.pki.certificateFromPem(certPem);
-  const privateKey = forge.pki.privateKeyFromPem(keyPem) as forge.pki.rsa.PrivateKey;
-  const wwdrCert = forge.pki.certificateFromPem(wwdrPem);
+  let cert, privateKey, wwdrCert;
+  try { cert = forge.pki.certificateFromPem(certPem); } catch (e) { throw new Error(`CERTIFICATE parse failed: ${e}`); }
+  try { privateKey = forge.pki.privateKeyFromPem(keyPem) as forge.pki.rsa.PrivateKey; } catch (e) { throw new Error(`PRIVATE_KEY parse failed: ${e}`); }
+  try { wwdrCert = forge.pki.certificateFromPem(wwdrPem); } catch (e) { throw new Error(`WWDR_CERTIFICATE parse failed: ${e}`); }
 
   const p7 = forge.pkcs7.createSignedData();
   p7.content = forge.util.createBuffer(manifestStr, "utf8");
