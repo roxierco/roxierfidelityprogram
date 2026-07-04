@@ -145,11 +145,12 @@ export async function POST(req: NextRequest) {
     }).catch(() => null);
   }
 
-  // 3. Apple Wallet APNS push
-  // Usar cardId del request o el id de la tarjeta activa si el QR no trae ?card=
+  // 3. Apple Wallet APNS push — awaited antes del return para que Vercel
+  // no mate la función serverless antes de que el push complete.
   const walletCardId = cardId ?? (card as { id?: string } | null)?.id ?? null;
+  console.log(`[apple-wallet] configured=${isAppleWalletConfigured()} walletCardId=${walletCardId ?? "null"}`);
   if (isAppleWalletConfigured() && walletCardId) {
-    (async () => {
+    try {
       const serialNumber = `${customerId}-${walletCardId}`;
       const { data: registrations } = await admin
         .from("apple_wallet_registrations")
@@ -159,9 +160,6 @@ export async function POST(req: NextRequest) {
       console.log(`[apple-wallet] serial=${serialNumber} registrations=${registrations?.length ?? 0}`);
 
       if (registrations?.length) {
-        // DB update PRIMERO — iOS puede responder al push en <500ms.
-        // Si actualizamos en paralelo, iOS consulta GET registrations antes de que
-        // updated_at esté committeado y devuelve vacío → el pass no se actualiza.
         await admin
           .from("apple_wallet_registrations")
           .update({ updated_at: new Date().toISOString() })
@@ -178,7 +176,9 @@ export async function POST(req: NextRequest) {
           }
         });
       }
-    })().catch((e) => console.error("[apple-wallet] unexpected error:", e));
+    } catch (e) {
+      console.error("[apple-wallet] error:", e);
+    }
   }
 
   // 4. Web Push al navegador del cliente
