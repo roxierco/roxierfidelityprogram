@@ -329,15 +329,10 @@ export async function sendApnsPassUpdate(pushToken: string): Promise<void> {
   const key = decodePem(process.env.APPLE_WALLET_PRIVATE_KEY!);
   const topic = process.env.APPLE_WALLET_PASS_TYPE_ID!;
 
-  // alert + priority 10 = entrega inmediata sin deferral de iOS.
-  // PassKit intercepta pushes al pass type ID topic independientemente del tipo,
-  // por lo que el pass se actualiza igual. Además muestra la notificación al usuario.
-  const payload = JSON.stringify({
-    aps: {
-      alert: "¡Tu visita se ha registrado con un sello nuevo en tu tarjeta de lealtad!",
-      sound: "default",
-    },
-  });
+  // Payload VACÍO — PassKit solo reacciona a pushes con body "{}".
+  // Si el payload trae aps.alert/sound/badge, iOS lo entrega como notificación
+  // normal y PassKit nunca se entera → el GET registrations nunca se dispara.
+  const payload = "{}";
 
   return new Promise((resolve, reject) => {
     const session = connect("https://api.push.apple.com", { cert, key });
@@ -347,7 +342,7 @@ export async function sendApnsPassUpdate(pushToken: string): Promise<void> {
       ":method": "POST",
       ":path": `/3/device/${pushToken}`,
       "apns-topic": topic,
-      "apns-push-type": "alert",
+      "apns-push-type": "background",
       "apns-priority": "10",
       "content-type": "application/json",
       "content-length": String(Buffer.byteLength(payload)),

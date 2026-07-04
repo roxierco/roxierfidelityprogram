@@ -1,3 +1,5 @@
+export const runtime = "nodejs"; // http2 no funciona en Edge runtime
+
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
