@@ -112,10 +112,17 @@ export function ScannerClient({ businessId }: { businessId: string; businessName
     scannerRef.current = qr;
 
     try {
-      // Usar camera ID (string) en vez de constraints — funciona en desktop y móvil
+      // Usar camera ID (string) — funciona en desktop y móvil.
+      // videoConstraints pide HD para que QRs pequeños (Wallet) sean más legibles.
       await qr.start(
         cameraId,
-        { fps: 25 },
+        {
+          fps: 30,
+          videoConstraints: {
+            width: { min: 640, ideal: 1280, max: 1920 },
+            height: { min: 480, ideal: 720, max: 1080 },
+          },
+        },
         (text) => handleScan(text, qr),
         undefined,
       );
@@ -247,6 +254,15 @@ export function ScannerClient({ businessId }: { businessId: string; businessName
               >
                 {loadingCameras ? "Iniciando cámara..." : "Activar cámara"}
               </button>
+            </div>
+          )}
+
+          {/* Tip de escaneo */}
+          {scanning && (
+            <div className="px-4 pt-3 pb-1">
+              <p className="text-xs text-mist text-center">
+                💡 Sube el brillo de la pantalla del cliente al máximo · Acerca el QR a la cámara
+              </p>
             </div>
           )}
 
