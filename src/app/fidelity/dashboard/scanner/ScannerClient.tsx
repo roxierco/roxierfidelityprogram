@@ -374,25 +374,76 @@ export function ScannerClient({ businessId }: { businessId: string; businessName
 
       {/* Pantalla completa de recompensa */}
       {result && result.cardType === "sellos" && result.rewarded && (
-        <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-yellow-400 animate-pulse-once">
-          <div className="text-center px-8 space-y-6">
-            <div className="text-8xl animate-bounce">🎉</div>
-            <div>
-              <p className="text-3xl font-black text-yellow-900 leading-tight">
-                ¡RECOMPENSA<br />GANADA!
+        <div className="fixed inset-0 z-50 flex flex-col items-center justify-center overflow-hidden"
+          style={{ background: "linear-gradient(135deg, #0a0a0f 0%, #1a1200 50%, #0a0a0f 100%)" }}>
+
+          {/* Destellos decorativos */}
+          <div className="pointer-events-none absolute inset-0">
+            {[
+              { top: "8%",  left: "12%", size: 180, opacity: 0.07 },
+              { top: "70%", left: "80%", size: 220, opacity: 0.06 },
+              { top: "50%", left: "5%",  size: 140, opacity: 0.05 },
+              { top: "15%", left: "75%", size: 160, opacity: 0.06 },
+            ].map((c, i) => (
+              <div key={i} className="absolute rounded-full"
+                style={{
+                  top: c.top, left: c.left,
+                  width: c.size, height: c.size,
+                  background: "radial-gradient(circle, #f59e0b, transparent 70%)",
+                  opacity: c.opacity,
+                  transform: "translate(-50%, -50%)",
+                }} />
+            ))}
+          </div>
+
+          <div className="relative w-full max-w-sm px-6 flex flex-col items-center gap-6">
+
+            {/* Trofeo */}
+            <div className="relative flex items-center justify-center">
+              <div className="absolute rounded-full"
+                style={{ width: 120, height: 120, background: "radial-gradient(circle, rgba(251,191,36,0.25) 0%, transparent 70%)" }} />
+              <span style={{ fontSize: 72, lineHeight: 1 }}>🏆</span>
+            </div>
+
+            {/* Título */}
+            <div className="text-center space-y-1">
+              <p className="text-xs font-bold uppercase tracking-[0.3em]"
+                style={{ color: "#f59e0b" }}>
+                ¡Premio ganado!
               </p>
-              <p className="mt-3 text-xl font-bold text-yellow-800">{result.customer.full_name}</p>
+              <p className="text-4xl font-black text-white leading-tight">
+                {result.customer.full_name}
+              </p>
+              <p className="text-sm text-white/50">completó su tarjeta de lealtad</p>
             </div>
-            <div className="rounded-2xl bg-yellow-900/20 px-6 py-4">
-              <p className="text-xs font-semibold uppercase tracking-widest text-yellow-800 mb-1">Premio a entregar</p>
-              <p className="text-2xl font-extrabold text-yellow-900">{result.rewardText}</p>
+
+            {/* Card del premio */}
+            <div className="w-full rounded-2xl border px-6 py-5 text-center"
+              style={{
+                borderColor: "rgba(251,191,36,0.3)",
+                background: "rgba(251,191,36,0.08)",
+              }}>
+              <p className="text-[11px] font-bold uppercase tracking-[0.2em] mb-2"
+                style={{ color: "rgba(251,191,36,0.6)" }}>
+                Premio a entregar
+              </p>
+              <p className="text-2xl font-extrabold" style={{ color: "#fbbf24" }}>
+                {result.rewardText}
+              </p>
             </div>
-            <p className="text-sm text-yellow-800 opacity-75">Entrega el premio al cliente y luego continúa.</p>
+
+            {/* Separador */}
+            <p className="text-xs text-white/30 text-center">
+              Entrega el premio al cliente y marca como completado
+            </p>
+
+            {/* CTA */}
             <button
               onClick={() => { setResult(null); startScanner(); }}
-              className="w-full rounded-2xl bg-yellow-900 py-4 text-lg font-bold text-yellow-100 active:scale-95 transition-transform"
+              className="w-full rounded-2xl py-4 text-base font-bold active:scale-95 transition-transform"
+              style={{ background: "#f59e0b", color: "#0a0a0f" }}
             >
-              ✓ Premio entregado — Siguiente
+              ✓ Premio entregado — Continuar
             </button>
           </div>
         </div>
