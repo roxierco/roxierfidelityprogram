@@ -36,7 +36,7 @@ export default async function CustomerCardPage({
   if (cardId) {
     const { data } = await supabase
       .from("loyalty_cards")
-      .select("title, stamps_required, reward_text, color_primary, color_background, text_color, logo_url, bg_type, color_gradient_end, gradient_direction, bg_image_url, bg_image_position, stamp_icon, card_type, coupon_value")
+      .select("id, title, stamps_required, reward_text, color_primary, color_background, text_color, logo_url, bg_type, color_gradient_end, gradient_direction, bg_image_url, bg_image_position, stamp_icon, card_type, coupon_value")
       .eq("id", cardId)
       .eq("business_id", customer.business_id)
       .single();
@@ -45,7 +45,7 @@ export default async function CustomerCardPage({
   if (!card) {
     const { data } = await supabase
       .from("loyalty_cards")
-      .select("title, stamps_required, reward_text, color_primary, color_background, text_color, logo_url, bg_type, color_gradient_end, gradient_direction, bg_image_url, bg_image_position, stamp_icon, card_type, coupon_value")
+      .select("id, title, stamps_required, reward_text, color_primary, color_background, text_color, logo_url, bg_type, color_gradient_end, gradient_direction, bg_image_url, bg_image_position, stamp_icon, card_type, coupon_value")
       .eq("business_id", customer.business_id)
       .eq("is_active", true)
       .order("created_at", { ascending: false })
@@ -54,7 +54,11 @@ export default async function CustomerCardPage({
     card = data;
   }
 
-  const cardUrl = `${process.env.NEXT_PUBLIC_APP_URL}/c/${slug}/u/${customerId}${cardId ? `?card=${cardId}` : ""}`;
+  // Siempre incluir cardId en el QR aunque la URL no lo traiga — si el cliente
+  // abre la tarjeta sin ?card= (bookmark, WhatsApp sin param), el QR debe seguir
+  // teniendo el card correcto para que el scanner pueda enviar el push de Apple Wallet.
+  const resolvedCardId = cardId ?? (card as { id?: string } | null)?.id ?? null;
+  const cardUrl = `${process.env.NEXT_PUBLIC_APP_URL}/c/${slug}/u/${customerId}${resolvedCardId ? `?card=${resolvedCardId}` : ""}`;
 
   return (
     <CustomerCardClient
@@ -62,7 +66,7 @@ export default async function CustomerCardPage({
       card={card}
       business={business}
       cardUrl={cardUrl}
-      cardId={cardId}
+      cardId={resolvedCardId ?? undefined}
       googleWalletEnabled={isGoogleWalletConfigured()}
       appleWalletEnabled={isAppleWalletConfigured()}
       vapidPublicKey={process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY}
