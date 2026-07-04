@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { Html5Qrcode, Html5QrcodeSupportedFormats } from "html5-qrcode";
 
 interface ScanResult {
@@ -14,10 +14,15 @@ interface ScanResult {
   couponValue: string | null;
 }
 
+interface CameraDevice {
+  id: string;
+  label: string;
+}
+
 function playRewardSound() {
   try {
     const ctx = new AudioContext();
-    const notes = [523, 659, 784, 1047]; // C5 E5 G5 C6
+    const notes = [523, 659, 784, 1047];
     notes.forEach((freq, i) => {
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
@@ -35,7 +40,20 @@ function playRewardSound() {
   }
 }
 
-export function ScannerClient({ businessId, businessName }: { businessId: string; businessName: string }) {
+function pickBestCamera(cameras: CameraDevice[]): CameraDevice {
+  if (!cameras.length) throw new Error("No cameras found");
+  const isMobile = /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+  if (isMobile) {
+    // prefer back camera
+    const back = cameras.find((c) =>
+      /back|rear|trasera|posterior|environment/i.test(c.label),
+    );
+    if (back) return back;
+  }
+  return cameras[0];
+}
+
+export function ScannerClient({ businessId }: { businessId: string; businessName: string }) {
   const scannerRef = useRef<Html5Qrcode | null>(null);
   const [scanning, setScanning] = useState(false);
   const [result, setResult] = useState<ScanResult | null>(null);
@@ -43,18 +61,46 @@ export function ScannerClient({ businessId, businessName }: { businessId: string
   const [stamping, setStamping] = useState(false);
   const [scannedCustomerId, setScannedCustomerId] = useState<string | null>(null);
   const [scannedCardId, setScannedCardId] = useState<string | null>(null);
+  const [cameras, setCameras] = useState<CameraDevice[]>([]);
+  const [activeCameraId, setActiveCameraId] = useState<string | null>(null);
+  const [loadingCameras, setLoadingCameras] = useState(false);
 
-  async function startScanner() {
-    setError("");
-    setResult(null);
-    setScannedCustomerId(null);
-    setScannedCardId(null);
+  // Load camera list on mount
+  useEffect(() => {
+    Html5Qrcode.getCameras()
+      .then((devs) => {
+        if (devs.length) {
+          setCameras(devs);
+          setActiveCameraId(pickBestCamera(devs).id);
+        }
+      })
+      .catch(() => null);
+  }, []);
 
-    // Parar instancia anterior si existe
+  const stopScanner = useCallback(async () => {
     if (scannerRef.current) {
       await scannerRef.current.stop().catch(() => null);
       scannerRef.current = null;
     }
+    setScanning(false);
+  }, []);
+
+  async function switchCamera(cameraId: string) {
+    setActiveCameraId(cameraId);
+    if (scanning) {
+      await stopScanner();
+      startWithCamera(cameraId);
+    }
+  }
+
+  async function startWithCamera(cameraId: string) {
+    setError("");
+    setResult(null);
+    setScannedCustomerId(null);
+    setScannedCardId(null);
+    setLoadingCameras(true);
+
+    await stopScanner();
 
     const container = document.getElementById("qr-reader");
     if (container) container.innerHTML = "";
@@ -66,13 +112,9 @@ export function ScannerClient({ businessId, businessName }: { businessId: string
     scannerRef.current = qr;
 
     try {
-      // facingMode ideal: selecciona cámara trasera en móvil, usa la disponible en desktop
-      // UN solo intento — evita el bug de doble-start del state machine de html5-qrcode
-      // Si se pasa videoConstraints en config, html5-qrcode LO USA EN VEZ del facingMode
-      // del primer argumento — por eso se ignoraba "environment". Sin videoConstraints en config,
-      // usa correctamente { facingMode: "environment" } que fuerza la cámara trasera en iOS/Android.
+      // Usar camera ID (string) en vez de constraints — funciona en desktop y móvil
       await qr.start(
-        { facingMode: "environment" } as MediaTrackConstraints,
+        cameraId,
         { fps: 25 },
         (text) => handleScan(text, qr),
         undefined,
@@ -81,19 +123,36 @@ export function ScannerClient({ businessId, businessName }: { businessId: string
     } catch (e) {
       const msg = String((e as { message?: string })?.message ?? e ?? "desconocido");
       setError(`Error al iniciar cámara: ${msg}`);
+    } finally {
+      setLoadingCameras(false);
     }
   }
 
-  async function stopScanner() {
-    if (scannerRef.current && scanning) {
-      await scannerRef.current.stop();
-      scannerRef.current = null;
+  async function startScanner() {
+    if (!activeCameraId) {
+      // Si no se cargaron cámaras, intentar enumerar de nuevo
+      try {
+        setLoadingCameras(true);
+        const devs = await Html5Qrcode.getCameras();
+        if (!devs.length) {
+          setError("No se encontró ninguna cámara. Verifica que tienes cámara y que diste permiso.");
+          setLoadingCameras(false);
+          return;
+        }
+        setCameras(devs);
+        const best = pickBestCamera(devs);
+        setActiveCameraId(best.id);
+        await startWithCamera(best.id);
+      } catch {
+        setError("No se pudo acceder a la cámara. Revisa los permisos del navegador.");
+        setLoadingCameras(false);
+      }
+      return;
     }
-    setScanning(false);
+    await startWithCamera(activeCameraId);
   }
 
   async function handleScan(url: string, qr: Html5Qrcode) {
-    // Extraer customerId de URL tipo /c/{slug}/u/{customerId}?card={cardId}
     const match = url.match(/\/u\/([a-f0-9-]{36})/);
     if (!match) {
       setError("QR inválido — no es una tarjeta de este sistema.");
@@ -103,13 +162,11 @@ export function ScannerClient({ businessId, businessName }: { businessId: string
     const customerId = match[1];
     setScannedCustomerId(customerId);
 
-    // Extraer cardId del query param ?card=xxx si está presente
     try {
       const parsed = new URL(url);
       const cardId = parsed.searchParams.get("card");
       if (cardId) setScannedCardId(cardId);
     } catch {
-      // URL relativa — intentar con regex
       const cardMatch = url.match(/[?&]card=([a-f0-9-]{36})/);
       if (cardMatch) setScannedCardId(cardMatch[1]);
     }
@@ -151,24 +208,20 @@ export function ScannerClient({ businessId, businessName }: { businessId: string
   }, []);
 
   return (
-    <div className="mx-auto max-w-sm space-y-4">
+    <div className="mx-auto max-w-lg space-y-4">
 
       {/* Cámara */}
       {!result && !scannedCustomerId && (
         <div className="rounded-2xl overflow-hidden bg-near-black border border-surface-border">
-          {/* Vista de cámara full-frame */}
           <div className="relative">
             <div
               id="qr-reader"
               className="w-full [&>video]:w-full [&>video]:block [&>*:not(video)]:hidden"
-              style={{ minHeight: scanning ? 320 : 0 }}
+              style={{ minHeight: scanning ? 360 : 0 }}
             />
-            {/* Overlay: esquinas estilo WhatsApp */}
             {scanning && (
               <div className="pointer-events-none absolute inset-0">
-                {/* Línea de escaneo animada */}
                 <div className="absolute inset-x-8 h-0.5 bg-magenta shadow-[0_0_10px_2px_rgba(255,46,99,0.7)] animate-scan-line" />
-                {/* Esquinas */}
                 <div className="absolute inset-8">
                   <div className="absolute left-0 top-0 h-7 w-7 border-l-2 border-t-2 border-white rounded-tl-md" />
                   <div className="absolute right-0 top-0 h-7 w-7 border-r-2 border-t-2 border-white rounded-tr-md" />
@@ -178,22 +231,42 @@ export function ScannerClient({ businessId, businessName }: { businessId: string
               </div>
             )}
           </div>
+
           {!scanning && (
             <div className="p-6 flex flex-col items-center gap-3">
               <div className="h-16 w-16 rounded-full bg-magenta/10 flex items-center justify-center text-3xl">
                 📷
               </div>
               <p className="text-sm text-mist text-center">
-                Activa la cámara para escanear el QR del cliente
+                Apunta la cámara al QR del cliente para agregar un sello
               </p>
-              <button onClick={startScanner} className="btn-primary w-full">
-                Activar cámara
+              <button
+                onClick={startScanner}
+                disabled={loadingCameras}
+                className="btn-primary w-full disabled:opacity-60"
+              >
+                {loadingCameras ? "Iniciando cámara..." : "Activar cámara"}
               </button>
             </div>
           )}
+
+          {/* Controles activos: cambiar cámara + cancelar */}
           {scanning && (
-            <div className="p-3 flex justify-center">
-              <button onClick={stopScanner} className="btn-secondary !py-2 text-sm">
+            <div className="p-3 flex items-center gap-2">
+              {cameras.length > 1 && (
+                <select
+                  value={activeCameraId ?? ""}
+                  onChange={(e) => switchCamera(e.target.value)}
+                  className="flex-1 rounded-lg border border-surface-border bg-surface text-xs text-paper px-2 py-2 focus:outline-none focus:border-magenta"
+                >
+                  {cameras.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.label || `Cámara ${cameras.indexOf(c) + 1}`}
+                    </option>
+                  ))}
+                </select>
+              )}
+              <button onClick={stopScanner} className="btn-secondary !py-2 text-sm flex-shrink-0">
                 Cancelar
               </button>
             </div>
@@ -207,12 +280,10 @@ export function ScannerClient({ businessId, businessName }: { businessId: string
           <div className="text-center">
             <div className="text-4xl mb-2">✅</div>
             <p className="font-bold text-paper">QR leído correctamente</p>
-            <p className="text-sm text-mist mt-1">
-              {scannedCardId ? "¿Confirmar acción para este cliente?" : "¿Dar sello a este cliente?"}
-            </p>
+            <p className="text-sm text-mist mt-1">¿Confirmar acción para este cliente?</p>
           </div>
           <div className="flex gap-3">
-            <button onClick={() => setScannedCustomerId(null)} className="btn-secondary flex-1">
+            <button onClick={() => { setScannedCustomerId(null); startScanner(); }} className="btn-secondary flex-1">
               Cancelar
             </button>
             <button onClick={darSello} disabled={stamping} className="btn-primary flex-1">
@@ -273,7 +344,7 @@ export function ScannerClient({ businessId, businessName }: { businessId: string
         </div>
       )}
 
-      {/* Pantalla completa de recompensa (solo sellos) */}
+      {/* Pantalla completa de recompensa */}
       {result && result.cardType === "sellos" && result.rewarded && (
         <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-yellow-400 animate-pulse-once">
           <div className="text-center px-8 space-y-6">
