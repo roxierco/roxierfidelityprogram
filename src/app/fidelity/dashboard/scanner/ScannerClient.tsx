@@ -112,20 +112,32 @@ export function ScannerClient({ businessId }: { businessId: string; businessName
     scannerRef.current = qr;
 
     try {
-      // Usar camera ID (string) — funciona en desktop y móvil.
-      // videoConstraints pide HD para que QRs pequeños (Wallet) sean más legibles.
-      await qr.start(
-        cameraId,
-        {
-          fps: 30,
-          videoConstraints: {
-            width: { min: 640, ideal: 1280, max: 1920 },
-            height: { min: 480, ideal: 720, max: 1080 },
+      const isMobile = /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+      if (isMobile) {
+        // En móvil: facingMode environment fuerza la cámara trasera.
+        // NO pasar videoConstraints en config — html5-qrcode los usa en vez
+        // del facingMode del primer argumento y lo ignora.
+        await qr.start(
+          { facingMode: "environment" } as MediaTrackConstraints,
+          { fps: 30 },
+          (text) => handleScan(text, qr),
+          undefined,
+        );
+      } else {
+        // En desktop: usar camera ID con resolución HD para leer QRs pequeños.
+        await qr.start(
+          cameraId,
+          {
+            fps: 30,
+            videoConstraints: {
+              width: { min: 640, ideal: 1280, max: 1920 },
+              height: { min: 480, ideal: 720, max: 1080 },
+            },
           },
-        },
-        (text) => handleScan(text, qr),
-        undefined,
-      );
+          (text) => handleScan(text, qr),
+          undefined,
+        );
+      }
       setScanning(true);
     } catch (e) {
       const msg = String((e as { message?: string })?.message ?? e ?? "desconocido");
