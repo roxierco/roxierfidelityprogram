@@ -321,7 +321,13 @@ function signManifest(manifestStr: string): Buffer {
 
 // ─── APNS push para actualizar passes en Apple Wallet ────────────────────────
 
-export async function sendApnsPassUpdate(pushToken: string): Promise<void> {
+export interface ApnsResult {
+  ok: boolean;
+  status: number;
+  reason?: string;
+}
+
+export async function sendApnsPassUpdate(pushToken: string): Promise<ApnsResult> {
   const decodePem = (b64: string) =>
     Buffer.from(b64, "base64").toString("utf-8").replace(/\r\n/g, "\n").replace(/\r/g, "\n");
 
@@ -334,9 +340,12 @@ export async function sendApnsPassUpdate(pushToken: string): Promise<void> {
   // normal y PassKit nunca se entera → el GET registrations nunca se dispara.
   const payload = "{}";
 
-  return new Promise((resolve, reject) => {
+  return new Promise((resolve) => {
     const session = connect("https://api.push.apple.com", { cert, key });
-    session.on("error", (err) => { console.error("[APNS] session error:", err); reject(err); });
+    session.on("error", (err) => {
+      console.error("[APNS] session error:", err);
+      resolve({ ok: false, status: 0, reason: String(err) });
+    });
 
     const req = session.request({
       ":method": "POST",
@@ -352,17 +361,26 @@ export async function sendApnsPassUpdate(pushToken: string): Promise<void> {
     req.end();
 
     req.on("response", (headers) => {
-      session.close();
-      const status = headers[":status"];
-      if (status === 200) {
-        resolve();
-      } else {
-        const err = new Error(`APNS status ${status}`);
-        console.error("[APNS] push rejected:", status, pushToken.slice(0, 8) + "...");
-        reject(err);
-      }
+      const status = headers[":status"] as number;
+      let body = "";
+      req.on("data", (chunk: Buffer) => { body += chunk.toString(); });
+      req.on("end", () => {
+        session.close();
+        if (status === 200) {
+          resolve({ ok: true, status: 200 });
+        } else {
+          let reason: string | undefined;
+          try { reason = JSON.parse(body).reason; } catch { /* body vacío o no-JSON */ }
+          console.error("[APNS] push rejected:", status, reason ?? "", pushToken.slice(0, 8) + "...");
+          resolve({ ok: false, status, reason });
+        }
+      });
     });
 
-    req.on("error", (err) => { session.close(); console.error("[APNS] req error:", err); reject(err); });
+    req.on("error", (err) => {
+      session.close();
+      console.error("[APNS] req error:", err);
+      resolve({ ok: false, status: 0, reason: String(err) });
+    });
   });
 }

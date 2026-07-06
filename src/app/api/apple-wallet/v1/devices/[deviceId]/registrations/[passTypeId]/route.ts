@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { logWalletEvent } from "@/lib/wallet-events";
 
 // Apple pregunta qué passes del dispositivo han sido actualizados
 export async function GET(req: NextRequest, { params }: { params: Promise<{ deviceId: string; passTypeId: string }> }) {
@@ -26,6 +27,11 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ devi
 
   const { data } = await query;
   if (!data?.length) return new NextResponse(null, { status: 204 });
+
+  // Log cada serial para el que iOS pidió updates
+  await Promise.allSettled(
+    data.map((r) => logWalletEvent("get_registrations", r.serial_number, deviceId, { since: since ?? null })),
+  );
 
   return NextResponse.json({
     serialNumbers: data.map((r) => r.serial_number),

@@ -5,6 +5,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { isGoogleWalletConfigured, syncAfterStamp } from "@/lib/google-wallet";
 import { isAppleWalletConfigured, sendApnsPassUpdate } from "@/lib/apple-wallet";
+import { logWalletEvent } from "@/lib/wallet-events";
 import { isPushConfigured, sendPush } from "@/lib/web-push";
 
 export async function POST(req: NextRequest) {
@@ -154,12 +155,14 @@ export async function POST(req: NextRequest) {
       const serialNumber = `${customerId}-${walletCardId}`;
       const { data: registrations } = await admin
         .from("apple_wallet_registrations")
-        .select("push_token")
+        .select("push_token, device_library_id")
         .eq("serial_number", serialNumber);
 
       console.log(`[apple-wallet] serial=${serialNumber} registrations=${registrations?.length ?? 0}`);
 
-      if (registrations?.length) {
+      if (!registrations?.length) {
+        await logWalletEvent("push_skipped_no_registration", serialNumber);
+      } else {
         await admin
           .from("apple_wallet_registrations")
           .update({ updated_at: new Date().toISOString() })
@@ -168,13 +171,37 @@ export async function POST(req: NextRequest) {
         const results = await Promise.allSettled(
           registrations.map((r) => sendApnsPassUpdate(r.push_token)),
         );
-        results.forEach((r, i) => {
+
+        const deadTokens: string[] = [];
+
+        await Promise.allSettled(results.map(async (r, i) => {
+          const reg = registrations[i];
+          const shortToken = reg.push_token.slice(0, 8) + "...";
           if (r.status === "fulfilled") {
-            console.log(`[apple-wallet] push ${i} OK`);
+            const { ok, status, reason } = r.value;
+            if (ok) {
+              console.log(`[apple-wallet] push ${i} OK`);
+              await logWalletEvent("push_sent", serialNumber, reg.device_library_id, { status: 200, pushToken: shortToken });
+            } else {
+              console.error(`[apple-wallet] push ${i} failed: status=${status} reason=${reason}`);
+              await logWalletEvent("push_failed", serialNumber, reg.device_library_id, { status, reason, pushToken: shortToken });
+              if (status === 410 || (status === 400 && reason === "BadDeviceToken")) {
+                deadTokens.push(reg.push_token);
+              }
+            }
           } else {
-            console.error(`[apple-wallet] push ${i} failed:`, r.reason);
+            console.error(`[apple-wallet] push ${i} network error:`, r.reason);
+            await logWalletEvent("push_failed", serialNumber, reg.device_library_id, { error: String(r.reason), pushToken: shortToken });
           }
-        });
+        }));
+
+        if (deadTokens.length) {
+          await admin.from("apple_wallet_registrations")
+            .delete()
+            .eq("serial_number", serialNumber)
+            .in("push_token", deadTokens);
+          console.log(`[apple-wallet] deleted ${deadTokens.length} dead token(s) for serial=${serialNumber}`);
+        }
       }
     } catch (e) {
       console.error("[apple-wallet] error:", e);
