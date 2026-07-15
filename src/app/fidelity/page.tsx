@@ -21,84 +21,142 @@ function QRMockup() {
   );
 }
 
-type IconKey = "car" | "coffee" | "icecream" | "scissors" | "spa" | "dumbbell" | "pizza" | "taco";
+type BannerType = "barber" | "waves" | "icecream" | "lotus" | "gym" | "pizza" | "fire" | "coffee";
 
-function BannerIcon({ type, color, size = 48 }: { type: IconKey; color: string; size?: number }) {
-  const icons: Record<IconKey, React.ReactNode> = {
-    car: (
-      <>
-        <path d="M9 28 C9 28 11 18 17 16 L31 16 L37 18 C43 20 45 28 45 28 L45 34 C45 34 43 36 40 36 L14 36 C11 36 9 34 9 34 Z" fill={color} />
-        <path d="M17 22 L20 16 L34 16 L37 22 Z" fill={color} opacity="0.4" />
-        <circle cx="17" cy="36" r="5" fill={color} opacity="0.8" />
-        <circle cx="37" cy="36" r="5" fill={color} opacity="0.8" />
-        <circle cx="17" cy="36" r="2.5" fill="white" opacity="0.5" />
-        <circle cx="37" cy="36" r="2.5" fill="white" opacity="0.5" />
-      </>
-    ),
-    coffee: (
-      <>
-        <path d="M14 22 L18 46 L34 46 L38 22 Z" fill={color} />
-        <path d="M38 28 C45 28 45 40 38 40" fill="none" stroke={color} strokeWidth="3" strokeLinecap="round" />
-        <path d="M20 16 C20 10 24 10 24 16" fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" opacity="0.6" />
-        <path d="M26 14 C26 8 30 8 30 14" fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" opacity="0.6" />
-      </>
-    ),
-    icecream: (
-      <>
-        <circle cx="27" cy="22" r="13" fill={color} />
-        <circle cx="27" cy="22" r="8" fill={color} opacity="0.5" />
-        <path d="M16 32 L27 52 L38 32 Z" fill={color} opacity="0.75" />
-        <circle cx="27" cy="14" r="3" fill="white" opacity="0.4" />
-      </>
-    ),
-    scissors: (
-      <>
-        <circle cx="14" cy="38" r="7" fill="none" stroke={color} strokeWidth="3" />
-        <circle cx="38" cy="38" r="7" fill="none" stroke={color} strokeWidth="3" />
-        <line x1="19" y1="33" x2="29" y2="20" stroke={color} strokeWidth="3" strokeLinecap="round" />
-        <line x1="33" y1="33" x2="23" y2="20" stroke={color} strokeWidth="3" strokeLinecap="round" />
-        <circle cx="26" cy="20" r="4" fill={color} />
-      </>
-    ),
-    spa: (
-      <>
-        <ellipse cx="26" cy="20" rx="6" ry="12" fill={color} opacity="0.9" />
-        <ellipse cx="26" cy="20" rx="6" ry="12" fill={color} opacity="0.9" transform="rotate(60 26 32)" />
-        <ellipse cx="26" cy="20" rx="6" ry="12" fill={color} opacity="0.9" transform="rotate(-60 26 32)" />
-        <circle cx="26" cy="32" r="4" fill={color} />
-      </>
-    ),
-    dumbbell: (
-      <>
-        <rect x="4" y="20" width="10" height="16" rx="3" fill={color} />
-        <rect x="38" y="20" width="10" height="16" rx="3" fill={color} />
-        <rect x="14" y="24" width="24" height="8" rx="2" fill={color} opacity="0.7" />
-      </>
-    ),
-    pizza: (
-      <>
-        <circle cx="26" cy="26" r="20" fill={color} />
-        <path d="M26 26 L26 6 A20 20 0 0 1 43.3 16 Z" fill="white" opacity="0.25" />
-        <circle cx="20" cy="22" r="2.5" fill="white" opacity="0.6" />
-        <circle cx="30" cy="32" r="2.5" fill="white" opacity="0.6" />
-        <circle cx="22" cy="32" r="2" fill="white" opacity="0.6" />
-        <circle cx="32" cy="20" r="2" fill="white" opacity="0.6" />
-      </>
-    ),
-    taco: (
-      <>
-        <path d="M8 34 Q26 8 44 34" fill="none" stroke={color} strokeWidth="4.5" strokeLinecap="round" />
-        <ellipse cx="26" cy="32" rx="15" ry="5" fill={color} opacity="0.45" />
-        <circle cx="20" cy="26" r="3" fill={color} opacity="0.7" />
-        <circle cx="26" cy="23" r="3" fill={color} opacity="0.7" />
-        <circle cx="32" cy="26" r="3" fill={color} opacity="0.7" />
-      </>
-    ),
-  };
+function BannerPattern({ type, accent }: { type: BannerType; accent: string }) {
+  if (type === "barber") return (
+    <svg width="100%" height="130" viewBox="0 0 300 130" preserveAspectRatio="xMidYMid slice">
+      <defs>
+        <pattern id="pat-barber" width="60" height="60" patternUnits="userSpaceOnUse" patternTransform="rotate(-45 150 65)">
+          <rect width="20" height="60" fill="#4169A0" />
+          <rect x="20" width="20" height="60" fill="#ffffff" />
+          <rect x="40" width="20" height="60" fill="#D93025" />
+        </pattern>
+      </defs>
+      <rect width="300" height="130" fill="url(#pat-barber)" />
+    </svg>
+  );
+
+  if (type === "waves") return (
+    <svg width="100%" height="130" viewBox="0 0 300 130" preserveAspectRatio="xMidYMid slice">
+      <rect width="300" height="130" fill="#DBEAFE" />
+      <circle cx="55" cy="46" r="26" fill="#93C5FD" opacity="0.55" stroke="#60A5FA" strokeWidth="2" />
+      <circle cx="108" cy="24" r="17" fill="#BFDBFE" opacity="0.7" stroke="#93C5FD" strokeWidth="1.5" />
+      <circle cx="152" cy="54" r="30" fill="#93C5FD" opacity="0.45" stroke="#60A5FA" strokeWidth="2" />
+      <circle cx="204" cy="28" r="21" fill="#BFDBFE" opacity="0.6" stroke="#93C5FD" strokeWidth="1.5" />
+      <circle cx="255" cy="50" r="24" fill="#93C5FD" opacity="0.5" stroke="#60A5FA" strokeWidth="2" />
+      <circle cx="286" cy="18" r="15" fill="#BFDBFE" opacity="0.5" stroke="#93C5FD" strokeWidth="1.5" />
+      <path d="M0 88 Q37 73 75 88 Q112 103 150 88 Q187 73 225 88 Q262 103 300 88 L300 130 L0 130 Z" fill="#60A5FA" opacity="0.35" />
+      <path d="M0 106 Q50 91 100 106 Q150 121 200 106 Q250 91 300 106 L300 130 L0 130 Z" fill={accent} opacity="0.45" />
+      <path d="M148 22 C144 15 139 9 139 5 A9 9 0 0 1 157 5 C157 9 152 15 148 22Z" fill={accent} opacity="0.7" />
+    </svg>
+  );
+
+  if (type === "icecream") return (
+    <svg width="100%" height="130" viewBox="0 0 300 130" preserveAspectRatio="xMidYMid slice">
+      <rect width="300" height="130" fill="#CCFBF1" />
+      <circle cx="55" cy="72" r="30" fill="#FBCFE8" />
+      <path d="M28 73 L55 118 L82 73 Z" fill="#D4A14A" />
+      <path d="M37 73 L55 107 L73 73 Z" fill="#B8862A" opacity="0.35" />
+      <circle cx="42" cy="58" r="8" fill="white" opacity="0.55" />
+      <circle cx="150" cy="60" r="35" fill={accent} opacity="0.8" />
+      <circle cx="150" cy="60" r="22" fill={accent} opacity="0.45" />
+      <path d="M118 61 L150 112 L182 61 Z" fill="#D4A14A" />
+      <path d="M128 61 L150 101 L172 61 Z" fill="#B8862A" opacity="0.35" />
+      <circle cx="137" cy="46" r="10" fill="white" opacity="0.5" />
+      <circle cx="245" cy="72" r="28" fill="#FDE68A" />
+      <path d="M220 73 L245 115 L270 73 Z" fill="#D4A14A" />
+      <circle cx="234" cy="58" r="7" fill="white" opacity="0.55" />
+    </svg>
+  );
+
+  if (type === "lotus") return (
+    <svg width="100%" height="130" viewBox="0 0 300 130" preserveAspectRatio="xMidYMid slice">
+      <rect width="300" height="130" fill="#F3E8FF" />
+      <ellipse cx="150" cy="82" rx="18" ry="40" fill={accent} opacity="0.65" />
+      <ellipse cx="150" cy="82" rx="18" ry="40" fill={accent} opacity="0.5" transform="rotate(42 150 82)" />
+      <ellipse cx="150" cy="82" rx="18" ry="40" fill={accent} opacity="0.5" transform="rotate(-42 150 82)" />
+      <ellipse cx="150" cy="82" rx="18" ry="40" fill={accent} opacity="0.35" transform="rotate(84 150 82)" />
+      <ellipse cx="150" cy="82" rx="18" ry="40" fill={accent} opacity="0.35" transform="rotate(-84 150 82)" />
+      <circle cx="150" cy="82" r="13" fill={accent} />
+      <circle cx="150" cy="82" r="6" fill="white" opacity="0.45" />
+      <ellipse cx="62" cy="90" rx="10" ry="24" fill={accent} opacity="0.35" />
+      <ellipse cx="62" cy="90" rx="10" ry="24" fill={accent} opacity="0.25" transform="rotate(50 62 90)" />
+      <ellipse cx="62" cy="90" rx="10" ry="24" fill={accent} opacity="0.25" transform="rotate(-50 62 90)" />
+      <circle cx="62" cy="90" r="7" fill={accent} opacity="0.55" />
+      <ellipse cx="238" cy="90" rx="10" ry="24" fill={accent} opacity="0.35" />
+      <ellipse cx="238" cy="90" rx="10" ry="24" fill={accent} opacity="0.25" transform="rotate(50 238 90)" />
+      <ellipse cx="238" cy="90" rx="10" ry="24" fill={accent} opacity="0.25" transform="rotate(-50 238 90)" />
+      <circle cx="238" cy="90" r="7" fill={accent} opacity="0.55" />
+      <ellipse cx="150" cy="120" rx="90" ry="10" fill={accent} opacity="0.1" />
+    </svg>
+  );
+
+  if (type === "gym") return (
+    <svg width="100%" height="130" viewBox="0 0 300 130" preserveAspectRatio="xMidYMid slice">
+      <rect width="300" height="130" fill="#0A0A0F" />
+      {[0, 1, 2, 3, 4, 5, 6].map((i) => (
+        <line key={`gv${i}`} x1={i * 50} y1="0" x2={i * 50} y2="130" stroke={accent} strokeWidth="0.5" opacity="0.18" />
+      ))}
+      {[0, 1, 2, 3].map((i) => (
+        <line key={`gh${i}`} x1="0" y1={i * 44} x2="300" y2={i * 44} stroke={accent} strokeWidth="0.5" opacity="0.18" />
+      ))}
+      <path d="M162 8 L126 72 L152 72 L132 125 L186 52 L158 52 L176 8 Z" fill={accent} opacity="0.9" />
+      <path d="M162 8 L126 72 L152 72 L132 125 L186 52 L158 52 L176 8 Z" fill="white" opacity="0.12" />
+      <ellipse cx="154" cy="66" rx="60" ry="40" fill={accent} opacity="0.08" />
+    </svg>
+  );
+
+  if (type === "pizza") return (
+    <svg width="100%" height="130" viewBox="0 0 300 130" preserveAspectRatio="xMidYMid slice">
+      <rect width="300" height="130" fill="#FEF3C7" />
+      <circle cx="150" cy="65" r="55" fill="#FCA5A5" opacity="0.65" />
+      <circle cx="150" cy="65" r="46" fill="#F87171" opacity="0.55" />
+      <circle cx="150" cy="65" r="36" fill="#EF4444" opacity="0.2" />
+      {[0, 1, 2, 3, 4, 5, 6, 7].map((i) => {
+        const angle = (i * 45 * Math.PI) / 180;
+        return <line key={i} x1="150" y1="65" x2={150 + 55 * Math.sin(angle)} y2={65 - 55 * Math.cos(angle)} stroke="#FEF3C7" strokeWidth="2" opacity="0.55" />;
+      })}
+      <circle cx="150" cy="34" r="5" fill="#7F1D1D" opacity="0.75" />
+      <circle cx="168" cy="48" r="4.5" fill="#7F1D1D" opacity="0.75" />
+      <circle cx="132" cy="48" r="4.5" fill="#7F1D1D" opacity="0.75" />
+      <circle cx="172" cy="70" r="4.5" fill="#7F1D1D" opacity="0.75" />
+      <circle cx="128" cy="70" r="4.5" fill="#7F1D1D" opacity="0.75" />
+      <circle cx="152" cy="88" r="4.5" fill="#7F1D1D" opacity="0.75" />
+      <circle cx="150" cy="65" r="4" fill="#7F1D1D" opacity="0.5" />
+      <path d="M150 65 L150 10 A55 55 0 0 1 197.6 37.5 Z" fill="white" opacity="0.18" />
+    </svg>
+  );
+
+  if (type === "fire") return (
+    <svg width="100%" height="130" viewBox="0 0 300 130" preserveAspectRatio="xMidYMid slice">
+      <rect width="300" height="130" fill="#1C0A00" />
+      <ellipse cx="150" cy="110" rx="130" ry="55" fill={accent} opacity="0.12" />
+      <path d="M150 8 C128 36 112 52 118 80 C102 62 98 36 114 14 C98 38 86 70 94 102 C74 80 78 48 96 26 C78 54 73 86 90 112 C90 112 116 128 140 130 L160 130 C184 128 210 112 210 112 C227 86 222 54 204 26 C222 48 226 80 206 102 C214 70 202 38 186 14 C202 36 198 62 182 80 C188 52 172 36 150 8 Z" fill={accent} opacity="0.88" />
+      <path d="M150 30 C136 52 130 68 135 90 C122 74 121 52 133 36 C122 56 119 76 128 96 C128 96 140 114 150 118 C160 114 172 96 172 96 C181 76 178 56 167 36 C179 52 178 74 165 90 C170 68 164 52 150 30 Z" fill="#FCD34D" opacity="0.82" />
+      <path d="M150 58 C144 70 142 80 145 93 C139 82 139 70 147 59 C142 70 140 83 145 96 C148 103 150 106 150 106 C150 106 152 103 155 96 C160 83 158 70 153 59 C161 70 161 82 155 93 C158 80 156 70 150 58 Z" fill="#FEF08A" opacity="0.9" />
+    </svg>
+  );
 
   return (
-    <svg viewBox="0 0 52 52" width={size} height={size} fill="none">
-      {icons[type]}
+    <svg width="100%" height="130" viewBox="0 0 300 130" preserveAspectRatio="xMidYMid slice">
+      <rect width="300" height="130" fill="#FDF6EE" />
+      <path d="M32 124 C42 100 37 78 48 56 C58 36 52 20 58 10" fill="none" stroke={accent} strokeWidth="3.5" strokeLinecap="round" opacity="0.6" />
+      <ellipse cx="52" cy="52" rx="12" ry="7" fill={accent} opacity="0.6" transform="rotate(-30 52 52)" />
+      <ellipse cx="44" cy="72" rx="12" ry="7" fill={accent} opacity="0.55" transform="rotate(20 44 72)" />
+      <ellipse cx="58" cy="35" rx="12" ry="7" fill={accent} opacity="0.6" transform="rotate(-15 58 35)" />
+      <rect x="112" y="52" width="76" height="58" rx="9" fill={accent} opacity="0.85" />
+      <rect x="118" y="58" width="64" height="46" rx="6" fill="#F5D8B0" opacity="0.85" />
+      <path d="M150 72 C147 68 140 68 140 75 C140 82 150 91 150 91 C150 91 160 82 160 75 C160 68 153 68 150 72 Z" fill={accent} opacity="0.5" />
+      <path d="M188 66 C200 66 203 80 200 92 C197 103 188 103 188 103" fill="none" stroke={accent} strokeWidth="5.5" strokeLinecap="round" opacity="0.8" />
+      <ellipse cx="150" cy="113" rx="46" ry="8" fill={accent} opacity="0.4" />
+      <path d="M136 48 C136 41 140 37 136 30" fill="none" stroke={accent} strokeWidth="2" strokeLinecap="round" opacity="0.4" />
+      <path d="M150 46 C150 39 154 35 150 28" fill="none" stroke={accent} strokeWidth="2" strokeLinecap="round" opacity="0.4" />
+      <path d="M164 48 C164 41 168 37 164 30" fill="none" stroke={accent} strokeWidth="2" strokeLinecap="round" opacity="0.4" />
+      <path d="M268 124 C258 100 263 78 252 56 C242 36 248 20 242 10" fill="none" stroke={accent} strokeWidth="3.5" strokeLinecap="round" opacity="0.6" />
+      <ellipse cx="248" cy="52" rx="12" ry="7" fill={accent} opacity="0.6" transform="rotate(30 248 52)" />
+      <ellipse cx="256" cy="72" rx="12" ry="7" fill={accent} opacity="0.55" transform="rotate(-20 256 72)" />
+      <ellipse cx="242" cy="35" rx="12" ry="7" fill={accent} opacity="0.6" transform="rotate(15 242 35)" />
     </svg>
   );
 }
@@ -113,7 +171,8 @@ function CardDemo({
   stamped,
   total,
   reward,
-  iconType,
+  bannerType,
+  initial,
 }: {
   accent: string;
   dark: boolean;
@@ -124,85 +183,163 @@ function CardDemo({
   stamped: number;
   total: number;
   reward: string;
-  iconType: IconKey;
+  bannerType: BannerType;
+  initial: string;
 }) {
-  const bg = dark ? "#111" : "#fff";
-  const text = dark ? "#fff" : "#1a1a1a";
-  const muted = dark ? "rgba(255,255,255,0.45)" : "rgba(0,0,0,0.4)";
+  const bg = dark ? (bannerType === "gym" ? "#0A0A12" : "#1A0804") : "#FFFFFF";
+  const textMain = dark ? "#F9FAFB" : "#111827";
+  const textMuted = dark ? "rgba(249,250,252,0.45)" : "rgba(17,24,39,0.42)";
+  const border = dark ? "1px solid rgba(255,255,255,0.07)" : "1px solid rgba(0,0,0,0.07)";
+  const dotSize = total <= 6 ? 14 : total <= 8 ? 12 : 10;
 
   return (
-    <div className="flex-shrink-0 w-60 rounded-2xl overflow-hidden shadow-2xl" style={{ background: bg }}>
+    <div
+      style={{
+        background: bg,
+        width: 290,
+        borderRadius: 18,
+        overflow: "hidden",
+        flexShrink: 0,
+        boxShadow: dark
+          ? "0 24px 56px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,255,255,0.05)"
+          : "0 20px 50px rgba(0,0,0,0.16), 0 0 0 1px rgba(0,0,0,0.06)",
+      }}
+    >
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3" style={{ background: accent }}>
-        <div className="flex items-center gap-2.5">
-          <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full" style={{ background: "rgba(255,255,255,0.2)" }}>
-            <BannerIcon type={iconType} color="white" size={24} />
+      <div style={{ padding: "16px 18px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 12, minWidth: 0, flex: 1 }}>
+          <div
+            style={{
+              width: 48,
+              height: 48,
+              borderRadius: "50%",
+              background: accent,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              flexShrink: 0,
+              fontSize: 20,
+              fontWeight: 900,
+              color: "white",
+              letterSpacing: "-0.5px",
+              fontFamily: "system-ui, sans-serif",
+            }}
+          >
+            {initial}
           </div>
-          <div className="min-w-0">
-            <p className="font-bold text-white text-sm leading-tight truncate">{business}</p>
-            <p className="text-white/60 text-[10px] leading-tight truncate">{slogan}</p>
+          <div style={{ minWidth: 0 }}>
+            <p style={{ color: textMain, fontWeight: 800, fontSize: 17, margin: 0, lineHeight: 1.2, fontFamily: "system-ui, sans-serif" }}>{business}</p>
+            {slogan && (
+              <p style={{ color: textMuted, fontSize: 11, margin: "3px 0 0", lineHeight: 1.4, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{slogan}</p>
+            )}
           </div>
         </div>
-        <div className="text-right flex-shrink-0 ml-2">
-          <p className="text-white/60 text-[8px] font-bold uppercase tracking-widest">SELLOS</p>
-          <p className="text-white font-black text-xl leading-tight">{stamped}/{total}</p>
+        <div style={{ textAlign: "right", flexShrink: 0, marginLeft: 12 }}>
+          <p style={{ color: textMuted, fontSize: 9, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.14em", margin: 0, fontFamily: "system-ui, sans-serif" }}>SELLOS</p>
+          <p style={{ color: textMain, fontWeight: 900, fontSize: 28, lineHeight: 1, margin: "2px 0 0", fontFamily: "system-ui, sans-serif" }}>
+            {stamped}
+            <span style={{ fontSize: 16, fontWeight: 500, color: textMuted }}>/{total}</span>
+          </p>
         </div>
       </div>
 
-      {/* Banner ilustración */}
-      <div className="relative flex items-center justify-center py-6" style={{ background: bg }}>
-        <div className="absolute inset-0" style={{ backgroundColor: accent, opacity: 0.10 }} />
-        <div className="relative z-10">
-          <BannerIcon type={iconType} color={accent} size={64} />
-        </div>
+      {/* Banner */}
+      <div style={{ width: "100%", overflow: "hidden" }}>
+        <BannerPattern type={bannerType} accent={accent} />
       </div>
 
-      {/* Info: 4 columnas */}
-      <div className="px-4 py-3 grid grid-cols-4 gap-1" style={{ background: bg }}>
+      {/* Info strip: MIEMBRO | PROGRESO | FALTAN | PREMIO */}
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "48px 1fr 52px 72px",
+          gap: 6,
+          padding: "14px",
+          borderTop: border,
+          fontFamily: "system-ui, sans-serif",
+        }}
+      >
         <div>
-          <p className="text-[8px] font-bold uppercase tracking-wide" style={{ color: muted }}>Miembro</p>
-          <p className="text-xs font-bold mt-1 truncate" style={{ color: text }}>{customer}</p>
+          <p style={{ color: textMuted, fontSize: 8, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.08em", margin: 0 }}>Miembro</p>
+          <p style={{ color: textMain, fontWeight: 700, fontSize: 13, margin: "5px 0 0", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{customer}</p>
         </div>
         <div>
-          <p className="text-[8px] font-bold uppercase tracking-wide" style={{ color: accent }}>Progreso</p>
-          <div className="flex flex-wrap gap-[3px] mt-1">
+          <p style={{ color: textMuted, fontSize: 8, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.08em", margin: 0 }}>Progreso</p>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginTop: 6 }}>
             {Array.from({ length: total }).map((_, i) => (
-              <div key={i} className="rounded-full" style={{ width: 7, height: 7, background: i < stamped ? accent : "transparent", border: `1.5px solid ${i < stamped ? accent : muted}` }} />
+              <div
+                key={i}
+                style={{
+                  width: dotSize,
+                  height: dotSize,
+                  borderRadius: "50%",
+                  flexShrink: 0,
+                  background: i < stamped ? accent : "transparent",
+                  border: `2px solid ${i < stamped ? accent : textMuted}`,
+                }}
+              />
             ))}
           </div>
         </div>
         <div>
-          <p className="text-[8px] font-bold uppercase tracking-wide" style={{ color: accent }}>Faltan</p>
-          <p className="text-xs font-bold mt-1 leading-tight" style={{ color: text }}>{total - stamped} sellos</p>
+          <p style={{ color: textMuted, fontSize: 8, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.08em", margin: 0 }}>Faltan</p>
+          <p style={{ color: textMain, fontWeight: 700, fontSize: 12, margin: "5px 0 0" }}>{total - stamped} sel.</p>
         </div>
         <div>
-          <p className="text-[8px] font-bold uppercase tracking-wide" style={{ color: accent }}>Premio</p>
-          <p className="text-[10px] font-bold mt-1 leading-tight" style={{ color: text }}>{reward}</p>
+          <p style={{ color: textMuted, fontSize: 8, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.08em", margin: 0 }}>Premio</p>
+          <p style={{ color: textMain, fontWeight: 700, fontSize: 11, margin: "5px 0 0", lineHeight: 1.35 }}>{reward}</p>
         </div>
       </div>
 
       {/* QR */}
-      <div className="flex flex-col items-center pb-5 pt-2" style={{ background: bg }}>
-        <div className="rounded-xl p-2 shadow-md" style={{ background: dark ? "#fff" : "#f5f5f5" }}>
-          <div className="h-16 w-16 text-black">
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          padding: "18px 18px 26px",
+          borderTop: border,
+        }}
+      >
+        <div
+          style={{
+            background: "white",
+            borderRadius: 14,
+            padding: 12,
+            boxShadow: dark ? "0 4px 28px rgba(0,0,0,0.6)" : "0 2px 14px rgba(0,0,0,0.10)",
+          }}
+        >
+          <div style={{ width: 88, height: 88, color: "black" }}>
             <QRMockup />
           </div>
         </div>
-        <p className="text-[11px] font-medium mt-2" style={{ color: muted }}>{customerFull}</p>
+        <p style={{ color: textMuted, fontSize: 13, fontWeight: 500, margin: "10px 0 0", fontFamily: "system-ui, sans-serif" }}>{customerFull}</p>
       </div>
     </div>
   );
 }
 
-const CARD_EXAMPLES = [
-  { accent: "#3B7DD8", dark: false, business: "AquaShine", slogan: "Tu auto como nuevo", customer: "Roberto", customerFull: "Roberto Díaz", stamped: 3, total: 6, reward: "Lavado premium gratis", iconType: "car" as IconKey },
-  { accent: "#2BA896", dark: false, business: "Ártico Heladería", slogan: "Frío que se antoja", customer: "Sofía", customerFull: "Sofía Herrera", stamped: 4, total: 7, reward: "Nieve doble gratis", iconType: "icecream" as IconKey },
-  { accent: "#7C3AED", dark: false, business: "Zen Spa", slogan: "Respira. Relaja. Renace.", customer: "Valentina", customerFull: "Valentina Cruz", stamped: 3, total: 5, reward: "Masaje relajante gratis", iconType: "spa" as IconKey },
-  { accent: "#FF2D6B", dark: true, business: "IronBox Gym", slogan: "Entrena. Supera. Repite.", customer: "Miguel", customerFull: "Miguel Á. Torres", stamped: 5, total: 10, reward: "1 mes de membresía", iconType: "dumbbell" as IconKey },
-  { accent: "#C0392B", dark: false, business: "Nápoli Pizza", slogan: "La verdadera pizza al horno", customer: "Andrea", customerFull: "Andrea Montes", stamped: 3, total: 8, reward: "Pizza mediana gratis", iconType: "pizza" as IconKey },
-  { accent: "#7B4F2E", dark: false, business: "Café Norte", slogan: "Tu momento, nuestro café", customer: "Diego", customerFull: "Diego Ramírez", stamped: 2, total: 6, reward: "Café americano gratis", iconType: "coffee" as IconKey },
-  { accent: "#2D4179", dark: true, business: "Barber King", slogan: "Estilo que impone", customer: "Carlos", customerFull: "Carlos Vega", stamped: 4, total: 6, reward: "Corte de cabello gratis", iconType: "scissors" as IconKey },
-  { accent: "#E8961A", dark: true, business: "Don Chilo", slogan: "Tacos de verdad", customer: "Luis", customerFull: "Luis Fernando", stamped: 6, total: 9, reward: "Orden de tacos gratis", iconType: "taco" as IconKey },
+const CARD_EXAMPLES: Array<{
+  accent: string;
+  dark: boolean;
+  business: string;
+  slogan: string;
+  customer: string;
+  customerFull: string;
+  stamped: number;
+  total: number;
+  reward: string;
+  bannerType: BannerType;
+  initial: string;
+}> = [
+  { accent: "#2D4179", dark: false, business: "Barber King", slogan: "Estilo que impone", initial: "B", customer: "Carlos", customerFull: "Carlos Vega", stamped: 0, total: 6, reward: "Corte de cabello gratis", bannerType: "barber" },
+  { accent: "#5C2D07", dark: true, business: "Carnitas El Güero", slogan: "Tradición en cada bocado", initial: "C", customer: "David", customerFull: "David Morales", stamped: 0, total: 5, reward: "1 kg de carnitas", bannerType: "fire" },
+  { accent: "#1D6FA4", dark: false, business: "AquaShine", slogan: "Tu auto como nuevo", initial: "A", customer: "Roberto", customerFull: "Roberto Díaz", stamped: 3, total: 6, reward: "Lavado premium gratis", bannerType: "waves" },
+  { accent: "#2BA896", dark: false, business: "Ártico Heladería", slogan: "Frío que se antoja", initial: "Á", customer: "Sofía", customerFull: "Sofía Herrera", stamped: 4, total: 7, reward: "Nieve doble gratis", bannerType: "icecream" },
+  { accent: "#7C3AED", dark: false, business: "Zen Spa", slogan: "Respira. Relaja. Renace.", initial: "Z", customer: "Valentina", customerFull: "Valentina Cruz", stamped: 2, total: 5, reward: "Masaje relajante gratis", bannerType: "lotus" },
+  { accent: "#FF2D6B", dark: true, business: "IronBox Gym", slogan: "Entrena. Supera. Repite.", initial: "I", customer: "Miguel", customerFull: "Miguel Torres", stamped: 5, total: 10, reward: "1 mes de membresía", bannerType: "gym" },
+  { accent: "#C0392B", dark: false, business: "Nápoli Pizza", slogan: "La verdadera pizza al horno", initial: "N", customer: "Andrea", customerFull: "Andrea Montes", stamped: 3, total: 8, reward: "Pizza mediana gratis", bannerType: "pizza" },
+  { accent: "#7B4F2E", dark: false, business: "Café Norte", slogan: "Tu momento, nuestro café.", initial: "C", customer: "Diego", customerFull: "Diego Ramírez", stamped: 0, total: 6, reward: "Café americano gratis", bannerType: "coffee" },
 ];
 
 export default function FidelityLanding() {
@@ -274,7 +411,7 @@ export default function FidelityLanding() {
         </div>
       </section>
 
-      {/* ── Galería de tarjetas con imagen ────────────────────────── */}
+      {/* ── Galería de tarjetas ───────────────────────────────────── */}
       <section id="ejemplos" className="py-20 overflow-hidden">
         <div className="mx-auto max-w-6xl px-6 mb-12 text-center">
           <p className="text-xs font-bold uppercase tracking-widest text-[#FF2E63] mb-3">Para cualquier negocio</p>
