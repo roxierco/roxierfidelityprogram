@@ -45,7 +45,7 @@ export async function POST(req: NextRequest) {
   if (!business) return NextResponse.json({ error: "No autorizado" }, { status: 403 });
 
   const ext = file.name.split(".").pop() ?? "png";
-  const path = `business-logos/${businessId}.${ext}`;
+  const path = `business-logos/${businessId}-${Date.now()}.${ext}`;
   const bytes = await file.arrayBuffer();
 
   const { error: uploadError } = await admin.storage
