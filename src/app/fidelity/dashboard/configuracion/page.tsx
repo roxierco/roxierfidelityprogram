@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { formatMXN } from "@/lib/utils";
 import { ActivarSuscripcion } from "./ActivarSuscripcion";
 import { LogoUpload } from "./LogoUpload";
+import { BusinessNameEdit } from "./BusinessNameEdit";
 import type { Business } from "@/types/database";
 
 /**
@@ -44,7 +45,7 @@ export default async function ConfiguracionPage() {
       </div>
 
       <div className="card mt-4 space-y-4">
-        <Row label="Negocio" value={business.name} />
+        <BusinessNameEdit currentName={business.name} />
         <Row label="Correo" value={business.email} />
         <Row label="Plan" value={business.plan === "basico" ? "Básico" : business.plan === "pro" ? "Pro" : business.plan} />
         <Row label="Mensualidad" value={business.plan === "basico" ? "$549 MXN" : business.plan === "pro" ? "$749 MXN" : formatMXN(business.monthly_price)} />
