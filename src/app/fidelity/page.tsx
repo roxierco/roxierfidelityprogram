@@ -4,19 +4,9 @@ import { RoxierLogo } from "@/components/brand/XMark";
 function QRMockup() {
   return (
     <svg viewBox="0 0 33 33" fill="currentColor" className="h-full w-full">
-      {/* Esquina superior izquierda */}
-      <rect x="0" y="0" width="9" height="9" />
-      <rect x="1" y="1" width="7" height="7" fill="white" />
-      <rect x="2" y="2" width="5" height="5" />
-      {/* Esquina superior derecha */}
-      <rect x="24" y="0" width="9" height="9" />
-      <rect x="25" y="1" width="7" height="7" fill="white" />
-      <rect x="26" y="2" width="5" height="5" />
-      {/* Esquina inferior izquierda */}
-      <rect x="0" y="24" width="9" height="9" />
-      <rect x="1" y="25" width="7" height="7" fill="white" />
-      <rect x="2" y="26" width="5" height="5" />
-      {/* Datos simulados */}
+      <rect x="0" y="0" width="9" height="9" /><rect x="1" y="1" width="7" height="7" fill="white" /><rect x="2" y="2" width="5" height="5" />
+      <rect x="24" y="0" width="9" height="9" /><rect x="25" y="1" width="7" height="7" fill="white" /><rect x="26" y="2" width="5" height="5" />
+      <rect x="0" y="24" width="9" height="9" /><rect x="1" y="25" width="7" height="7" fill="white" /><rect x="2" y="26" width="5" height="5" />
       <rect x="11" y="0" width="2" height="2" /><rect x="14" y="0" width="2" height="2" /><rect x="17" y="0" width="2" height="2" /><rect x="20" y="0" width="2" height="2" />
       <rect x="11" y="3" width="2" height="2" /><rect x="15" y="3" width="2" height="2" /><rect x="19" y="3" width="2" height="2" />
       <rect x="11" y="6" width="2" height="2" /><rect x="14" y="6" width="2" height="2" /><rect x="17" y="6" width="2" height="2" /><rect x="21" y="6" width="2" height="2" />
@@ -31,140 +21,188 @@ function QRMockup() {
   );
 }
 
+type IconKey = "car" | "coffee" | "icecream" | "scissors" | "spa" | "dumbbell" | "pizza" | "taco";
+
+function BannerIcon({ type, color, size = 48 }: { type: IconKey; color: string; size?: number }) {
+  const icons: Record<IconKey, React.ReactNode> = {
+    car: (
+      <>
+        <path d="M9 28 C9 28 11 18 17 16 L31 16 L37 18 C43 20 45 28 45 28 L45 34 C45 34 43 36 40 36 L14 36 C11 36 9 34 9 34 Z" fill={color} />
+        <path d="M17 22 L20 16 L34 16 L37 22 Z" fill={color} opacity="0.4" />
+        <circle cx="17" cy="36" r="5" fill={color} opacity="0.8" />
+        <circle cx="37" cy="36" r="5" fill={color} opacity="0.8" />
+        <circle cx="17" cy="36" r="2.5" fill="white" opacity="0.5" />
+        <circle cx="37" cy="36" r="2.5" fill="white" opacity="0.5" />
+      </>
+    ),
+    coffee: (
+      <>
+        <path d="M14 22 L18 46 L34 46 L38 22 Z" fill={color} />
+        <path d="M38 28 C45 28 45 40 38 40" fill="none" stroke={color} strokeWidth="3" strokeLinecap="round" />
+        <path d="M20 16 C20 10 24 10 24 16" fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" opacity="0.6" />
+        <path d="M26 14 C26 8 30 8 30 14" fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" opacity="0.6" />
+      </>
+    ),
+    icecream: (
+      <>
+        <circle cx="27" cy="22" r="13" fill={color} />
+        <circle cx="27" cy="22" r="8" fill={color} opacity="0.5" />
+        <path d="M16 32 L27 52 L38 32 Z" fill={color} opacity="0.75" />
+        <circle cx="27" cy="14" r="3" fill="white" opacity="0.4" />
+      </>
+    ),
+    scissors: (
+      <>
+        <circle cx="14" cy="38" r="7" fill="none" stroke={color} strokeWidth="3" />
+        <circle cx="38" cy="38" r="7" fill="none" stroke={color} strokeWidth="3" />
+        <line x1="19" y1="33" x2="29" y2="20" stroke={color} strokeWidth="3" strokeLinecap="round" />
+        <line x1="33" y1="33" x2="23" y2="20" stroke={color} strokeWidth="3" strokeLinecap="round" />
+        <circle cx="26" cy="20" r="4" fill={color} />
+      </>
+    ),
+    spa: (
+      <>
+        <ellipse cx="26" cy="20" rx="6" ry="12" fill={color} opacity="0.9" />
+        <ellipse cx="26" cy="20" rx="6" ry="12" fill={color} opacity="0.9" transform="rotate(60 26 32)" />
+        <ellipse cx="26" cy="20" rx="6" ry="12" fill={color} opacity="0.9" transform="rotate(-60 26 32)" />
+        <circle cx="26" cy="32" r="4" fill={color} />
+      </>
+    ),
+    dumbbell: (
+      <>
+        <rect x="4" y="20" width="10" height="16" rx="3" fill={color} />
+        <rect x="38" y="20" width="10" height="16" rx="3" fill={color} />
+        <rect x="14" y="24" width="24" height="8" rx="2" fill={color} opacity="0.7" />
+      </>
+    ),
+    pizza: (
+      <>
+        <circle cx="26" cy="26" r="20" fill={color} />
+        <path d="M26 26 L26 6 A20 20 0 0 1 43.3 16 Z" fill="white" opacity="0.25" />
+        <circle cx="20" cy="22" r="2.5" fill="white" opacity="0.6" />
+        <circle cx="30" cy="32" r="2.5" fill="white" opacity="0.6" />
+        <circle cx="22" cy="32" r="2" fill="white" opacity="0.6" />
+        <circle cx="32" cy="20" r="2" fill="white" opacity="0.6" />
+      </>
+    ),
+    taco: (
+      <>
+        <path d="M8 34 Q26 8 44 34" fill="none" stroke={color} strokeWidth="4.5" strokeLinecap="round" />
+        <ellipse cx="26" cy="32" rx="15" ry="5" fill={color} opacity="0.45" />
+        <circle cx="20" cy="26" r="3" fill={color} opacity="0.7" />
+        <circle cx="26" cy="23" r="3" fill={color} opacity="0.7" />
+        <circle cx="32" cy="26" r="3" fill={color} opacity="0.7" />
+      </>
+    ),
+  };
+
+  return (
+    <svg viewBox="0 0 52 52" width={size} height={size} fill="none">
+      {icons[type]}
+    </svg>
+  );
+}
+
 function CardDemo({
-  image,
   accent,
+  dark,
   business,
-  category,
-  initial,
-  reward,
+  slogan,
+  customer,
+  customerFull,
   stamped,
   total,
-  icon,
+  reward,
+  iconType,
 }: {
-  image: string;
   accent: string;
+  dark: boolean;
   business: string;
-  category: string;
-  initial: string;
-  reward: string;
+  slogan: string;
+  customer: string;
+  customerFull: string;
   stamped: number;
   total: number;
-  icon: string;
+  reward: string;
+  iconType: IconKey;
 }) {
-  return (
-    <div className="relative rounded-2xl overflow-hidden flex-shrink-0 w-64 h-80 shadow-2xl text-white">
-      {/* Imagen de fondo */}
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={image} alt={business} className="absolute inset-0 w-full h-full object-cover" />
-      {/* Overlay oscuro */}
-      <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/40 to-black/80" />
+  const bg = dark ? "#111" : "#fff";
+  const text = dark ? "#fff" : "#1a1a1a";
+  const muted = dark ? "rgba(255,255,255,0.45)" : "rgba(0,0,0,0.4)";
 
-      {/* Contenido */}
-      <div className="relative h-full flex flex-col p-4">
-        {/* Header */}
-        <div className="flex items-center gap-2.5 mb-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg text-sm font-black flex-shrink-0" style={{ background: accent, color: "white" }}>
-            {initial}
+  return (
+    <div className="flex-shrink-0 w-60 rounded-2xl overflow-hidden shadow-2xl" style={{ background: bg }}>
+      {/* Header */}
+      <div className="flex items-center justify-between px-4 py-3" style={{ background: accent }}>
+        <div className="flex items-center gap-2.5">
+          <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full" style={{ background: "rgba(255,255,255,0.2)" }}>
+            <BannerIcon type={iconType} color="white" size={24} />
           </div>
           <div className="min-w-0">
-            <p className="font-bold text-sm leading-tight truncate">{business}</p>
-            <p className="text-[9px] font-bold uppercase tracking-widest text-white/50">{category}</p>
+            <p className="font-bold text-white text-sm leading-tight truncate">{business}</p>
+            <p className="text-white/60 text-[10px] leading-tight truncate">{slogan}</p>
           </div>
         </div>
-
-        {/* QR central */}
-        <div className="flex flex-1 items-center justify-center">
-          <div className="bg-white rounded-2xl p-3 shadow-xl">
-            <div className="h-20 w-20 text-black">
-              <QRMockup />
-            </div>
-            <p className="text-center text-[8px] font-bold text-black/40 uppercase tracking-widest mt-1.5">Escanear</p>
-          </div>
+        <div className="text-right flex-shrink-0 ml-2">
+          <p className="text-white/60 text-[8px] font-bold uppercase tracking-widest">SELLOS</p>
+          <p className="text-white font-black text-xl leading-tight">{stamped}/{total}</p>
         </div>
+      </div>
 
-        {/* Footer: sellos + recompensa */}
-        <div className="mt-3 space-y-2">
-          <div className="flex items-center gap-1 flex-wrap">
+      {/* Banner ilustración */}
+      <div className="relative flex items-center justify-center py-6" style={{ background: bg }}>
+        <div className="absolute inset-0" style={{ backgroundColor: accent, opacity: 0.10 }} />
+        <div className="relative z-10">
+          <BannerIcon type={iconType} color={accent} size={64} />
+        </div>
+      </div>
+
+      {/* Info: 4 columnas */}
+      <div className="px-4 py-3 grid grid-cols-4 gap-1" style={{ background: bg }}>
+        <div>
+          <p className="text-[8px] font-bold uppercase tracking-wide" style={{ color: muted }}>Miembro</p>
+          <p className="text-xs font-bold mt-1 truncate" style={{ color: text }}>{customer}</p>
+        </div>
+        <div>
+          <p className="text-[8px] font-bold uppercase tracking-wide" style={{ color: accent }}>Progreso</p>
+          <div className="flex flex-wrap gap-[3px] mt-1">
             {Array.from({ length: total }).map((_, i) => (
-              <div key={i}
-                className="flex h-5 w-5 items-center justify-center rounded-full border text-[9px] font-black transition-all"
-                style={{
-                  borderColor: i < stamped ? accent : "rgba(255,255,255,0.3)",
-                  background: i < stamped ? accent : "transparent",
-                  color: i < stamped ? "white" : "rgba(255,255,255,0.3)",
-                }}>
-                {i < stamped ? icon : ""}
-              </div>
+              <div key={i} className="rounded-full" style={{ width: 7, height: 7, background: i < stamped ? accent : "transparent", border: `1.5px solid ${i < stamped ? accent : muted}` }} />
             ))}
-            <span className="ml-auto text-[9px] font-bold text-white/40">{stamped}/{total}</span>
-          </div>
-          <div className="flex items-center justify-between">
-            <p className="text-xs font-bold text-white/80">{reward}</p>
-            <div className="h-2 w-2 rounded-full animate-pulse" style={{ background: accent }} />
           </div>
         </div>
+        <div>
+          <p className="text-[8px] font-bold uppercase tracking-wide" style={{ color: accent }}>Faltan</p>
+          <p className="text-xs font-bold mt-1 leading-tight" style={{ color: text }}>{total - stamped} sellos</p>
+        </div>
+        <div>
+          <p className="text-[8px] font-bold uppercase tracking-wide" style={{ color: accent }}>Premio</p>
+          <p className="text-[10px] font-bold mt-1 leading-tight" style={{ color: text }}>{reward}</p>
+        </div>
+      </div>
+
+      {/* QR */}
+      <div className="flex flex-col items-center pb-5 pt-2" style={{ background: bg }}>
+        <div className="rounded-xl p-2 shadow-md" style={{ background: dark ? "#fff" : "#f5f5f5" }}>
+          <div className="h-16 w-16 text-black">
+            <QRMockup />
+          </div>
+        </div>
+        <p className="text-[11px] font-medium mt-2" style={{ color: muted }}>{customerFull}</p>
       </div>
     </div>
   );
 }
 
 const CARD_EXAMPLES = [
-  {
-    image: "https://images.unsplash.com/photo-1559925393-8be0ec4767c8?w=400&q=80",
-    accent: "#D97706",
-    business: "La Taquería del Centro",
-    category: "Restaurante",
-    initial: "T",
-    reward: "🌮 Taco gratis",
-    stamped: 7,
-    total: 10,
-    icon: "★",
-  },
-  {
-    image: "https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=400&q=80",
-    accent: "#FF2E63",
-    business: "Roxier Coffee",
-    category: "Cafetería",
-    initial: "R",
-    reward: "☕ Café gratis",
-    stamped: 4,
-    total: 8,
-    icon: "✓",
-  },
-  {
-    image: "https://images.unsplash.com/photo-1503951914875-452162b0f3f1?w=400&q=80",
-    accent: "#EAB308",
-    business: "Barbería El Estilo",
-    category: "Barbería",
-    initial: "E",
-    reward: "✂️ Corte gratis",
-    stamped: 3,
-    total: 6,
-    icon: "★",
-  },
-  {
-    image: "https://images.unsplash.com/photo-1544161515-4ab6ce6db874?w=400&q=80",
-    accent: "#A855F7",
-    business: "Spa Serenidad",
-    category: "Spa & Bienestar",
-    initial: "S",
-    reward: "💆 Masaje gratis",
-    stamped: 5,
-    total: 8,
-    icon: "♥",
-  },
-  {
-    image: "https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=400&q=80",
-    accent: "#EC4899",
-    business: "Pastelería Dulce",
-    category: "Pastelería",
-    initial: "D",
-    reward: "🎂 Pastel gratis",
-    stamped: 9,
-    total: 12,
-    icon: "★",
-  },
+  { accent: "#3B7DD8", dark: false, business: "AquaShine", slogan: "Tu auto como nuevo", customer: "Roberto", customerFull: "Roberto Díaz", stamped: 3, total: 6, reward: "Lavado premium gratis", iconType: "car" as IconKey },
+  { accent: "#2BA896", dark: false, business: "Ártico Heladería", slogan: "Frío que se antoja", customer: "Sofía", customerFull: "Sofía Herrera", stamped: 4, total: 7, reward: "Nieve doble gratis", iconType: "icecream" as IconKey },
+  { accent: "#7C3AED", dark: false, business: "Zen Spa", slogan: "Respira. Relaja. Renace.", customer: "Valentina", customerFull: "Valentina Cruz", stamped: 3, total: 5, reward: "Masaje relajante gratis", iconType: "spa" as IconKey },
+  { accent: "#FF2D6B", dark: true, business: "IronBox Gym", slogan: "Entrena. Supera. Repite.", customer: "Miguel", customerFull: "Miguel Á. Torres", stamped: 5, total: 10, reward: "1 mes de membresía", iconType: "dumbbell" as IconKey },
+  { accent: "#C0392B", dark: false, business: "Nápoli Pizza", slogan: "La verdadera pizza al horno", customer: "Andrea", customerFull: "Andrea Montes", stamped: 3, total: 8, reward: "Pizza mediana gratis", iconType: "pizza" as IconKey },
+  { accent: "#7B4F2E", dark: false, business: "Café Norte", slogan: "Tu momento, nuestro café", customer: "Diego", customerFull: "Diego Ramírez", stamped: 2, total: 6, reward: "Café americano gratis", iconType: "coffee" as IconKey },
+  { accent: "#2D4179", dark: true, business: "Barber King", slogan: "Estilo que impone", customer: "Carlos", customerFull: "Carlos Vega", stamped: 4, total: 6, reward: "Corte de cabello gratis", iconType: "scissors" as IconKey },
+  { accent: "#E8961A", dark: true, business: "Don Chilo", slogan: "Tacos de verdad", customer: "Luis", customerFull: "Luis Fernando", stamped: 6, total: 9, reward: "Orden de tacos gratis", iconType: "taco" as IconKey },
 ];
 
 export default function FidelityLanding() {
