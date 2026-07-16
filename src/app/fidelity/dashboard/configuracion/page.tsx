@@ -47,8 +47,8 @@ export default async function ConfiguracionPage() {
       <div className="card mt-4 space-y-4">
         <BusinessNameEdit currentName={business.name} />
         <Row label="Correo" value={business.email} />
-        <Row label="Plan" value={business.plan === "basico" ? "Básico" : business.plan === "pro" ? "Pro" : business.plan} />
-        <Row label="Mensualidad" value={business.plan === "basico" ? "$549 MXN" : business.plan === "pro" ? "$749 MXN" : formatMXN(business.monthly_price)} />
+        <Row label="Plan" value={business.plan === "pro" ? "Pro" : business.plan} />
+        <Row label="Mensualidad" value={business.plan === "pro" ? "$749 MXN" : formatMXN(business.monthly_price)} />
         <Row label="Estado" value={estadoLabel[business.status] ?? business.status} />
       </div>
 
@@ -56,7 +56,7 @@ export default async function ConfiguracionPage() {
         <div className="card mt-6 space-y-3">
           <h3 className="font-bold text-paper">Activa tu suscripción</h3>
           <p className="text-sm text-mist">
-            Elige tu plan y empieza con 7 días gratis. El cobro se hace automáticamente al terminar el período de prueba.
+            Activa tu suscripción para empezar a usar tu dashboard. El cobro es mensual y automático.
           </p>
           <a href="/fidelity/planes" className="btn-primary inline-block text-center py-3 px-6 text-sm font-bold">
             Ver planes y activar

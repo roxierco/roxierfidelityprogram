@@ -2,7 +2,6 @@ import { MercadoPagoConfig, PreApproval } from "mercadopago";
 import { getServerEnv } from "@/lib/env";
 
 export const PLANS = {
-  basico: { name: "Básico", amount: 549 },
   pro: { name: "Pro", amount: 749 },
 } as const;
 
@@ -31,7 +30,6 @@ export async function crearSuscripcion(params: {
         frequency_type: "months",
         transaction_amount: amount,
         currency_id: "MXN",
-        free_trial: { frequency: 7, frequency_type: "days" },
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } as any,
       back_url: `${appUrl}/fidelity/dashboard/billing?status=subscribed`,

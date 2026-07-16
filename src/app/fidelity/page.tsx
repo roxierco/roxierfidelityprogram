@@ -397,7 +397,7 @@ export default function FidelityLanding() {
           <div className="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row">
             <Link href="/fidelity/registro"
               className="group flex items-center gap-2 rounded-full bg-[#FF2E63] px-8 py-3.5 text-base font-bold text-white hover:bg-[#e0254f] transition-all hover:scale-105 shadow-lg shadow-[#FF2E63]/25">
-              Empieza gratis
+              Regístrate ahora
               <svg className="h-4 w-4 transition-transform group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
               </svg>
@@ -407,7 +407,7 @@ export default function FidelityLanding() {
               Ya tengo cuenta
             </Link>
           </div>
-          <p className="mt-4 text-sm text-white/30">7 días gratis · Sin compromisos · Cancela cuando quieras</p>
+          <p className="mt-4 text-sm text-white/30">Sin compromisos · Cancela cuando quieras</p>
         </div>
       </section>
 
@@ -535,66 +535,13 @@ export default function FidelityLanding() {
             </p>
           </div>
 
-          {/* Badge de prueba gratis */}
-          <div className="flex justify-center mb-12">
-            <div className="inline-flex items-center gap-2 rounded-full bg-white/[0.05] border border-white/10 px-5 py-2.5">
-              <svg className="h-4 w-4 text-[#FF2E63]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              <span className="text-sm font-semibold text-white/70">7 días gratis en ambos planes — tarjeta requerida, cobro al término</span>
-            </div>
-          </div>
-
-          {/* Cards de planes */}
-          <div className="grid gap-6 md:grid-cols-2 max-w-3xl mx-auto">
-
-            {/* Plan Básico */}
-            <div className="relative rounded-2xl border border-white/[0.08] bg-white/[0.03] p-8 flex flex-col">
-              <div className="mb-6">
-                <p className="text-xs font-bold uppercase tracking-widest text-white/40 mb-1">Plan</p>
-                <h3 className="text-2xl font-extrabold text-white mb-1">Básico</h3>
-                <p className="text-white/40 text-sm">Todo lo que necesitas para empezar</p>
-              </div>
-              <div className="flex items-end gap-1 mb-8">
-                <span className="text-5xl font-extrabold text-white">$549</span>
-                <span className="text-white/40 text-sm mb-2">/mes MXN</span>
-              </div>
-              <ul className="space-y-3 mb-8 flex-1">
-                {[
-                  "1 tarjeta de lealtad activa",
-                  "Clientes ilimitados",
-                  "QR para sellos en segundos",
-                  "Guardado en Google Wallet",
-                  "Notificaciones push",
-                  "Promociones a clientes",
-                  "Dashboard con analytics",
-                ].map((f) => (
-                  <li key={f} className="flex items-center gap-2.5 text-sm text-white/70">
-                    <svg className="h-4 w-4 flex-shrink-0 text-[#FF2E63]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                    </svg>
-                    {f}
-                  </li>
-                ))}
-              </ul>
-              <Link href="/fidelity/registro"
-                className="w-full rounded-xl border border-white/15 py-3 text-center text-sm font-bold text-white hover:border-white/30 hover:bg-white/[0.05] transition-all">
-                Probar 7 días gratis
-              </Link>
-            </div>
-
-            {/* Plan Pro — destacado */}
+          {/* Card de plan único */}
+          <div className="max-w-md mx-auto">
             <div className="relative rounded-2xl border border-[#FF2E63]/50 bg-gradient-to-b from-[#FF2E63]/10 to-transparent p-8 flex flex-col">
-              {/* Badge popular */}
-              <div className="absolute -top-3.5 left-1/2 -translate-x-1/2">
-                <span className="inline-block rounded-full bg-[#FF2E63] px-4 py-1 text-[10px] font-extrabold uppercase tracking-widest text-white shadow-lg shadow-[#FF2E63]/30">
-                  Más popular
-                </span>
-              </div>
               <div className="mb-6">
                 <p className="text-xs font-bold uppercase tracking-widest text-[#FF2E63]/70 mb-1">Plan</p>
-                <h3 className="text-2xl font-extrabold text-white mb-1">Pro</h3>
-                <p className="text-white/40 text-sm">Para negocios que quieren más impacto</p>
+                <h3 className="text-2xl font-extrabold text-white mb-1">Roxier Fidelity</h3>
+                <p className="text-white/40 text-sm">Todo lo que necesitas para fidelizar a tus clientes</p>
               </div>
               <div className="flex items-end gap-1 mb-8">
                 <span className="text-5xl font-extrabold text-white">$749</span>
@@ -602,12 +549,12 @@ export default function FidelityLanding() {
               </div>
               <ul className="space-y-3 mb-8 flex-1">
                 {[
-                  "3 tarjetas de lealtad activas",
+                  "Tarjetas de lealtad ilimitadas",
                   "Clientes ilimitados",
                   "QR para sellos en segundos",
                   "Guardado en Google Wallet",
                   "Notificaciones push",
-                  "Promociones a clientes",
+                  "Promociones ilimitadas",
                   "Dashboard con analytics",
                   "Soporte prioritario por WhatsApp",
                 ].map((f) => (
@@ -621,7 +568,7 @@ export default function FidelityLanding() {
               </ul>
               <Link href="/fidelity/registro"
                 className="w-full rounded-xl bg-[#FF2E63] py-3 text-center text-sm font-bold text-white hover:bg-[#e0254f] transition-all shadow-lg shadow-[#FF2E63]/25">
-                Probar 7 días gratis
+                Crear mi cuenta
               </Link>
             </div>
           </div>
@@ -654,12 +601,12 @@ export default function FidelityLanding() {
             </p>
             <Link href="/fidelity/registro"
               className="inline-flex items-center gap-2 rounded-full bg-white px-8 py-4 text-base font-bold text-[#FF2E63] hover:bg-white/90 transition-all hover:scale-105 shadow-xl">
-              Crea tu cuenta gratis
+              Crear mi cuenta
               <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
               </svg>
             </Link>
-            <p className="mt-4 text-white/40 text-sm">7 días gratis · Cancela cuando quieras</p>
+            <p className="mt-4 text-white/40 text-sm">Cancela cuando quieras</p>
           </div>
         </div>
       </section>

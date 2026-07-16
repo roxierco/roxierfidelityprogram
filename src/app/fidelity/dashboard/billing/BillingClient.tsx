@@ -20,7 +20,6 @@ interface Subscription {
 }
 
 const PLANES = {
-  basico: { name: "Básico", amount: 549 },
   pro: { name: "Pro", amount: 749 },
 } as const;
 
@@ -39,7 +38,7 @@ export function BillingClient({
   const [toast, setToast] = useState<{ msg: string; ok: boolean } | null>(null);
 
   useEffect(() => {
-    if (paymentStatus === "subscribed") setToast({ msg: "¡Suscripción activada! Tu período de prueba de 7 días ha comenzado.", ok: true });
+    if (paymentStatus === "subscribed") setToast({ msg: "¡Suscripción activada!", ok: true });
     if (paymentStatus === "failure") setToast({ msg: "El pago no se completó. Intenta de nuevo.", ok: false });
   }, [paymentStatus]);
 
@@ -58,13 +57,8 @@ export function BillingClient({
   const isActive = business.status === "active";
   const isTrial = business.status === "trial";
   const isSuspended = business.status === "suspended";
-  const trialEnds = business.trial_ends_at ? new Date(business.trial_ends_at) : null;
   const hasActiveSub = subscription?.status === "authorized";
   const currentPlan = business.plan as PlanKey;
-
-  const daysLeft = trialEnds
-    ? Math.max(0, Math.ceil((trialEnds.getTime() - Date.now()) / 86400000))
-    : null;
 
   return (
     <div className="space-y-6 max-w-2xl">
@@ -86,8 +80,7 @@ export function BillingClient({
           <div className={`h-3 w-3 rounded-full animate-pulse ${isActive ? "bg-green-400" : isSuspended ? "bg-red-400" : "bg-yellow-400"}`} />
           <span className="font-bold text-paper text-lg">
             {isActive && hasActiveSub ? `Plan ${PLANES[currentPlan]?.name ?? business.plan} — Activo` :
-             isTrial && daysLeft !== null && daysLeft > 0 ? `Período de prueba — ${daysLeft} día${daysLeft !== 1 ? "s" : ""} restante${daysLeft !== 1 ? "s" : ""}` :
-             isSuspended ? "Suspendida" : "Prueba terminada"}
+             isSuspended ? "Suspendida" : "Pendiente de pago"}
           </span>
         </div>
 
@@ -98,30 +91,22 @@ export function BillingClient({
           </p>
         )}
 
-        {isTrial && daysLeft !== null && daysLeft > 0 && (
+        {isTrial && (
           <p className="text-sm text-mist">
-            Selecciona un plan para continuar después del período de prueba.
+            Activa tu suscripción para empezar a usar tu dashboard.
           </p>
         )}
       </div>
 
-      {/* Seleccionar plan — trial activo o suspendido */}
+      {/* Seleccionar plan — pendiente de pago o suspendido */}
       {(isTrial || isSuspended || !hasActiveSub) && (
         <div className="space-y-4">
           <p className="font-bold text-paper">
-            {isTrial ? "Elige tu plan" : "Reactiva tu cuenta"}
+            {isTrial ? "Activa tu plan" : "Reactiva tu cuenta"}
           </p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="max-w-xs">
             {(Object.entries(PLANES) as [PlanKey, { name: string; amount: number }][]).map(([key, plan]) => (
-              <div
-                key={key}
-                className={`card space-y-4 ${key === "pro" ? "border-2 border-magenta" : ""}`}
-              >
-                {key === "pro" && (
-                  <span className="inline-flex items-center gap-1.5 rounded-full bg-magenta/15 px-2.5 py-1 text-xs font-bold text-magenta uppercase tracking-wide">
-                    Más popular
-                  </span>
-                )}
+              <div key={key} className="card space-y-4 border-2 border-magenta">
                 <div>
                   <p className="font-black text-paper text-lg">{plan.name}</p>
                   <div className="flex items-baseline gap-1 mt-1">
@@ -132,20 +117,13 @@ export function BillingClient({
                 <button
                   onClick={() => suscribir(key)}
                   disabled={loading !== null}
-                  className={`w-full py-2.5 rounded-lg font-bold text-sm disabled:opacity-60 transition-all ${
-                    key === "pro"
-                      ? "bg-magenta text-white hover:bg-magenta/90"
-                      : "border border-magenta text-magenta hover:bg-magenta/10"
-                  }`}
+                  className="w-full py-2.5 rounded-lg font-bold text-sm disabled:opacity-60 transition-all bg-magenta text-white hover:bg-magenta/90"
                 >
-                  {loading === key ? "Redirigiendo..." : isTrial ? "Seleccionar" : "Reactivar"}
+                  {loading === key ? "Redirigiendo..." : isTrial ? "Suscribirme" : "Reactivar"}
                 </button>
               </div>
             ))}
           </div>
-          <p className="text-xs text-mist">
-            {isTrial ? "Se cobra automáticamente al terminar los 7 días de prueba." : ""}
-          </p>
         </div>
       )}
 

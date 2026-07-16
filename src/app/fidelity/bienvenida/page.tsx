@@ -19,7 +19,7 @@ export default function BienvenidaPage() {
             ¡Tu cuenta está lista!
           </h1>
           <p className="text-mist text-base leading-relaxed">
-            Correo verificado correctamente. Ahora elige tu plan para empezar tu período de prueba de 7 días gratis.
+            Correo verificado correctamente. Activa tu suscripción para empezar a usar tu dashboard.
           </p>
         </div>
 
@@ -29,7 +29,7 @@ export default function BienvenidaPage() {
             href="/fidelity/planes"
             className="btn-primary w-full py-4 text-base font-bold text-center"
           >
-            Ver planes y empezar gratis
+            Activar mi cuenta
           </Link>
           <Link
             href="/fidelity/dashboard"

@@ -61,7 +61,7 @@ export async function POST(req: NextRequest) {
 
         await admin.from("businesses").update({
           status: "active",
-          plan: "basico",
+          plan: "pro",
           monthly_price: 449,
           trial_ends_at: expiresAt.toISOString(),
         }).eq("id", businessId);
@@ -78,8 +78,8 @@ export async function POST(req: NextRequest) {
       if (!ref) return NextResponse.json({ ok: true });
 
       const [, businessId, planKey] = ref.split(":");
-      const planAmounts: Record<string, number> = { basico: 549, pro: 749 };
-      const amount = planAmounts[planKey] ?? 549;
+      const planAmounts: Record<string, number> = { pro: 749 };
+      const amount = planAmounts[planKey] ?? 749;
 
       if (sub.status === "authorized") {
         const expiresAt = new Date();
@@ -87,7 +87,7 @@ export async function POST(req: NextRequest) {
 
         await admin.from("businesses").update({
           status: "active",
-          plan: planKey ?? "basico",
+          plan: planKey ?? "pro",
           monthly_price: amount,
           trial_ends_at: expiresAt.toISOString(),
         }).eq("id", businessId);

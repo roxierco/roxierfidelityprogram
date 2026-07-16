@@ -66,8 +66,8 @@ export async function registrarNegocio(
     email,
     phone: phone || null,
     status: "trial",
-    plan: "basico",
-    monthly_price: 549,
+    plan: "pro",
+    monthly_price: 749,
     trial_ends_at: null,
   });
 
