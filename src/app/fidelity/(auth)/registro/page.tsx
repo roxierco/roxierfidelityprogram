@@ -23,7 +23,7 @@ export default function RegistroPage() {
             Crea tu cuenta
           </h1>
           <p className="mb-6 text-sm text-mist">
-            15 días gratis. Sin tarjeta de crédito.
+            $749 MXN/mes. Sin cuota de activación.
           </p>
 
           <form action={formAction} className="space-y-4">
@@ -93,7 +93,7 @@ export default function RegistroPage() {
             )}
 
             <button type="submit" disabled={pending} className="btn-primary w-full">
-              {pending ? "Creando cuenta..." : "Empezar gratis"}
+              {pending ? "Creando cuenta..." : "Crear mi cuenta"}
             </button>
           </form>
         </div>

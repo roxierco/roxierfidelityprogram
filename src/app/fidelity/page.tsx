@@ -365,7 +365,7 @@ export default function FidelityLanding() {
             </Link>
             <Link href="/fidelity/registro"
               className="rounded-full bg-[#FF2E63] px-5 py-2 text-sm font-bold text-white hover:bg-[#e0254f] transition-colors">
-              Empieza gratis
+              Regístrate
             </Link>
           </nav>
         </div>
@@ -435,7 +435,7 @@ export default function FidelityLanding() {
           <p className="text-white/30 text-sm mb-4">Elige colores, íconos y recompensas según tu negocio</p>
           <Link href="/fidelity/registro"
             className="inline-flex items-center gap-2 rounded-full border border-[#FF2E63]/40 px-6 py-3 text-sm font-bold text-[#FF2E63] hover:bg-[#FF2E63]/10 transition-all">
-            Crea la tuya gratis →
+            Crea la tuya →
           </Link>
         </div>
       </section>
