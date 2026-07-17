@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 
+const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 export async function POST(req: NextRequest) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -16,7 +18,6 @@ export async function POST(req: NextRequest) {
   }
 
   // Validar UUID
-  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
   if (!uuidRegex.test(businessId)) {
     return NextResponse.json({ error: "Negocio inválido" }, { status: 400 });
   }
@@ -70,4 +71,38 @@ export async function POST(req: NextRequest) {
   }
 
   return NextResponse.json({ publicUrl });
+}
+
+export async function DELETE(req: NextRequest) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+
+  const { businessId } = await req.json();
+  if (!businessId || !uuidRegex.test(businessId)) {
+    return NextResponse.json({ error: "Negocio inválido" }, { status: 400 });
+  }
+
+  const admin = createAdminClient();
+
+  const { data: business } = await admin
+    .from("businesses")
+    .select("id")
+    .eq("id", businessId)
+    .eq("owner_id", user.id)
+    .single();
+
+  if (!business) return NextResponse.json({ error: "No autorizado" }, { status: 403 });
+
+  const { error: rpcError } = await admin.rpc("set_business_logo", {
+    p_business_id: businessId,
+    p_logo_url: null,
+    p_owner_id: user.id,
+  });
+
+  if (rpcError) {
+    return NextResponse.json({ error: "Error al quitar el logo: " + rpcError.message }, { status: 500 });
+  }
+
+  return NextResponse.json({ ok: true });
 }
