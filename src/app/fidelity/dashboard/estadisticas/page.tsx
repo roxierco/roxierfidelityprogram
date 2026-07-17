@@ -262,8 +262,10 @@ function BarSeries({
   legend?: string;
   total?: number;
 }) {
-  const max = Math.max(...data.map((d) => d.count), 1);
-  const chartH = 64;
+  const rawMax = Math.max(...data.map((d) => d.count), 0);
+  const max = Math.max(rawMax, 1);
+  const chartH = 96;
+  const isEmpty = rawMax === 0;
   // Mostrar solo algunas etiquetas si hay muchas barras, para evitar amontonamiento
   const showEvery = data.length > 14 ? Math.ceil(data.length / 7) : 1;
 
@@ -271,42 +273,64 @@ function BarSeries({
     <div className="space-y-2">
       {legend && (
         <div className="flex items-center gap-2 text-xs">
-          <span className="h-2 w-2 rounded-full" style={{ backgroundColor: color }} />
+          <span className="h-2.5 w-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: color }} />
           <span className="text-paper font-semibold">{legend}</span>
           {total !== undefined && <span className="text-mist ml-auto">{total} en total</span>}
         </div>
       )}
-      <div className="relative" style={{ height: chartH + 20 }}>
-        <div className="absolute inset-x-0 top-0 flex items-end gap-1" style={{ height: chartH }}>
-          {data.map((d, i) => {
-            const barH = max === 0 ? 0 : Math.max((d.count / max) * chartH, d.count > 0 ? 3 : 0);
-            return (
-              <div key={i} className="relative flex-1 flex flex-col justify-end group" style={{ height: chartH }}>
-                {d.count > 0 && (
+      {isEmpty ? (
+        <div className="flex items-center justify-center rounded-xl border border-dashed border-surface-border text-xs text-mist" style={{ height: chartH + 24 }}>
+          Sin datos en este período todavía
+        </div>
+      ) : (
+        <div className="relative pl-7" style={{ height: chartH + 22 }}>
+          {/* Eje Y: valor máximo de referencia + líneas guía */}
+          <span className="absolute -top-1 left-0 text-[9px] text-mist tabular-nums">{max}</span>
+          <span className="absolute left-0 text-[9px] text-mist tabular-nums" style={{ top: chartH / 2 - 5 }}>
+            {Math.round(max / 2)}
+          </span>
+          <span className="absolute left-0 text-[9px] text-mist tabular-nums" style={{ top: chartH - 4 }}>0</span>
+          {[0, 0.5, 1].map((f) => (
+            <div
+              key={f}
+              className="absolute right-0 border-t border-surface-border/60"
+              style={{ left: 26, top: (1 - f) * chartH }}
+            />
+          ))}
+
+          <div className="absolute inset-y-0 left-7 right-0 top-0 flex items-end gap-1" style={{ height: chartH }}>
+            {data.map((d, i) => {
+              const barH = Math.max((d.count / max) * chartH, d.count > 0 ? 3 : 0);
+              const isPeak = d.count === rawMax && rawMax > 0;
+              return (
+                <div key={i} className="relative flex-1 flex flex-col justify-end group" style={{ height: chartH }}>
                   <div
-                    className="absolute -top-7 left-1/2 -translate-x-1/2 hidden group-hover:flex items-center whitespace-nowrap rounded-lg bg-near-black border border-surface-border px-2 py-1 text-[10px] text-paper z-10 shadow-lg"
+                    className={`absolute left-1/2 -translate-x-1/2 flex items-center whitespace-nowrap rounded-lg bg-near-black border border-surface-border px-2 py-1 text-[10px] text-paper z-10 shadow-lg transition-opacity ${
+                      d.count > 0 ? "opacity-0 group-hover:opacity-100" : "hidden"
+                    }`}
+                    style={{ bottom: barH + 8 }}
                   >
                     {d.count}
                   </div>
+                  <div
+                    className="w-full max-w-[22px] mx-auto rounded-t-sm transition-opacity group-hover:opacity-80"
+                    style={{ height: barH, backgroundColor: color, opacity: isPeak ? 1 : 0.75 }}
+                  />
+                </div>
+              );
+            })}
+          </div>
+          <div className="absolute inset-x-0 left-7 flex gap-1" style={{ top: chartH + 4 }}>
+            {data.map((d, i) => (
+              <div key={i} className="flex-1 text-center">
+                {i % showEvery === 0 && (
+                  <span className="text-[9px] text-mist leading-none">{d.label}</span>
                 )}
-                <div
-                  className="w-full rounded-t-sm transition-opacity group-hover:opacity-80"
-                  style={{ height: barH, backgroundColor: color }}
-                />
               </div>
-            );
-          })}
+            ))}
+          </div>
         </div>
-        <div className="absolute inset-x-0 flex gap-1" style={{ top: chartH + 4 }}>
-          {data.map((d, i) => (
-            <div key={i} className="flex-1 text-center">
-              {i % showEvery === 0 && (
-                <span className="text-[9px] text-mist leading-none">{d.label}</span>
-              )}
-            </div>
-          ))}
-        </div>
-      </div>
+      )}
     </div>
   );
 }

@@ -17,6 +17,10 @@ const registroSchema = z.object({
   email: z.string().email("Correo inválido"),
   phone: z.string().min(8, "Teléfono inválido").optional().or(z.literal("")),
   password: z.string().min(8, "La contraseña debe tener al menos 8 caracteres"),
+  confirmPassword: z.string(),
+}).refine((data) => data.password === data.confirmPassword, {
+  message: "Las contraseñas no coinciden",
+  path: ["confirmPassword"],
 });
 
 export type ActionState = { error?: string } | undefined;
@@ -33,6 +37,7 @@ export async function registrarNegocio(
     email: formData.get("email"),
     phone: formData.get("phone"),
     password: formData.get("password"),
+    confirmPassword: formData.get("confirmPassword"),
   });
 
   if (!parsed.success) {

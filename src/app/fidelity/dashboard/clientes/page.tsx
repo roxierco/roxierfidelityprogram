@@ -20,7 +20,7 @@ export default async function ClientesPage() {
   const [{ data: customers }, { data: card }] = await Promise.all([
     admin
       .from("end_customers")
-      .select("id, full_name, current_stamps, total_visits, rewards_redeemed, last_visit_at, enrolled_at")
+      .select("id, full_name, phone, email, current_stamps, total_visits, rewards_redeemed, last_visit_at, enrolled_at")
       .eq("business_id", business.id)
       .order("last_visit_at", { ascending: false, nullsFirst: false })
       .limit(500),

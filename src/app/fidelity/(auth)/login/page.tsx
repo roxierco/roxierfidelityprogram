@@ -6,6 +6,7 @@ import { useActionState } from "react";
 import { useSearchParams } from "next/navigation";
 import { iniciarSesion, type ActionState } from "../actions";
 import { RoxierLogo } from "@/components/brand/XMark";
+import { PasswordInput } from "@/components/auth/PasswordInput";
 
 function EmailConfirmBanner() {
   const searchParams = useSearchParams();
@@ -63,13 +64,11 @@ export default function LoginPage() {
               <label htmlFor="password" className="label">
                 Contraseña
               </label>
-              <input
+              <PasswordInput
                 id="password"
                 name="password"
-                type="password"
                 required
                 autoComplete="current-password"
-                className="input"
                 placeholder="••••••••"
               />
             </div>

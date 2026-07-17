@@ -5,6 +5,8 @@ import { useState, useMemo, useCallback } from "react";
 interface Customer {
   id: string;
   full_name: string;
+  phone: string | null;
+  email: string | null;
   current_stamps: number;
   total_visits: number;
   rewards_redeemed: number;
@@ -73,7 +75,13 @@ export function ClientesClient({
 
   const filtered = useMemo(() => {
     const q = search.toLowerCase();
-    let list = q ? visibleCustomers.filter((c) => c.full_name.toLowerCase().includes(q)) : [...visibleCustomers];
+    let list = q
+      ? visibleCustomers.filter((c) =>
+          c.full_name.toLowerCase().includes(q) ||
+          (c.phone ?? "").toLowerCase().includes(q) ||
+          (c.email ?? "").toLowerCase().includes(q),
+        )
+      : [...visibleCustomers];
 
     if (sort === "recientes") {
       list.sort((a, b) => (b.last_visit_at ?? "").localeCompare(a.last_visit_at ?? ""));
@@ -134,7 +142,7 @@ export function ClientesClient({
             </svg>
             <input
               type="text"
-              placeholder="Buscar cliente..."
+              placeholder="Buscar por nombre, teléfono o correo..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="w-full rounded-xl border border-surface-border bg-surface pl-9 pr-4 py-2.5 text-sm text-paper placeholder:text-mist focus:border-magenta focus:outline-none"
@@ -221,6 +229,11 @@ export function ClientesClient({
                           </span>
                         )}
                       </div>
+                      {(c.phone || c.email) && (
+                        <p className="text-xs text-mist truncate mt-0.5">
+                          {[c.phone, c.email].filter(Boolean).join(" · ")}
+                        </p>
+                      )}
                       <div className="mt-2 flex items-center gap-2">
                         <div className="flex-1 h-1.5 rounded-full bg-surface-border overflow-hidden">
                           <div
@@ -243,6 +256,31 @@ export function ClientesClient({
                         )}
                       </p>
                     </div>
+
+                    {c.phone && (
+                      <a
+                        href={`https://wa.me/${c.phone.replace(/\D/g, "")}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        title="Escribir por WhatsApp"
+                        className="flex-shrink-0 rounded-lg p-2 text-mist hover:text-green-400 hover:bg-surface-border transition-colors"
+                      >
+                        <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
+                          <path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91C21.95 6.45 17.5 2 12.04 2zm0 18.15c-1.48 0-2.93-.4-4.2-1.15l-.3-.18-3.12.82.83-3.04-.2-.31a8.18 8.18 0 01-1.26-4.38c0-4.54 3.7-8.24 8.25-8.24 2.2 0 4.27.86 5.83 2.42a8.18 8.18 0 012.41 5.83c0 4.55-3.7 8.23-8.24 8.23zm4.52-6.16c-.25-.12-1.47-.72-1.7-.81-.23-.08-.39-.12-.56.13-.17.25-.64.81-.78.97-.14.17-.29.19-.54.06-.25-.12-1.05-.39-2-1.23-.74-.66-1.24-1.47-1.38-1.72-.15-.25-.02-.38.11-.51.11-.11.25-.29.37-.43.12-.15.16-.25.24-.42.08-.17.04-.31-.02-.44-.06-.12-.56-1.35-.77-1.85-.2-.48-.4-.42-.56-.43h-.48c-.17 0-.44.06-.67.31-.23.25-.87.86-.87 2.09 0 1.23.9 2.42 1.02 2.59.12.17 1.77 2.7 4.29 3.79.6.26 1.07.41 1.43.53.6.19 1.15.16 1.58.1.48-.07 1.47-.6 1.68-1.18.21-.58.21-1.07.15-1.18-.06-.11-.23-.17-.48-.29z" />
+                        </svg>
+                      </a>
+                    )}
+                    {c.email && (
+                      <a
+                        href={`mailto:${c.email}`}
+                        title="Enviar correo"
+                        className="flex-shrink-0 rounded-lg p-2 text-mist hover:text-paper hover:bg-surface-border transition-colors"
+                      >
+                        <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                        </svg>
+                      </a>
+                    )}
 
                     {cardId && (
                       <button

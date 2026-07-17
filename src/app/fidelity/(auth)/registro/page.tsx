@@ -1,15 +1,22 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { useActionState } from "react";
 import { registrarNegocio, type ActionState } from "../actions";
 import { RoxierLogo } from "@/components/brand/XMark";
+import { PasswordInput, PasswordStrengthMeter } from "@/components/auth/PasswordInput";
 
 export default function RegistroPage() {
   const [state, formAction, pending] = useActionState<ActionState, FormData>(
     registrarNegocio,
     undefined,
   );
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+
+  const mismatch = confirmPassword.length > 0 && password !== confirmPassword;
+  const canSubmit = password.length >= 8 && confirmPassword.length > 0 && !mismatch;
 
   return (
     <div className="flex min-h-screen items-center justify-center px-6 py-12">
@@ -74,16 +81,35 @@ export default function RegistroPage() {
               <label htmlFor="password" className="label">
                 Contraseña
               </label>
-              <input
+              <PasswordInput
                 id="password"
                 name="password"
-                type="password"
                 required
                 minLength={8}
                 autoComplete="new-password"
-                className="input"
                 placeholder="Mínimo 8 caracteres"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
               />
+              <PasswordStrengthMeter password={password} />
+            </div>
+
+            <div>
+              <label htmlFor="confirmPassword" className="label">
+                Confirma tu contraseña
+              </label>
+              <PasswordInput
+                id="confirmPassword"
+                name="confirmPassword"
+                required
+                autoComplete="new-password"
+                placeholder="Escríbela de nuevo"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+              />
+              {mismatch && (
+                <p className="mt-1.5 text-xs text-magenta">Las contraseñas no coinciden</p>
+              )}
             </div>
 
             {state?.error && (
@@ -92,7 +118,7 @@ export default function RegistroPage() {
               </p>
             )}
 
-            <button type="submit" disabled={pending} className="btn-primary w-full">
+            <button type="submit" disabled={pending || !canSubmit} className="btn-primary w-full disabled:opacity-50">
               {pending ? "Creando cuenta..." : "Crear mi cuenta"}
             </button>
           </form>
