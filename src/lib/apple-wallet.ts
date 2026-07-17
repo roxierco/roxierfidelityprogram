@@ -48,6 +48,8 @@ export interface LoyaltyPassData {
   // Solo para tarjetas de cashback
   cardType?: string;
   cashbackBalance?: number;
+  // Para cupón / descuento: el beneficio que ofrece la tarjeta
+  couponValue?: string | null;
 }
 
 // ─── PNG generator (no external deps) ───────────────────────────────────────
@@ -167,9 +169,15 @@ export async function generateLoyaltyPass(data: LoyaltyPassData): Promise<Buffer
   if (data.logoUrl) logoBuf = await fetchLogo(data.logoUrl);
   const logo = logoBuf ?? solidPng(160, 50, data.colorPrimary, 0);
 
+  // La barra de progreso solo tiene sentido en tarjetas de sellos.
+  // Cashback / cupón / descuento no llevan progreso, así que no dibujamos el strip
+  // (a menos que el negocio haya subido su propia imagen de strip).
+  const isSellos = !data.cardType || data.cardType === "sellos";
   let stripBuf: Buffer | null = null;
   if (data.stripUrl) stripBuf = await fetchLogo(data.stripUrl);
-  const strip = stripBuf ?? progressStripPng(750, 246, data.colorBackground, data.colorPrimary, data.currentStamps, data.stampsRequired);
+  const strip = stripBuf ?? (isSellos
+    ? progressStripPng(750, 246, data.colorBackground, data.colorPrimary, data.currentStamps, data.stampsRequired)
+    : null);
 
   const passJson = buildPassJson(data, true);
 
@@ -177,11 +185,13 @@ export async function generateLoyaltyPass(data: LoyaltyPassData): Promise<Buffer
     "pass.json": Buffer.from(JSON.stringify(passJson), "utf8"),
     "icon.png": icon,
     "icon@2x.png": icon2x,
-    "strip.png": strip,
-    "strip@2x.png": strip,
     "logo.png": logo,
     "logo@2x.png": logo,
   };
+  if (strip) {
+    files["strip.png"] = strip;
+    files["strip@2x.png"] = strip;
+  }
 
   const manifest: Record<string, string> = {};
   for (const [name, buf] of Object.entries(files)) {
@@ -250,6 +260,58 @@ function buildPassJson(data: LoyaltyPassData, hasStrip: boolean): object {
             key: "instructions",
             label: "Cómo funciona",
             value: `Presenta este QR en ${data.businessName} en cada compra para acumular cashback. Usa tu saldo cuando quieras.`,
+          },
+          { key: "card", label: "Programa", value: data.cardTitle },
+          { key: "powered", label: "", value: "Powered by Roxier Fidelity · roxierco.com" },
+        ],
+      },
+      barcodes: [
+        {
+          message: data.cardUrl,
+          format: "PKBarcodeFormatQR",
+          messageEncoding: "iso-8859-1",
+          altText: data.customerName,
+        },
+      ],
+    };
+  }
+
+  // ── Rama CUPÓN / DESCUENTO: muestran el beneficio, sin progreso ──
+  if (data.cardType === "cupon" || data.cardType === "descuento") {
+    const esCupon = data.cardType === "cupon";
+    const oferta = data.couponValue || data.rewardText;
+    return {
+      formatVersion: 1,
+      passTypeIdentifier: process.env.APPLE_WALLET_PASS_TYPE_ID!,
+      serialNumber: `${data.customerId}-${data.cardId}`,
+      teamIdentifier: process.env.APPLE_WALLET_TEAM_ID!,
+      webServiceURL: `${appUrl}/api/apple-wallet/`,
+      authenticationToken: authToken,
+      organizationName: data.businessName,
+      description: data.cardTitle,
+      logoText: data.businessName,
+      foregroundColor: hexToRgb(data.colorText),
+      backgroundColor: hexToRgb(data.colorBackground),
+      labelColor: hexToRgb(data.colorText),
+      stripColor: hexToRgb(data.colorPrimary),
+      storeCard: {
+        primaryFields: [
+          {
+            key: "offer",
+            label: esCupon ? "Cupón" : "Descuento",
+            value: oferta,
+          },
+        ],
+        secondaryFields: [
+          { key: "member", label: "MIEMBRO", value: data.customerName },
+        ],
+        backFields: [
+          {
+            key: "instructions",
+            label: "Cómo funciona",
+            value: esCupon
+              ? `Presenta este QR en ${data.businessName} para canjear tu cupón. Válido una sola vez.`
+              : `Presenta este QR en ${data.businessName} para obtener tu descuento.`,
           },
           { key: "card", label: "Programa", value: data.cardTitle },
           { key: "powered", label: "", value: "Powered by Roxier Fidelity · roxierco.com" },

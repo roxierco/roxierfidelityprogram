@@ -6,6 +6,8 @@ import {
   upsertLoyaltyObject,
   upsertCashbackClass,
   upsertCashbackObject,
+  upsertBenefitClass,
+  upsertBenefitObject,
   generateSaveLink,
 } from "@/lib/google-wallet";
 
@@ -41,7 +43,7 @@ export async function POST(req: NextRequest) {
 
   const { data: card } = await admin
     .from("loyalty_cards")
-    .select("id, title, color_primary, color_background, logo_url, stamps_required, reward_text, card_type")
+    .select("id, title, color_primary, color_background, logo_url, stamps_required, reward_text, card_type, coupon_value")
     .eq("id", cardId)
     .eq("business_id", customer.business_id)
     .single();
@@ -60,6 +62,17 @@ export async function POST(req: NextRequest) {
         cardId,
         customerName: customer.full_name,
         balance: Number(customer.cashback_balance ?? 0),
+        cardUrl,
+      });
+    } else if (card.card_type === "cupon" || card.card_type === "descuento") {
+      await upsertBenefitClass(card, business.name);
+      objectId = await upsertBenefitObject({
+        customerId,
+        cardId,
+        customerName: customer.full_name,
+        cardType: card.card_type,
+        couponValue: card.coupon_value ?? null,
+        rewardText: card.reward_text,
         cardUrl,
       });
     } else {

@@ -177,6 +177,86 @@ export async function syncAfterStamp(params: {
   await addMessage(objectId, msg.header, msg.body);
 }
 
+// ─── CUPÓN / DESCUENTO (sin progreso) ─────────────────────────────────────────
+export interface BenefitWalletCard {
+  id: string;
+  title: string;
+  color_background: string;
+  logo_url: string | null;
+  card_type: string;
+  coupon_value: string | null;
+  reward_text: string;
+}
+
+export async function upsertBenefitClass(card: BenefitWalletCard, businessName: string) {
+  const id = getClassId(card.id);
+  const label = card.card_type === "cupon" ? "Cupón" : "Descuento";
+  const value = card.coupon_value || card.reward_text;
+
+  const benefitClass = {
+    id,
+    issuerName: businessName,
+    programName: card.title,
+    hexBackgroundColor: card.color_background,
+    reviewStatus: "UNDER_REVIEW",
+    loyaltyPoints: { label, balance: { string: value } },
+    ...(card.logo_url
+      ? {
+          programLogo: {
+            sourceUri: { uri: card.logo_url },
+            contentDescription: { defaultValue: { language: "es-MX", value: businessName } },
+          },
+        }
+      : {}),
+  };
+
+  const existing = await walletFetch("GET", `/loyaltyClass/${encodeURIComponent(id)}`);
+  if (existing.ok) {
+    await walletFetch("PATCH", `/loyaltyClass/${encodeURIComponent(id)}`, benefitClass);
+  } else {
+    await walletFetch("POST", `/loyaltyClass`, benefitClass);
+  }
+}
+
+export async function upsertBenefitObject(params: {
+  customerId: string;
+  cardId: string;
+  customerName: string;
+  cardType: string;
+  couponValue: string | null;
+  rewardText: string;
+  cardUrl: string;
+}) {
+  const { customerId, cardId, customerName, cardType, couponValue, rewardText, cardUrl } = params;
+  const id = getObjectId(customerId, cardId);
+  const classId = getClassId(cardId);
+  const label = cardType === "cupon" ? "Cupón" : "Descuento";
+  const value = couponValue || rewardText;
+
+  const loyaltyObject = {
+    id,
+    classId,
+    state: "ACTIVE",
+    accountId: customerId,
+    accountName: customerName,
+    loyaltyPoints: { label, balance: { string: value } },
+    barcode: {
+      type: "QR_CODE",
+      value: cardUrl,
+      alternateText: "Mostrar al cajero",
+    },
+  };
+
+  const existing = await walletFetch("GET", `/loyaltyObject/${encodeURIComponent(id)}`);
+  if (existing.ok) {
+    await walletFetch("PATCH", `/loyaltyObject/${encodeURIComponent(id)}`, loyaltyObject);
+  } else {
+    await walletFetch("POST", `/loyaltyObject`, loyaltyObject);
+  }
+
+  return id;
+}
+
 // ─── CASHBACK ────────────────────────────────────────────────────────────────
 // Google Wallet maneja dinero en MICROS: 1 unidad = 1,000,000 micros.
 // $85.50 MXN → 85_500_000 micros.
