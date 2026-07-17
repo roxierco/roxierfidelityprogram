@@ -349,7 +349,7 @@ export default function FidelityLanding() {
       {/* ── Navbar ────────────────────────────────────────────────── */}
       <header className="sticky top-0 z-50 border-b border-white/[0.06] bg-[#09090B]/80 backdrop-blur-xl">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-          <RoxierLogo />
+          <RoxierLogo forceLight />
           <nav className="flex items-center gap-6">
             <Link href="#ejemplos" className="hidden text-sm font-medium text-white/50 hover:text-white transition-colors sm:block">
               Ejemplos
@@ -614,7 +614,7 @@ export default function FidelityLanding() {
       {/* ── Footer ─────────────────────────────────────────────────── */}
       <footer className="border-t border-white/[0.06]">
         <div className="mx-auto max-w-6xl px-6 py-10 flex flex-col items-center justify-between gap-6 sm:flex-row">
-          <RoxierLogo />
+          <RoxierLogo forceLight />
           <div className="flex items-center gap-6 text-sm text-white/30">
             <Link href="/fidelity/login" className="hover:text-white/60 transition-colors">Iniciar sesión</Link>
             <Link href="/fidelity/registro" className="hover:text-white/60 transition-colors">Registrarse</Link>

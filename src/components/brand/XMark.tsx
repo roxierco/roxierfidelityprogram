@@ -23,12 +23,14 @@ export function XMark({ className }: { className?: string }) {
 
 /**
  * Logo horizontal: X + "ROXIER Co."
+ * `forceLight`: usa siempre texto claro, para secciones con fondo oscuro fijo
+ * que no siguen el toggle de tema claro/oscuro (ej. la landing).
  */
-export function RoxierLogo({ className }: { className?: string }) {
+export function RoxierLogo({ className, forceLight }: { className?: string; forceLight?: boolean }) {
   return (
     <div className={cn("flex items-center gap-3", className)}>
       <XMark className="h-7 w-7" />
-      <span className="text-xl font-extrabold tracking-wide text-paper">
+      <span className={cn("text-xl font-extrabold tracking-wide", forceLight ? "text-white" : "text-paper")}>
         ROXIER
         <span className="ml-1.5 text-sm font-semibold text-magenta">
           Fidelity
