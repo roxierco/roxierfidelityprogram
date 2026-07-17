@@ -16,6 +16,7 @@ function defaultCard(businessId: string, type: CardTypeKey = "sellos"): Partial<
   };
   if (type === "cupon") return { ...base, title: "Cupón especial", coupon_value: "20% de descuento", stamps_required: 1, reward_text: "Cupón canjeado" };
   if (type === "descuento") return { ...base, title: "Descuento especial", coupon_value: "15% de descuento en tu próxima compra", stamps_required: 1, reward_text: "Descuento aplicado" };
+  if (type === "cashback") return { ...base, color_primary: "#16A34A", title: "Cashback", stamps_required: 1, reward_text: "Saldo de cashback", cashback_percent: 5, cashback_min_purchase: 0 };
   return { ...base, title: "Tarjeta de lealtad", stamps_required: 10, reward_text: "Un producto gratis" };
 }
 

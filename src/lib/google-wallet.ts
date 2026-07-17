@@ -177,6 +177,104 @@ export async function syncAfterStamp(params: {
   await addMessage(objectId, msg.header, msg.body);
 }
 
+// ─── CASHBACK ────────────────────────────────────────────────────────────────
+// Google Wallet maneja dinero en MICROS: 1 unidad = 1,000,000 micros.
+// $85.50 MXN → 85_500_000 micros.
+function toMicros(amount: number): number {
+  return Math.round(amount * 1_000_000);
+}
+
+export interface CashbackWalletCard {
+  id: string;
+  title: string;
+  color_background: string;
+  logo_url: string | null;
+}
+
+export async function upsertCashbackClass(card: CashbackWalletCard, businessName: string) {
+  const id = getClassId(card.id);
+  const cashbackClass = {
+    id,
+    issuerName: businessName,
+    programName: card.title,
+    hexBackgroundColor: card.color_background,
+    reviewStatus: "UNDER_REVIEW",
+    loyaltyPoints: {
+      label: "Saldo",
+      balance: { money: { micros: 0, currencyCode: "MXN" } },
+    },
+    ...(card.logo_url
+      ? {
+          programLogo: {
+            sourceUri: { uri: card.logo_url },
+            contentDescription: { defaultValue: { language: "es-MX", value: businessName } },
+          },
+        }
+      : {}),
+  };
+
+  const existing = await walletFetch("GET", `/loyaltyClass/${encodeURIComponent(id)}`);
+  if (existing.ok) {
+    await walletFetch("PATCH", `/loyaltyClass/${encodeURIComponent(id)}`, cashbackClass);
+  } else {
+    await walletFetch("POST", `/loyaltyClass`, cashbackClass);
+  }
+}
+
+export async function upsertCashbackObject(params: {
+  customerId: string;
+  cardId: string;
+  customerName: string;
+  balance: number;
+  cardUrl: string;
+}) {
+  const { customerId, cardId, customerName, balance, cardUrl } = params;
+  const id = getObjectId(customerId, cardId);
+  const classId = getClassId(cardId);
+
+  const loyaltyObject = {
+    id,
+    classId,
+    state: "ACTIVE",
+    accountId: customerId,
+    accountName: customerName,
+    loyaltyPoints: {
+      label: "Saldo",
+      balance: { money: { micros: toMicros(balance), currencyCode: "MXN" } },
+    },
+    barcode: {
+      type: "QR_CODE",
+      value: cardUrl,
+      alternateText: "Mostrar al cajero",
+    },
+  };
+
+  const existing = await walletFetch("GET", `/loyaltyObject/${encodeURIComponent(id)}`);
+  if (existing.ok) {
+    await walletFetch("PATCH", `/loyaltyObject/${encodeURIComponent(id)}`, loyaltyObject);
+  } else {
+    await walletFetch("POST", `/loyaltyObject`, loyaltyObject);
+  }
+
+  return id;
+}
+
+// Actualiza el saldo de cashback en Google Wallet Y notifica al cliente.
+export async function syncCashback(params: {
+  customerId: string;
+  cardId: string;
+  customerName: string;
+  balance: number;
+  cardUrl: string;
+  message?: { header: string; body: string };
+}) {
+  const objectId = await upsertCashbackObject(params);
+  if (!objectId) return;
+  if (params.message) {
+    await addMessage(objectId, params.message.header, params.message.body);
+  }
+}
+
 export function generateSaveLink(objectId: string): string {
   const privateKey = process.env.GOOGLE_WALLET_SERVICE_ACCOUNT_PRIVATE_KEY!.replace(/\\n/g, "\n");
 

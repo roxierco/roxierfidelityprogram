@@ -18,7 +18,7 @@ export default async function CustomerCardPage({
 
   const { data: customer } = await supabase
     .from("end_customers")
-    .select("id, full_name, current_stamps, total_visits, rewards_redeemed, business_id")
+    .select("id, full_name, current_stamps, total_visits, rewards_redeemed, cashback_balance, business_id")
     .eq("id", customerId)
     .single();
 
@@ -36,7 +36,7 @@ export default async function CustomerCardPage({
   if (cardId) {
     const { data } = await supabase
       .from("loyalty_cards")
-      .select("id, title, stamps_required, reward_text, color_primary, color_background, text_color, logo_url, bg_type, color_gradient_end, gradient_direction, bg_image_url, bg_image_position, stamp_icon, card_type, coupon_value, max_uses")
+      .select("id, title, stamps_required, reward_text, color_primary, color_background, text_color, logo_url, bg_type, color_gradient_end, gradient_direction, bg_image_url, bg_image_position, stamp_icon, card_type, coupon_value, max_uses, cashback_percent")
       .eq("id", cardId)
       .eq("business_id", customer.business_id)
       .single();
@@ -45,7 +45,7 @@ export default async function CustomerCardPage({
   if (!card) {
     const { data } = await supabase
       .from("loyalty_cards")
-      .select("id, title, stamps_required, reward_text, color_primary, color_background, text_color, logo_url, bg_type, color_gradient_end, gradient_direction, bg_image_url, bg_image_position, stamp_icon, card_type, coupon_value, max_uses")
+      .select("id, title, stamps_required, reward_text, color_primary, color_background, text_color, logo_url, bg_type, color_gradient_end, gradient_direction, bg_image_url, bg_image_position, stamp_icon, card_type, coupon_value, max_uses, cashback_percent")
       .eq("business_id", customer.business_id)
       .eq("is_active", true)
       .order("created_at", { ascending: false })

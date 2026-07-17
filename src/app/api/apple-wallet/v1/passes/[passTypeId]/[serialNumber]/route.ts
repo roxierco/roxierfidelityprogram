@@ -22,8 +22,8 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ pass
   const admin = createAdminClient();
 
   const [{ data: customer }, { data: card }] = await Promise.all([
-    admin.from("end_customers").select("id, full_name, current_stamps, business_id").eq("id", customerId).single(),
-    admin.from("loyalty_cards").select("id, title, stamps_required, reward_text, color_primary, color_background, text_color, apple_wallet_strip_url").eq("id", cardId).single(),
+    admin.from("end_customers").select("id, full_name, current_stamps, cashback_balance, business_id").eq("id", customerId).single(),
+    admin.from("loyalty_cards").select("id, title, stamps_required, reward_text, color_primary, color_background, text_color, apple_wallet_strip_url, card_type").eq("id", cardId).single(),
   ]);
 
   if (!customer || !card) return new NextResponse(null, { status: 404 });
@@ -49,6 +49,8 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ pass
       colorText: card.text_color ?? "#ffffff",
       logoUrl: business.logo_url ?? null,
       stripUrl: card.apple_wallet_strip_url ?? null,
+      cardType: card.card_type ?? "sellos",
+      cashbackBalance: Number(customer.cashback_balance ?? 0),
     });
 
     return new NextResponse(new Uint8Array(passBuffer), {

@@ -21,7 +21,7 @@ export async function GET(req: NextRequest) {
 
   const { data: customer } = await admin
     .from("end_customers")
-    .select("id, full_name, current_stamps, business_id")
+    .select("id, full_name, current_stamps, cashback_balance, business_id")
     .eq("id", customerId)
     .single();
 
@@ -30,7 +30,7 @@ export async function GET(req: NextRequest) {
   const [{ data: card }, { data: business }] = await Promise.all([
     admin
       .from("loyalty_cards")
-      .select("title, stamps_required, reward_text, color_primary, color_background, text_color, apple_wallet_strip_url")
+      .select("title, stamps_required, reward_text, color_primary, color_background, text_color, apple_wallet_strip_url, card_type")
       .eq("id", cardId)
       .eq("business_id", customer.business_id)
       .eq("is_active", true)
@@ -62,6 +62,8 @@ export async function GET(req: NextRequest) {
       colorText: card.text_color ?? "#ffffff",
       logoUrl: business.logo_url ?? null,
       stripUrl: card.apple_wallet_strip_url ?? null,
+      cardType: card.card_type ?? "sellos",
+      cashbackBalance: Number(customer.cashback_balance ?? 0),
     });
 
     return new NextResponse(new Uint8Array(passBuffer), {

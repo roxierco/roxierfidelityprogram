@@ -20,6 +20,18 @@ interface CameraDevice {
   label: string;
 }
 
+interface CashbackInfo {
+  customerId: string;
+  cardId: string;
+  businessId: string;
+  customerName: string;
+  balance: number;
+  cashbackPercent: number;
+  minPurchase: number;
+}
+
+const newIdempotencyKey = () => `${Date.now()}-${crypto.randomUUID()}`;
+
 function playRewardSound() {
   try {
     const ctx = new AudioContext();
@@ -88,6 +100,12 @@ export function ScannerClient({ businessId }: { businessId: string; businessName
   );
   const [gunInput, setGunInput] = useState("");
   const gunInputRef = useRef<HTMLInputElement | null>(null);
+
+  // Estado de cashback (cuando la tarjeta escaneada es de tipo cashback)
+  const [cashback, setCashback] = useState<CashbackInfo | null>(null);
+  const [cashbackAmount, setCashbackAmount] = useState("");
+  const [cashbackBusy, setCashbackBusy] = useState(false);
+  const [cashbackMsg, setCashbackMsg] = useState<{ text: string; ok: boolean } | null>(null);
 
   // Load camera list on mount
   useEffect(() => {
@@ -202,12 +220,88 @@ export function ScannerClient({ businessId }: { businessId: string; businessName
       return;
     }
 
-    setScannedCustomerId(parsed.customerId);
-    setScannedCardId(parsed.cardId);
-
     await qr.stop();
     scannerRef.current = null;
     setScanning(false);
+
+    await routeScan(parsed.customerId, parsed.cardId, false);
+  }
+
+  /**
+   * Decide qué hacer con el QR escaneado: si la tarjeta es de cashback abre el
+   * panel de monto; si no, sigue el flujo normal de sellos.
+   * autoStamp=true (pistola) sella al instante para tarjetas que no son cashback.
+   */
+  async function routeScan(customerId: string, cardId: string | null, autoStamp: boolean) {
+    if (cardId) {
+      try {
+        const res = await fetch(`/api/cashback/card/${customerId}?card=${cardId}`);
+        if (res.ok) {
+          const info = (await res.json()) as CashbackInfo;
+          setCashback(info);
+          setCashbackAmount("");
+          setCashbackMsg(null);
+          return;
+        }
+      } catch {
+        // si falla la consulta de cashback, caemos al flujo normal
+      }
+    }
+
+    if (autoStamp) {
+      await darSelloDirecto(customerId, cardId);
+    } else {
+      setScannedCustomerId(customerId);
+      setScannedCardId(cardId);
+    }
+  }
+
+  async function aplicarCashback(kind: "apply" | "redeem") {
+    if (!cashback) return;
+    const monto = Number(cashbackAmount);
+    if (!monto || monto <= 0) {
+      setCashbackMsg({ text: "Ingresa un monto válido", ok: false });
+      return;
+    }
+    setCashbackBusy(true);
+    setCashbackMsg(null);
+
+    const endpoint = kind === "apply" ? "/api/cashback/apply" : "/api/cashback/redeem";
+    const body =
+      kind === "apply"
+        ? { customerId: cashback.customerId, cardId: cashback.cardId, businessId: cashback.businessId, purchaseAmount: monto, idempotencyKey: newIdempotencyKey() }
+        : { customerId: cashback.customerId, cardId: cashback.cardId, businessId: cashback.businessId, redeemAmount: monto, idempotencyKey: newIdempotencyKey() };
+
+    const res = await fetch(endpoint, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    const data = await res.json();
+    setCashbackBusy(false);
+
+    if (!res.ok) {
+      setCashbackMsg({ text: data.error ?? "Error al procesar", ok: false });
+      return;
+    }
+
+    setCashback({ ...cashback, balance: data.balance });
+    setCashbackAmount("");
+    setCashbackMsg({
+      text:
+        kind === "apply"
+          ? `✅ +$${Number(data.earned).toFixed(2)} de cashback acreditado`
+          : `✅ Se usaron $${monto.toFixed(2)} del saldo`,
+      ok: true,
+    });
+    playRewardSound();
+  }
+
+  function cerrarCashback() {
+    setCashback(null);
+    setCashbackMsg(null);
+    setCashbackAmount("");
+    if (mode === "camera") startScanner();
   }
 
   /** Da el sello/canje directamente con los IDs recibidos (usado por la pistola lectora). */
@@ -252,17 +346,18 @@ export function ScannerClient({ businessId }: { businessId: string; businessName
       return;
     }
     setError("");
-    darSelloDirecto(parsed.customerId, parsed.cardId);
+    routeScan(parsed.customerId, parsed.cardId, true);
   }
 
-  // Mantiene el input de la pistola siempre enfocado para capturar el escaneo (modo teclado/HID)
+  // Mantiene el input de la pistola siempre enfocado para capturar el escaneo (modo teclado/HID).
+  // Se desactiva cuando hay un panel de cashback abierto para que puedan escribir el monto.
   useEffect(() => {
-    if (mode !== "gun" || result || stamping) return;
+    if (mode !== "gun" || result || stamping || cashback) return;
     gunInputRef.current?.focus();
     const refocus = () => gunInputRef.current?.focus();
     window.addEventListener("click", refocus);
     return () => window.removeEventListener("click", refocus);
-  }, [mode, result, stamping]);
+  }, [mode, result, stamping, cashback]);
 
   async function darSello() {
     if (!scannedCustomerId) return;
@@ -299,7 +394,7 @@ export function ScannerClient({ businessId }: { businessId: string; businessName
     <div className="mx-auto max-w-lg space-y-4">
 
       {/* Selector de modo: cámara o pistola lectora */}
-      {!result && !scannedCustomerId && (
+      {!result && !scannedCustomerId && !cashback && (
         <div className="flex rounded-xl border border-surface-border bg-surface p-1">
           <button
             onClick={() => { setMode("camera"); setError(""); }}
@@ -317,7 +412,7 @@ export function ScannerClient({ businessId }: { businessId: string; businessName
       )}
 
       {/* Pistola lectora de códigos (modo teclado/HID) */}
-      {mode === "gun" && !result && !scannedCustomerId && (
+      {mode === "gun" && !result && !scannedCustomerId && !cashback && (
         <div className="rounded-2xl border border-surface-border bg-surface p-6 space-y-4 text-center">
           <div className="h-16 w-16 mx-auto rounded-full bg-magenta/10 flex items-center justify-center text-3xl">
             🔫
@@ -351,8 +446,67 @@ export function ScannerClient({ businessId }: { businessId: string; businessName
         </div>
       )}
 
+      {/* Panel de CASHBACK — capturar monto para acumular o redimir */}
+      {cashback && (
+        <div className="rounded-2xl border-2 border-green-500/40 bg-surface p-6 space-y-5">
+          <div className="text-center">
+            <p className="text-sm text-mist">{cashback.customerName}</p>
+            <p className="mt-1 text-4xl font-black text-paper tabular-nums tracking-tight">
+              ${cashback.balance.toFixed(2)}
+              <span className="ml-2 text-base font-normal text-mist">MXN</span>
+            </p>
+            <p className="mt-1 text-xs text-green-400 font-semibold">Saldo de cashback · devuelve {cashback.cashbackPercent}% por compra</p>
+          </div>
+
+          <div>
+            <label className="label">Monto</label>
+            <div className="relative mt-1">
+              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-lg text-mist">$</span>
+              <input
+                autoFocus
+                inputMode="decimal"
+                value={cashbackAmount}
+                onChange={(e) => setCashbackAmount(e.target.value.replace(/[^0-9.]/g, ""))}
+                placeholder="0.00"
+                className="w-full rounded-xl border border-surface-border bg-near-black pl-8 pr-4 py-3 text-lg text-paper focus:border-green-500 focus:outline-none tabular-nums"
+              />
+            </div>
+            <p className="mt-1.5 text-xs text-mist">
+              Para acumular, captura el <strong>monto de la compra</strong>. Para redimir, el monto que el cliente quiere usar de su saldo.
+            </p>
+          </div>
+
+          {cashbackMsg && (
+            <div className={`rounded-xl px-4 py-2.5 text-sm font-medium text-center ${cashbackMsg.ok ? "bg-green-500/15 text-green-400" : "bg-red-500/15 text-red-400"}`}>
+              {cashbackMsg.text}
+            </div>
+          )}
+
+          <div className="grid grid-cols-2 gap-3">
+            <button
+              onClick={() => aplicarCashback("apply")}
+              disabled={cashbackBusy || !cashbackAmount}
+              className="rounded-xl bg-green-600 py-3.5 font-bold text-sm text-white hover:bg-green-700 disabled:opacity-40 transition-colors"
+            >
+              {cashbackBusy ? "..." : "Agregar cashback"}
+            </button>
+            <button
+              onClick={() => aplicarCashback("redeem")}
+              disabled={cashbackBusy || !cashbackAmount}
+              className="rounded-xl bg-magenta py-3.5 font-bold text-sm text-white hover:bg-magenta/90 disabled:opacity-40 transition-colors"
+            >
+              {cashbackBusy ? "..." : "Redimir saldo"}
+            </button>
+          </div>
+
+          <button onClick={cerrarCashback} className="w-full text-sm text-mist hover:text-paper transition-colors">
+            Escanear otra tarjeta
+          </button>
+        </div>
+      )}
+
       {/* Cámara */}
-      {mode === "camera" && !result && !scannedCustomerId && (
+      {mode === "camera" && !result && !scannedCustomerId && !cashback && (
         <div className="rounded-2xl overflow-hidden bg-near-black border border-surface-border">
           <div className="relative">
             <div

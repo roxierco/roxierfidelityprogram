@@ -23,7 +23,7 @@ export interface Business {
   updated_at: string;
 }
 
-export type CardType = "sellos" | "cupon" | "descuento";
+export type CardType = "sellos" | "cupon" | "descuento" | "cashback";
 
 export interface LoyaltyCard {
   id: string;
@@ -40,6 +40,11 @@ export interface LoyaltyCard {
   card_type: CardType;
   coupon_value: string | null;
   max_uses: number | null;
+  // Config de cashback (solo aplica cuando card_type === "cashback")
+  cashback_percent: number;
+  cashback_min_purchase: number;
+  cashback_max_balance: number | null;
+  cashback_expires_days: number | null;
   // Personalización avanzada del fondo
   bg_type: "solid" | "gradient" | "image";
   color_gradient_end: string | null;
@@ -65,6 +70,7 @@ export interface EndCustomer {
   current_stamps: number;
   total_visits: number;
   rewards_redeemed: number;
+  cashback_balance: number;
   apple_pass_serial: string | null;
   google_pass_id: string | null;
   enrolled_at: string;
@@ -89,6 +95,22 @@ export interface PushNotification {
   message: string;
   recipients_count: number;
   sent_at: string;
+}
+
+export type CashbackTxType = "earned" | "redeemed" | "expired" | "adjustment";
+
+export interface CashbackTransaction {
+  id: string;
+  customer_id: string;
+  card_id: string | null;
+  business_id: string;
+  type: CashbackTxType;
+  amount: number;
+  purchase_amount: number | null;
+  balance_after: number;
+  idempotency_key: string | null;
+  created_by: string | null;
+  created_at: string;
 }
 
 /** Métricas calculadas para el dashboard del negocio. */

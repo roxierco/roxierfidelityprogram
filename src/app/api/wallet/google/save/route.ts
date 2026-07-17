@@ -4,6 +4,8 @@ import {
   isGoogleWalletConfigured,
   upsertLoyaltyClass,
   upsertLoyaltyObject,
+  upsertCashbackClass,
+  upsertCashbackObject,
   generateSaveLink,
 } from "@/lib/google-wallet";
 
@@ -23,7 +25,7 @@ export async function POST(req: NextRequest) {
 
   const { data: customer } = await admin
     .from("end_customers")
-    .select("id, full_name, current_stamps, business_id")
+    .select("id, full_name, current_stamps, cashback_balance, business_id")
     .eq("id", customerId)
     .single();
 
@@ -39,7 +41,7 @@ export async function POST(req: NextRequest) {
 
   const { data: card } = await admin
     .from("loyalty_cards")
-    .select("id, title, color_primary, color_background, logo_url, stamps_required, reward_text")
+    .select("id, title, color_primary, color_background, logo_url, stamps_required, reward_text, card_type")
     .eq("id", cardId)
     .eq("business_id", customer.business_id)
     .single();
@@ -49,16 +51,29 @@ export async function POST(req: NextRequest) {
   const cardUrl = `${process.env.NEXT_PUBLIC_APP_URL}/c/${business.slug}/u/${customerId}?card=${cardId}`;
 
   try {
-    await upsertLoyaltyClass(card, business.name);
-    const objectId = await upsertLoyaltyObject({
-      customerId,
-      cardId,
-      customerName: customer.full_name,
-      currentStamps: customer.current_stamps,
-      stampsRequired: card.stamps_required,
-      rewardText: card.reward_text,
-      cardUrl,
-    });
+    let objectId: string | undefined;
+
+    if (card.card_type === "cashback") {
+      await upsertCashbackClass(card, business.name);
+      objectId = await upsertCashbackObject({
+        customerId,
+        cardId,
+        customerName: customer.full_name,
+        balance: Number(customer.cashback_balance ?? 0),
+        cardUrl,
+      });
+    } else {
+      await upsertLoyaltyClass(card, business.name);
+      objectId = await upsertLoyaltyObject({
+        customerId,
+        cardId,
+        customerName: customer.full_name,
+        currentStamps: customer.current_stamps,
+        stampsRequired: card.stamps_required,
+        rewardText: card.reward_text,
+        cardUrl,
+      });
+    }
 
     const saveUrl = generateSaveLink(objectId!);
     return NextResponse.json({ saveUrl });

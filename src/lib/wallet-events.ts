@@ -6,7 +6,9 @@ export type WalletEventType =
   | "push_sent"
   | "push_failed"
   | "push_skipped_no_registration"
-  | "get_registrations";
+  | "get_registrations"
+  | "cashback_earned"
+  | "cashback_redeemed";
 
 export async function logWalletEvent(
   event_type: WalletEventType,

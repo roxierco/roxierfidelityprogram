@@ -11,6 +11,7 @@ interface Customer {
   current_stamps: number;
   total_visits: number;
   rewards_redeemed: number;
+  cashback_balance: number;
 }
 
 interface Card {
@@ -29,6 +30,7 @@ interface Card {
   card_type: string | null;
   coupon_value: string | null;
   max_uses: number | null;
+  cashback_percent: number | null;
 }
 
 function cardBgStyle(card: Card | null): CSSProperties {
@@ -193,6 +195,10 @@ export function CustomerCardClient({
       .on("broadcast", { event: "stamp_added" }, (msg) => {
         applyUpdate(msg.payload as { current_stamps: number; total_visits: number; rewards_redeemed: number });
       })
+      .on("broadcast", { event: "cashback_updated" }, (msg) => {
+        const p = msg.payload as { cashback_balance: number };
+        setCustomer((prev) => ({ ...prev, cashback_balance: p.cashback_balance }));
+      })
       .subscribe();
     return () => { supabase.removeChannel(channel); };
   }, [initialCustomer.id, applyUpdate]);
@@ -300,6 +306,37 @@ export function CustomerCardClient({
       )}
 
       <div className="w-full max-w-sm space-y-4">
+
+        {/* ── Cashback ── */}
+        {card?.card_type === "cashback" && (
+          <div className="relative overflow-hidden rounded-2xl shadow-2xl" style={{ ...cardBgStyle(card), color: text, border: `2px solid ${primary}` }}>
+            {card?.bg_type === "image" && card?.bg_image_url && <div className="absolute inset-0 bg-black/45" />}
+            <div className="relative p-5">
+              <div className="flex items-center gap-3 mb-4">
+                {card?.logo_url
+                  ? <img src={card.logo_url} alt="Logo" className="h-10 w-10 rounded-lg object-contain shadow" />
+                  : <div className="flex h-10 w-10 items-center justify-center rounded-lg font-bold text-sm shadow" style={{ backgroundColor: primary, color: bg }}>{business.name[0]}</div>
+                }
+                <div>
+                  <p className="font-bold">{card?.title ?? "Cashback"}</p>
+                  <p className="text-xs" style={{ opacity: 0.6 }}>{customer.full_name}</p>
+                </div>
+                {justStamped && <span className="ml-auto text-lg animate-bounce">✨</span>}
+              </div>
+              <div className="rounded-xl bg-white/10 p-5 text-center">
+                <p className="text-[10px] font-bold uppercase tracking-widest mb-1" style={{ opacity: 0.6 }}>Saldo disponible</p>
+                <p className="text-4xl font-extrabold tabular-nums tracking-tight">
+                  ${customer.cashback_balance.toFixed(2)}
+                  <span className="ml-1.5 text-base font-normal" style={{ opacity: 0.5 }}>MXN</span>
+                </p>
+                {card.cashback_percent ? (
+                  <p className="text-xs mt-1.5" style={{ opacity: 0.5 }}>Ganas {card.cashback_percent}% de cashback en cada compra</p>
+                ) : null}
+              </div>
+              <p className="text-center text-xs mt-3" style={{ opacity: 0.5 }}>Muestra el QR al cajero para acumular o usar tu saldo</p>
+            </div>
+          </div>
+        )}
 
         {/* ── Cupón ── */}
         {card?.card_type === "cupon" && (() => {

@@ -472,6 +472,11 @@ export function TarjetaEditor({
       card_type: cardType,
       coupon_value: card.coupon_value ?? null,
       max_uses: cardType === "descuento" ? (card.max_uses ?? null) : null,
+      // Config de cashback (0 / null cuando no aplica, para no ensuciar otras tarjetas)
+      cashback_percent: cardType === "cashback" ? (card.cashback_percent ?? 0) : 0,
+      cashback_min_purchase: cardType === "cashback" ? (card.cashback_min_purchase ?? 0) : 0,
+      cashback_max_balance: cardType === "cashback" ? (card.cashback_max_balance ?? null) : null,
+      cashback_expires_days: cardType === "cashback" ? (card.cashback_expires_days ?? null) : null,
     };
 
     let savedCardId = card.id;
@@ -619,6 +624,60 @@ export function TarjetaEditor({
                   {card.max_uses
                     ? `ℹ️ Cada cliente puede usar esta tarjeta hasta ${card.max_uses} ${card.max_uses === 1 ? "vez" : "veces"}.`
                     : "ℹ️ El cliente puede usar esta tarjeta en cada visita — sin límite de usos."}
+                </div>
+              </div>
+            )}
+
+            {/* Campos de Cashback */}
+            {(card.card_type === "cashback") && (
+              <div className="card space-y-4">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-lg">💰</span>
+                  <p className="font-bold text-paper text-sm">Configuración del cashback</p>
+                  <span className="rounded-full bg-green-500/10 px-2 py-0.5 text-[10px] font-bold text-green-400 uppercase tracking-wider">
+                    {card.cashback_percent ?? 0}% por compra
+                  </span>
+                </div>
+                <div>
+                  <label className="label">Nombre de la tarjeta</label>
+                  <input className="input mt-1" placeholder="Ej: Cashback Casa Veguero"
+                    value={card.title ?? ""} onChange={(e) => update("title", e.target.value)} />
+                </div>
+                <div>
+                  <label className="label">Porcentaje de cashback por compra</label>
+                  <div className="mt-1 flex items-center gap-3">
+                    <input type="range" min={1} max={30} step={1} value={card.cashback_percent ?? 5}
+                      onChange={(e) => update("cashback_percent", parseInt(e.target.value))}
+                      className="flex-1 accent-green-500" />
+                    <span className="w-12 text-center text-lg font-black text-paper">{card.cashback_percent ?? 5}%</span>
+                  </div>
+                  <p className="mt-1 text-xs text-mist">De cada compra, este % se le devuelve al cliente como saldo.</p>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="label">Compra mínima</label>
+                    <input className="input mt-1" type="number" min={0} step="0.01" placeholder="0"
+                      value={card.cashback_min_purchase ?? ""}
+                      onChange={(e) => update("cashback_min_purchase", e.target.value ? Number(e.target.value) : 0)} />
+                    <p className="mt-1 text-[11px] text-mist">Vacío = sin mínimo</p>
+                  </div>
+                  <div>
+                    <label className="label">Tope de saldo</label>
+                    <input className="input mt-1" type="number" min={0} step="0.01" placeholder="Sin tope"
+                      value={card.cashback_max_balance ?? ""}
+                      onChange={(e) => update("cashback_max_balance", e.target.value ? Number(e.target.value) : (null as unknown as number))} />
+                    <p className="mt-1 text-[11px] text-mist">Máximo acumulable</p>
+                  </div>
+                </div>
+                <div>
+                  <label className="label">Vigencia del saldo (días)</label>
+                  <input className="input mt-1" type="number" min={1} placeholder="Vacío = no expira"
+                    value={card.cashback_expires_days ?? ""}
+                    onChange={(e) => update("cashback_expires_days", e.target.value ? Number(e.target.value) : (null as unknown as number))} />
+                  <p className="mt-1 text-xs text-mist">Si el cliente no usa la tarjeta en este tiempo, su saldo expira. Vacío = nunca expira.</p>
+                </div>
+                <div className="rounded-xl bg-green-500/10 border border-green-500/20 p-3 text-xs text-green-400">
+                  💡 El empleado captura el <strong>monto de la compra</strong> al escanear; el sistema calcula y acredita el {card.cashback_percent ?? 5}% automáticamente. El cliente redime su saldo desde la misma pantalla.
                 </div>
               </div>
             )}

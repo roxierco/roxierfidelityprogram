@@ -45,6 +45,9 @@ export interface LoyaltyPassData {
   colorText: string;
   logoUrl: string | null;
   stripUrl: string | null;
+  // Solo para tarjetas de cashback
+  cardType?: string;
+  cashbackBalance?: number;
 }
 
 // ─── PNG generator (no external deps) ───────────────────────────────────────
@@ -203,6 +206,66 @@ function hexToRgb(hex: string): string {
 function buildPassJson(data: LoyaltyPassData, hasStrip: boolean): object {
   const authToken = generateAuthToken(data.customerId, data.cardId);
   const appUrl = process.env.NEXT_PUBLIC_APP_URL!;
+
+  // ── Rama CASHBACK: el campo primario es el saldo formateado como moneda ──
+  if (data.cardType === "cashback") {
+    const balance = data.cashbackBalance ?? 0;
+    return {
+      formatVersion: 1,
+      passTypeIdentifier: process.env.APPLE_WALLET_PASS_TYPE_ID!,
+      serialNumber: `${data.customerId}-${data.cardId}`,
+      teamIdentifier: process.env.APPLE_WALLET_TEAM_ID!,
+      webServiceURL: `${appUrl}/api/apple-wallet/`,
+      authenticationToken: authToken,
+      organizationName: data.businessName,
+      description: data.cardTitle,
+      logoText: data.businessName,
+      foregroundColor: hexToRgb(data.colorText),
+      backgroundColor: hexToRgb(data.colorBackground),
+      labelColor: hexToRgb(data.colorText),
+      stripColor: hexToRgb(data.colorPrimary),
+      storeCard: {
+        headerFields: [
+          {
+            key: "balance",
+            label: "SALDO",
+            value: balance,
+            currencyCode: "MXN",
+            textAlignment: "PKTextAlignmentRight",
+          },
+        ],
+        primaryFields: [
+          {
+            key: "balancePrimary",
+            label: "Saldo disponible",
+            value: balance,
+            currencyCode: "MXN",
+          },
+        ],
+        secondaryFields: [
+          { key: "member", label: "MIEMBRO", value: data.customerName },
+        ],
+        backFields: [
+          {
+            key: "instructions",
+            label: "Cómo funciona",
+            value: `Presenta este QR en ${data.businessName} en cada compra para acumular cashback. Usa tu saldo cuando quieras.`,
+          },
+          { key: "card", label: "Programa", value: data.cardTitle },
+          { key: "powered", label: "", value: "Powered by Roxier Fidelity · roxierco.com" },
+        ],
+      },
+      barcodes: [
+        {
+          message: data.cardUrl,
+          format: "PKBarcodeFormatQR",
+          messageEncoding: "iso-8859-1",
+          altText: data.customerName,
+        },
+      ],
+    };
+  }
+
   const remaining = Math.max(0, data.stampsRequired - data.currentStamps);
   const stampBar = "●".repeat(Math.min(data.currentStamps, data.stampsRequired)) +
                    "○".repeat(Math.max(0, data.stampsRequired - data.currentStamps));
