@@ -510,9 +510,14 @@ export function TarjetasClient({
                     </div>
                   </div>
 
-                  <a href="/fidelity/dashboard/scanner" className="btn-primary inline-flex !py-2 !px-4 text-sm">
-                    📷 Abrir escáner para dar sellos
-                  </a>
+                  <div className="flex flex-wrap gap-2">
+                    <a href="/fidelity/dashboard/scanner" className="btn-primary inline-flex !py-2 !px-4 text-sm">
+                      📷 Abrir escáner para dar sellos
+                    </a>
+                    <a href="/fidelity/dashboard/scanner?modo=pistola" className="btn-secondary inline-flex !py-2 !px-4 text-sm">
+                      🔫 Usar pistola lectora
+                    </a>
+                  </div>
                 </div>
               </div>
             </section>

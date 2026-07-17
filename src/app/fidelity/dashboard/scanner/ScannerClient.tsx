@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useCallback } from "react";
+import { useSearchParams } from "next/navigation";
 import { Html5Qrcode, Html5QrcodeSupportedFormats } from "html5-qrcode";
 
 interface ScanResult {
@@ -81,7 +82,10 @@ export function ScannerClient({ businessId }: { businessId: string; businessName
   const [cameras, setCameras] = useState<CameraDevice[]>([]);
   const [activeCameraId, setActiveCameraId] = useState<string | null>(null);
   const [loadingCameras, setLoadingCameras] = useState(false);
-  const [mode, setMode] = useState<"camera" | "gun">("camera");
+  const searchParams = useSearchParams();
+  const [mode, setMode] = useState<"camera" | "gun">(
+    searchParams.get("modo") === "pistola" ? "gun" : "camera",
+  );
   const [gunInput, setGunInput] = useState("");
   const gunInputRef = useRef<HTMLInputElement | null>(null);
 

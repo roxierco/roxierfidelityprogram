@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { ScannerClient } from "./ScannerClient";
@@ -22,7 +23,9 @@ export default async function ScannerPage() {
         Apunta la cámara al código QR del cliente para registrar su visita.
       </p>
       <div className="mt-8">
-        <ScannerClient businessId={business.id} businessName={business.name} />
+        <Suspense fallback={null}>
+          <ScannerClient businessId={business.id} businessName={business.name} />
+        </Suspense>
       </div>
     </div>
   );
