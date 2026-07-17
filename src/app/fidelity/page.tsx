@@ -1,22 +1,25 @@
 import Link from "next/link";
 import { RoxierLogo } from "@/components/brand/XMark";
 
+// Mockup decorativo de QR — usa un patrón SVG en vez de ~70 <rect> individuales
+// (eso inflaba el HTML/RSC de la landing y hacía la primera carga más lenta en móvil).
 function QRMockup() {
   return (
     <svg viewBox="0 0 33 33" fill="currentColor" className="h-full w-full">
-      <rect x="0" y="0" width="9" height="9" /><rect x="1" y="1" width="7" height="7" fill="white" /><rect x="2" y="2" width="5" height="5" />
-      <rect x="24" y="0" width="9" height="9" /><rect x="25" y="1" width="7" height="7" fill="white" /><rect x="26" y="2" width="5" height="5" />
-      <rect x="0" y="24" width="9" height="9" /><rect x="1" y="25" width="7" height="7" fill="white" /><rect x="2" y="26" width="5" height="5" />
-      <rect x="11" y="0" width="2" height="2" /><rect x="14" y="0" width="2" height="2" /><rect x="17" y="0" width="2" height="2" /><rect x="20" y="0" width="2" height="2" />
-      <rect x="11" y="3" width="2" height="2" /><rect x="15" y="3" width="2" height="2" /><rect x="19" y="3" width="2" height="2" />
-      <rect x="11" y="6" width="2" height="2" /><rect x="14" y="6" width="2" height="2" /><rect x="17" y="6" width="2" height="2" /><rect x="21" y="6" width="2" height="2" />
-      <rect x="0" y="11" width="2" height="2" /><rect x="3" y="11" width="2" height="2" /><rect x="6" y="11" width="2" height="2" /><rect x="10" y="11" width="2" height="2" /><rect x="13" y="11" width="2" height="2" /><rect x="16" y="11" width="2" height="2" /><rect x="19" y="11" width="2" height="2" /><rect x="23" y="11" width="2" height="2" /><rect x="26" y="11" width="2" height="2" /><rect x="30" y="11" width="2" height="2" />
-      <rect x="0" y="14" width="2" height="2" /><rect x="4" y="14" width="2" height="2" /><rect x="8" y="14" width="2" height="2" /><rect x="12" y="14" width="2" height="2" /><rect x="17" y="14" width="2" height="2" /><rect x="21" y="14" width="2" height="2" /><rect x="25" y="14" width="2" height="2" /><rect x="29" y="14" width="2" height="2" />
-      <rect x="2" y="17" width="2" height="2" /><rect x="6" y="17" width="2" height="2" /><rect x="10" y="17" width="2" height="2" /><rect x="14" y="17" width="2" height="2" /><rect x="18" y="17" width="2" height="2" /><rect x="22" y="17" width="2" height="2" /><rect x="27" y="17" width="2" height="2" /><rect x="31" y="17" width="2" height="2" />
-      <rect x="0" y="20" width="2" height="2" /><rect x="4" y="20" width="2" height="2" /><rect x="9" y="20" width="2" height="2" /><rect x="13" y="20" width="2" height="2" /><rect x="17" y="20" width="2" height="2" /><rect x="20" y="20" width="2" height="2" /><rect x="24" y="20" width="2" height="2" /><rect x="28" y="20" width="2" height="2" />
-      <rect x="11" y="24" width="2" height="2" /><rect x="15" y="24" width="2" height="2" /><rect x="19" y="25" width="2" height="2" /><rect x="23" y="24" width="2" height="2" /><rect x="28" y="24" width="2" height="2" /><rect x="31" y="24" width="2" height="2" />
-      <rect x="11" y="27" width="2" height="2" /><rect x="14" y="27" width="2" height="2" /><rect x="18" y="27" width="2" height="2" /><rect x="22" y="27" width="2" height="2" /><rect x="26" y="27" width="2" height="2" /><rect x="30" y="27" width="2" height="2" />
-      <rect x="11" y="30" width="2" height="2" /><rect x="16" y="30" width="2" height="2" /><rect x="20" y="30" width="2" height="2" /><rect x="24" y="30" width="2" height="2" /><rect x="28" y="31" width="2" height="2" />
+      <defs>
+        <pattern id="qr-dots" width="4" height="4" patternUnits="userSpaceOnUse">
+          <rect width="2" height="2" />
+          <rect x="2" y="2" width="2" height="2" opacity="0.6" />
+        </pattern>
+      </defs>
+      <rect x="10" y="10" width="13" height="13" fill="url(#qr-dots)" />
+      {[[0, 0], [24, 0], [0, 24]].map(([x, y]) => (
+        <g key={`${x}-${y}`}>
+          <rect x={x} y={y} width="9" height="9" />
+          <rect x={x + 1} y={y + 1} width="7" height="7" fill="white" />
+          <rect x={x + 2} y={y + 2} width="5" height="5" />
+        </g>
+      ))}
     </svg>
   );
 }
