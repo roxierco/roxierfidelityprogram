@@ -28,6 +28,7 @@ interface Card {
   gradient_direction: string | null;
   card_type: string | null;
   coupon_value: string | null;
+  max_uses: number | null;
 }
 
 function cardBgStyle(card: Card | null): CSSProperties {
@@ -333,29 +334,39 @@ export function CustomerCardClient({
         })()}
 
         {/* ── Descuento ── */}
-        {card?.card_type === "descuento" && (
-          <div className="relative overflow-hidden rounded-2xl shadow-2xl" style={{ ...cardBgStyle(card), color: text, border: `2px solid ${primary}` }}>
-            {card?.bg_type === "image" && card?.bg_image_url && <div className="absolute inset-0 bg-black/45" />}
-            <div className="relative p-5">
-              <div className="flex items-center gap-3 mb-4">
-                {card?.logo_url
-                  ? <img src={card.logo_url} alt="Logo" className="h-10 w-10 rounded-lg object-contain shadow" />
-                  : <div className="flex h-10 w-10 items-center justify-center rounded-lg font-bold text-sm shadow" style={{ backgroundColor: primary, color: bg }}>{business.name[0]}</div>
-                }
-                <div>
-                  <p className="font-bold">{card?.title ?? "Tarjeta de descuento"}</p>
-                  <p className="text-xs" style={{ opacity: 0.6 }}>{customer.full_name}</p>
+        {card?.card_type === "descuento" && (() => {
+          const usesLeft = card.max_uses != null ? Math.max(0, card.max_uses - customer.rewards_redeemed) : null;
+          const exhausted = usesLeft !== null && usesLeft <= 0;
+          return (
+            <div className="relative overflow-hidden rounded-2xl shadow-2xl" style={{ ...cardBgStyle(card), color: text, border: `2px solid ${primary}` }}>
+              {card?.bg_type === "image" && card?.bg_image_url && <div className="absolute inset-0 bg-black/45" />}
+              <div className="relative p-5">
+                <div className="flex items-center gap-3 mb-4">
+                  {card?.logo_url
+                    ? <img src={card.logo_url} alt="Logo" className="h-10 w-10 rounded-lg object-contain shadow" />
+                    : <div className="flex h-10 w-10 items-center justify-center rounded-lg font-bold text-sm shadow" style={{ backgroundColor: primary, color: bg }}>{business.name[0]}</div>
+                  }
+                  <div>
+                    <p className="font-bold">{card?.title ?? "Tarjeta de descuento"}</p>
+                    <p className="text-xs" style={{ opacity: 0.6 }}>{customer.full_name}</p>
+                  </div>
+                  {justStamped && <span className="ml-auto text-lg animate-bounce">✨</span>}
                 </div>
-                {justStamped && <span className="ml-auto text-lg animate-bounce">✨</span>}
-              </div>
-              <div className="rounded-xl bg-white/10 p-4 text-center">
-                <p className="text-[10px] font-bold uppercase tracking-widest mb-1" style={{ opacity: 0.6 }}>Tu descuento</p>
-                <p className="text-2xl font-extrabold">{card.coupon_value ?? "Descuento especial"}</p>
-                <p className="text-xs mt-1" style={{ opacity: 0.5 }}>Muestra el QR al cajero en cada visita</p>
+                <div className="rounded-xl bg-white/10 p-4 text-center">
+                  <p className="text-[10px] font-bold uppercase tracking-widest mb-1" style={{ opacity: 0.6 }}>Tu descuento</p>
+                  <p className={`text-2xl font-extrabold ${exhausted ? "line-through opacity-40" : ""}`}>{card.coupon_value ?? "Descuento especial"}</p>
+                  <p className="text-xs mt-1" style={{ opacity: 0.5 }}>
+                    {exhausted
+                      ? "Ya usaste todos los usos disponibles"
+                      : usesLeft !== null
+                        ? `Te quedan ${usesLeft} uso${usesLeft !== 1 ? "s" : ""} · Muestra el QR al cajero`
+                        : "Muestra el QR al cajero en cada visita"}
+                  </p>
+                </div>
               </div>
             </div>
-          </div>
-        )}
+          );
+        })()}
 
         {/* ── Tarjeta de sellos (default) ── */}
         {(!card?.card_type || card?.card_type === "sellos") && (

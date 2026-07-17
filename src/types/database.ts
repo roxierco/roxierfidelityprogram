@@ -39,6 +39,7 @@ export interface LoyaltyCard {
   is_active: boolean;
   card_type: CardType;
   coupon_value: string | null;
+  max_uses: number | null;
   // Personalización avanzada del fondo
   bg_type: "solid" | "gradient" | "image";
   color_gradient_end: string | null;

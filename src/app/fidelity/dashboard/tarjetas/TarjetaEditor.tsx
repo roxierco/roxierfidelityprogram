@@ -471,6 +471,7 @@ export function TarjetaEditor({
       apple_wallet_strip_url: card.apple_wallet_strip_url ?? null,
       card_type: cardType,
       coupon_value: card.coupon_value ?? null,
+      max_uses: cardType === "descuento" ? (card.max_uses ?? null) : null,
     };
 
     let savedCardId = card.id;
@@ -592,7 +593,9 @@ export function TarjetaEditor({
                 <div className="flex items-center gap-2 mb-1">
                   <span className="text-lg">%</span>
                   <p className="font-bold text-paper text-sm">Configuración del descuento</p>
-                  <span className="rounded-full bg-green-500/10 px-2 py-0.5 text-[10px] font-bold text-green-400 uppercase tracking-wider">Usos ilimitados</span>
+                  <span className="rounded-full bg-green-500/10 px-2 py-0.5 text-[10px] font-bold text-green-400 uppercase tracking-wider">
+                    {card.max_uses ? `${card.max_uses} usos` : "Usos ilimitados"}
+                  </span>
                 </div>
                 <div>
                   <label className="label">Nombre de la tarjeta</label>
@@ -605,8 +608,17 @@ export function TarjetaEditor({
                     value={card.coupon_value ?? ""} onChange={(e) => update("coupon_value", e.target.value)} />
                   <p className="mt-1 text-xs text-mist">El cliente muestra el QR para obtener el descuento en cada visita</p>
                 </div>
+                <div>
+                  <label className="label">Límite de usos por cliente</label>
+                  <input className="input mt-1" type="number" min={1} placeholder="Vacío = ilimitado"
+                    value={card.max_uses ?? ""}
+                    onChange={(e) => update("max_uses", e.target.value ? Number(e.target.value) : (null as unknown as number))} />
+                  <p className="mt-1 text-xs text-mist">Deja el campo vacío para permitir usos ilimitados.</p>
+                </div>
                 <div className="rounded-xl bg-green-500/10 border border-green-500/20 p-3 text-xs text-green-400">
-                  ℹ️ El cliente puede usar esta tarjeta en cada visita — sin límite de usos.
+                  {card.max_uses
+                    ? `ℹ️ Cada cliente puede usar esta tarjeta hasta ${card.max_uses} ${card.max_uses === 1 ? "vez" : "veces"}.`
+                    : "ℹ️ El cliente puede usar esta tarjeta en cada visita — sin límite de usos."}
                 </div>
               </div>
             )}

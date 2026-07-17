@@ -59,7 +59,7 @@ export async function POST(req: NextRequest) {
   if (cardId && uuidRegex.test(cardId)) {
     const { data } = await admin
       .from("loyalty_cards")
-      .select("id, stamps_required, reward_text, card_type, coupon_value")
+      .select("id, stamps_required, reward_text, card_type, coupon_value, max_uses")
       .eq("id", cardId)
       .eq("business_id", businessId)
       .eq("is_active", true)
@@ -69,7 +69,7 @@ export async function POST(req: NextRequest) {
   if (!card) {
     const { data } = await admin
       .from("loyalty_cards")
-      .select("id, stamps_required, reward_text, card_type, coupon_value")
+      .select("id, stamps_required, reward_text, card_type, coupon_value, max_uses")
       .eq("business_id", businessId)
       .eq("is_active", true)
       .order("created_at", { ascending: false })
@@ -81,6 +81,11 @@ export async function POST(req: NextRequest) {
   // Cupón: bloquear si ya fue canjeado
   if (card?.card_type === "cupon" && customer.rewards_redeemed > 0) {
     return NextResponse.json({ error: "Este cupón ya fue canjeado" }, { status: 409 });
+  }
+
+  // Descuento con límite de usos: bloquear si ya alcanzó el máximo
+  if (card?.card_type === "descuento" && card.max_uses != null && customer.rewards_redeemed >= card.max_uses) {
+    return NextResponse.json({ error: "Esta tarjeta ya alcanzó su límite de usos" }, { status: 409 });
   }
 
   const stampsRequired = card?.stamps_required ?? 10;
