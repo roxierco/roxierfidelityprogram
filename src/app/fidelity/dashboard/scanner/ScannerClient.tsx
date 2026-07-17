@@ -40,6 +40,23 @@ function playRewardSound() {
   }
 }
 
+/** Extrae customerId y cardId de la URL codificada en el QR (cámara o pistola). */
+function parseQrUrl(url: string): { customerId: string; cardId: string | null } | null {
+  const match = url.match(/\/u\/([a-f0-9-]{36})/);
+  if (!match) return null;
+
+  const customerId = match[1];
+  let cardId: string | null = null;
+  try {
+    const parsed = new URL(url);
+    cardId = parsed.searchParams.get("card");
+  } catch {
+    const cardMatch = url.match(/[?&]card=([a-f0-9-]{36})/);
+    if (cardMatch) cardId = cardMatch[1];
+  }
+  return { customerId, cardId };
+}
+
 function pickBestCamera(cameras: CameraDevice[]): CameraDevice {
   if (!cameras.length) throw new Error("No cameras found");
   const isMobile = /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
@@ -64,6 +81,9 @@ export function ScannerClient({ businessId }: { businessId: string; businessName
   const [cameras, setCameras] = useState<CameraDevice[]>([]);
   const [activeCameraId, setActiveCameraId] = useState<string | null>(null);
   const [loadingCameras, setLoadingCameras] = useState(false);
+  const [mode, setMode] = useState<"camera" | "gun">("camera");
+  const [gunInput, setGunInput] = useState("");
+  const gunInputRef = useRef<HTMLInputElement | null>(null);
 
   // Load camera list on mount
   useEffect(() => {
@@ -172,28 +192,73 @@ export function ScannerClient({ businessId }: { businessId: string; businessName
   }
 
   async function handleScan(url: string, qr: Html5Qrcode) {
-    const match = url.match(/\/u\/([a-f0-9-]{36})/);
-    if (!match) {
+    const parsed = parseQrUrl(url);
+    if (!parsed) {
       setError("QR inválido — no es una tarjeta de este sistema.");
       return;
     }
 
-    const customerId = match[1];
-    setScannedCustomerId(customerId);
-
-    try {
-      const parsed = new URL(url);
-      const cardId = parsed.searchParams.get("card");
-      if (cardId) setScannedCardId(cardId);
-    } catch {
-      const cardMatch = url.match(/[?&]card=([a-f0-9-]{36})/);
-      if (cardMatch) setScannedCardId(cardMatch[1]);
-    }
+    setScannedCustomerId(parsed.customerId);
+    setScannedCardId(parsed.cardId);
 
     await qr.stop();
     scannerRef.current = null;
     setScanning(false);
   }
+
+  /** Da el sello/canje directamente con los IDs recibidos (usado por la pistola lectora). */
+  async function darSelloDirecto(customerId: string, cardId: string | null) {
+    setStamping(true);
+    setError("");
+
+    const res = await fetch("/api/stamp", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ customerId, businessId, cardId }),
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      setError(data.error ?? "Error al registrar el escaneo");
+      setStamping(false);
+      return;
+    }
+
+    setResult(data);
+    setStamping(false);
+    if (data.rewarded) playRewardSound();
+  }
+
+  /** Reinicia la pantalla para el siguiente escaneo, respetando el modo activo. */
+  function continuar() {
+    setResult(null);
+    setError("");
+    if (mode === "camera") startScanner();
+  }
+
+  function handleGunSubmit(raw: string) {
+    const value = raw.trim();
+    setGunInput("");
+    if (!value) return;
+
+    const parsed = parseQrUrl(value);
+    if (!parsed) {
+      setError("Código inválido — no es una tarjeta de este sistema.");
+      return;
+    }
+    setError("");
+    darSelloDirecto(parsed.customerId, parsed.cardId);
+  }
+
+  // Mantiene el input de la pistola siempre enfocado para capturar el escaneo (modo teclado/HID)
+  useEffect(() => {
+    if (mode !== "gun" || result || stamping) return;
+    gunInputRef.current?.focus();
+    const refocus = () => gunInputRef.current?.focus();
+    window.addEventListener("click", refocus);
+    return () => window.removeEventListener("click", refocus);
+  }, [mode, result, stamping]);
 
   async function darSello() {
     if (!scannedCustomerId) return;
@@ -229,8 +294,61 @@ export function ScannerClient({ businessId }: { businessId: string; businessName
   return (
     <div className="mx-auto max-w-lg space-y-4">
 
-      {/* Cámara */}
+      {/* Selector de modo: cámara o pistola lectora */}
       {!result && !scannedCustomerId && (
+        <div className="flex rounded-xl border border-surface-border bg-surface p-1">
+          <button
+            onClick={() => { setMode("camera"); setError(""); }}
+            className={`flex-1 rounded-lg py-2 text-sm font-bold transition-colors ${mode === "camera" ? "bg-magenta text-white" : "text-mist"}`}
+          >
+            📷 Cámara
+          </button>
+          <button
+            onClick={async () => { await stopScanner(); setMode("gun"); setError(""); }}
+            className={`flex-1 rounded-lg py-2 text-sm font-bold transition-colors ${mode === "gun" ? "bg-magenta text-white" : "text-mist"}`}
+          >
+            🔫 Pistola lectora
+          </button>
+        </div>
+      )}
+
+      {/* Pistola lectora de códigos (modo teclado/HID) */}
+      {mode === "gun" && !result && !scannedCustomerId && (
+        <div className="rounded-2xl border border-surface-border bg-surface p-6 space-y-4 text-center">
+          <div className="h-16 w-16 mx-auto rounded-full bg-magenta/10 flex items-center justify-center text-3xl">
+            🔫
+          </div>
+          <div>
+            <p className="font-bold text-paper">Listo para escanear</p>
+            <p className="text-sm text-mist mt-1">
+              {stamping ? "Procesando..." : "Escanea el código QR del cliente con la pistola lectora"}
+            </p>
+          </div>
+          <input
+            ref={gunInputRef}
+            type="text"
+            value={gunInput}
+            autoFocus
+            disabled={stamping}
+            onChange={(e) => setGunInput(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                handleGunSubmit(gunInput);
+              }
+            }}
+            onBlur={() => gunInputRef.current?.focus()}
+            className="w-full rounded-lg border border-surface-border bg-near-black text-paper px-3 py-2 text-center text-sm focus:outline-none focus:border-magenta"
+            placeholder="Esperando escaneo..."
+          />
+          <p className="text-xs text-mist">
+            Conecta la pistola por USB o Bluetooth a esta computadora — funciona como un teclado, no necesita instalación.
+          </p>
+        </div>
+      )}
+
+      {/* Cámara */}
+      {mode === "camera" && !result && !scannedCustomerId && (
         <div className="rounded-2xl overflow-hidden bg-near-black border border-surface-border">
           <div className="relative">
             <div
@@ -330,7 +448,7 @@ export function ScannerClient({ businessId }: { businessId: string; businessName
             <p className="text-purple-400 font-semibold mt-1">¡Cupón canjeado!</p>
             {result.couponValue && <p className="text-sm text-mist mt-1">{result.couponValue}</p>}
           </div>
-          <button onClick={() => { setResult(null); startScanner(); }} className="btn-primary w-full">
+          <button onClick={continuar} className="btn-primary w-full">
             Escanear otro cliente
           </button>
         </div>
@@ -345,7 +463,7 @@ export function ScannerClient({ businessId }: { businessId: string; businessName
             <p className="text-green-400 font-semibold mt-1">¡Descuento aplicado!</p>
             {result.couponValue && <p className="text-sm text-mist mt-1">{result.couponValue}</p>}
           </div>
-          <button onClick={() => { setResult(null); startScanner(); }} className="btn-primary w-full">
+          <button onClick={continuar} className="btn-primary w-full">
             Escanear otro cliente
           </button>
         </div>
@@ -366,7 +484,7 @@ export function ScannerClient({ businessId }: { businessId: string; businessName
               </p>
             )}
           </div>
-          <button onClick={() => { setResult(null); startScanner(); }} className="btn-primary w-full">
+          <button onClick={continuar} className="btn-primary w-full">
             Escanear otro cliente
           </button>
         </div>
@@ -439,7 +557,7 @@ export function ScannerClient({ businessId }: { businessId: string; businessName
 
             {/* CTA */}
             <button
-              onClick={() => { setResult(null); startScanner(); }}
+              onClick={continuar}
               className="w-full rounded-2xl py-4 text-base font-bold active:scale-95 transition-transform"
               style={{ background: "#f59e0b", color: "#0a0a0f" }}
             >
@@ -452,7 +570,7 @@ export function ScannerClient({ businessId }: { businessId: string; businessName
       {error && (
         <div className="rounded-brand border border-red-500/30 bg-red-500/10 p-4">
           <p className="text-sm text-red-400">{error}</p>
-          <button onClick={() => { setError(""); startScanner(); }} className="mt-2 text-xs underline text-mist">
+          <button onClick={continuar} className="mt-2 text-xs underline text-mist">
             Intentar de nuevo
           </button>
         </div>
