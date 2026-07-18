@@ -30,7 +30,7 @@ export async function GET(req: NextRequest) {
   const [{ data: card }, { data: business }] = await Promise.all([
     admin
       .from("loyalty_cards")
-      .select("title, stamps_required, reward_text, color_primary, color_background, text_color, apple_wallet_strip_url, card_type, coupon_value, cashback_percent")
+      .select("title, stamps_required, reward_text, color_primary, color_background, text_color, logo_url, apple_wallet_strip_url, card_type, coupon_value, cashback_percent")
       .eq("id", cardId)
       .eq("business_id", customer.business_id)
       .eq("is_active", true)
@@ -60,7 +60,9 @@ export async function GET(req: NextRequest) {
       colorBackground: card.color_background ?? "#14141e",
       colorPrimary: card.color_primary ?? "#e100ff",
       colorText: card.text_color ?? "#ffffff",
-      logoUrl: business.logo_url ?? null,
+      // El logo de la tarjeta manda; si no tiene, cae al logo del negocio.
+      // Si ninguno tiene logo, el pase simplemente no muestra logo (diseño sin logo).
+      logoUrl: card.logo_url ?? business.logo_url ?? null,
       stripUrl: card.apple_wallet_strip_url ?? null,
       cardType: card.card_type ?? "sellos",
       cashbackBalance: Number(customer.cashback_balance ?? 0),

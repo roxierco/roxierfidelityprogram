@@ -537,7 +537,8 @@ export function TarjetaEditor({
 
             {/* Logo */}
             <div className="card">
-              <p className="label mb-3">Logo del negocio</p>
+              <p className="label mb-1">Logo de la tarjeta</p>
+              <p className="text-xs text-mist mb-3">Aparece arriba a la izquierda en Apple/Google Wallet y en la tarjeta del cliente. Opcional — puedes dejarla sin logo.</p>
               <div className="flex items-center gap-4">
                 <div className="flex h-20 w-20 flex-shrink-0 items-center justify-center overflow-hidden rounded-2xl border-2 border-dashed border-surface-border cursor-pointer hover:border-magenta transition-colors"
                   style={{ backgroundColor: card.color_background ?? "#0E0E10" }}
