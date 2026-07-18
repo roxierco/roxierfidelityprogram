@@ -67,11 +67,14 @@ export async function POST(req: NextRequest) {
     card = data;
   }
   if (!card) {
+    // Cuando el QR no trae ?card=, usamos la tarjeta activa más reciente,
+    // pero NUNCA una de cashback (esas se manejan por /api/cashback, no con sellos).
     const { data } = await admin
       .from("loyalty_cards")
       .select("id, stamps_required, reward_text, card_type, coupon_value, max_uses")
       .eq("business_id", businessId)
       .eq("is_active", true)
+      .neq("card_type", "cashback")
       .order("created_at", { ascending: false })
       .limit(1)
       .maybeSingle();

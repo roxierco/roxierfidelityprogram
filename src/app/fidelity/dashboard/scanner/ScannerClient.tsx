@@ -11,7 +11,7 @@ interface ScanResult {
   nearReward: boolean;
   rewardText: string;
   stampsRequired: number;
-  cardType: "sellos" | "cupon" | "descuento";
+  cardType: "sellos" | "cupon" | "descuento" | "cashback" | string;
   couponValue: string | null;
 }
 
@@ -722,6 +722,21 @@ export function ScannerClient({ businessId }: { businessId: string; businessName
               ✓ Premio entregado — Continuar
             </button>
           </div>
+        </div>
+      )}
+
+      {/* Resultado genérico — respaldo para que nunca quede en blanco
+          (ej. QR viejo sin ?card= que resuelve a otro tipo de tarjeta) */}
+      {result && result.cardType !== "sellos" && result.cardType !== "cupon" && result.cardType !== "descuento" && (
+        <div className="rounded-brand border border-green-500 bg-green-500/10 p-6 space-y-3 text-center">
+          <div className="text-5xl">✅</div>
+          <div>
+            <p className="font-bold text-lg text-paper">{result.customer.full_name}</p>
+            <p className="text-green-400 font-semibold mt-1">Visita registrada</p>
+          </div>
+          <button onClick={continuar} className="btn-primary w-full">
+            Escanear otro cliente
+          </button>
         </div>
       )}
 
