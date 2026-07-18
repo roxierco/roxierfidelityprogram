@@ -58,6 +58,7 @@ export async function GET(
 
   return NextResponse.json({
     customerId: customer.id,
+    cardId: card.id,
     customerName: customer.full_name,
     balance: Number(customer.cashback_balance),
     businessId: customer.business_id,
