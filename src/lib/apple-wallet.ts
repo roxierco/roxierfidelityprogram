@@ -48,6 +48,7 @@ export interface LoyaltyPassData {
   // Solo para tarjetas de cashback
   cardType?: string;
   cashbackBalance?: number;
+  cashbackPercent?: number;
   // Para cupón / descuento: el beneficio que ofrece la tarjeta
   couponValue?: string | null;
 }
@@ -244,22 +245,20 @@ function buildPassJson(data: LoyaltyPassData, hasStrip: boolean): object {
             textAlignment: "PKTextAlignmentRight",
           },
         ],
-        primaryFields: [
-          {
-            key: "balancePrimary",
-            label: "Saldo disponible",
-            value: balance,
-            currencyCode: "MXN",
-          },
-        ],
         secondaryFields: [
           { key: "member", label: "MIEMBRO", value: data.customerName },
+          { key: "type", label: "TARJETA", value: "Cashback" },
+          ...(data.cashbackPercent
+            ? [{ key: "percent", label: "CASHBACK", value: `${data.cashbackPercent}% por compra` }]
+            : []),
         ],
         backFields: [
           {
             key: "instructions",
             label: "Cómo funciona",
-            value: `Presenta este QR en ${data.businessName} en cada compra para acumular cashback. Usa tu saldo cuando quieras.`,
+            value: data.cashbackPercent
+              ? `Ganas ${data.cashbackPercent}% de cashback en cada compra en ${data.businessName}. Usa tu saldo cuando quieras presentando este QR.`
+              : `Presenta este QR en ${data.businessName} en cada compra para acumular cashback. Usa tu saldo cuando quieras.`,
           },
           { key: "card", label: "Programa", value: data.cardTitle },
           { key: "powered", label: "", value: "Powered by Roxier Fidelity · roxierco.com" },
