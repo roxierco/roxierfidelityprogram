@@ -8,6 +8,7 @@ export const applyCashbackSchema = z.object({
   businessId: uuid,
   purchaseAmount: z.number().positive().max(1_000_000),
   idempotencyKey: z.string().min(8).max(128),
+  sucursalId: uuid.nullable().optional(),
 });
 
 export const redeemCashbackSchema = z.object({
@@ -16,6 +17,7 @@ export const redeemCashbackSchema = z.object({
   businessId: uuid,
   redeemAmount: z.number().positive().max(1_000_000),
   idempotencyKey: z.string().min(8).max(128),
+  sucursalId: uuid.nullable().optional(),
 });
 
 /** Config de cashback que edita el negocio (se guarda en loyalty_cards). */

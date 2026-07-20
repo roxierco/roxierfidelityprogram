@@ -16,7 +16,7 @@ export async function POST(req: NextRequest) {
   }
 
   const body = await req.json();
-  const { customerId, businessId, cardId } = body;
+  const { customerId, businessId, cardId, sucursalId } = body;
 
   if (!customerId || !businessId) {
     return NextResponse.json({ error: "Faltan datos" }, { status: 400 });
@@ -27,6 +27,7 @@ export async function POST(req: NextRequest) {
   if (!uuidRegex.test(customerId) || !uuidRegex.test(businessId)) {
     return NextResponse.json({ error: "Datos inválidos" }, { status: 400 });
   }
+  const sucursalIdValida = sucursalId && uuidRegex.test(sucursalId) ? sucursalId : null;
 
   const admin = createAdminClient();
 
@@ -111,6 +112,7 @@ export async function POST(req: NextRequest) {
     customer_id: customerId,
     stamps_added: 1,
     is_redemption: rewarded,
+    sucursal_id: sucursalIdValida,
   });
 
   const slug = (ownedBusiness as { id: string; slug: string }).slug;

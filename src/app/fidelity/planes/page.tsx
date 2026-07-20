@@ -127,7 +127,7 @@ export default function PlanesPage() {
       </ul>
 
       <p className="mt-8 text-mist text-xs text-center max-w-md">
-        El cobro es automático y se renueva al terminar cada período (mes, 6 meses o año). Sin cuota de activación · Cancela cuando quieras.
+        Incluye ubicaciones ilimitadas. Con 4 o más sucursales aplica la tarifa multi-sucursal (desde $999/mes). El cobro es automático y se renueva al terminar cada período. Sin cuota de activación · Cancela cuando quieras.
       </p>
 
       <p className="mt-6 text-mist text-sm">

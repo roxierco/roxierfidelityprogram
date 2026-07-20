@@ -577,6 +577,11 @@ export default function FidelityLanding() {
             ))}
           </div>
 
+          {/* Nota multi-sucursal */}
+          <p className="text-center text-xs text-white/40 mt-6">
+            Ubicaciones ilimitadas incluidas · Con 4+ sucursales aplica tarifa multi-sucursal (desde $999/mes)
+          </p>
+
           {/* Todo incluido en cualquier plan */}
           <div className="max-w-3xl mx-auto mt-10">
             <p className="text-center text-xs font-bold uppercase tracking-widest text-white/30 mb-4">Todo incluido en cualquier plan</p>

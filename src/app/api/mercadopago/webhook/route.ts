@@ -80,7 +80,9 @@ export async function POST(req: NextRequest) {
 
       const [, businessId, planKey] = ref.split(":");
       const plan = PLANS[planKey as PlanKey] ?? PLANS.mensual;
-      const amount = plan.amount;
+      // Monto real cobrado por MP (respeta la tarifa multi-sucursal si aplicó);
+      // si no viene, cae al precio base del plan.
+      const amount = Number(sub.auto_recurring?.transaction_amount ?? plan.amount);
 
       if (sub.status === "authorized") {
         // Próximo cobro = ahora + el período del plan (1, 6 o 12 meses).

@@ -20,16 +20,16 @@ interface Subscription {
 }
 
 const PLANES = {
-  mensual:   { name: "Mensual", amount: 749,  period: "/ mes",     nota: "" },
-  semestral: { name: "6 meses", amount: 3999, period: "/ 6 meses", nota: "Ahorras ~11%" },
-  anual:     { name: "Anual",   amount: 7490, period: "/ año",     nota: "2 meses gratis" },
+  mensual:   { name: "Mensual", amount: 749,  amountPlus: 999,  period: "/ mes",     nota: "" },
+  semestral: { name: "6 meses", amount: 3999, amountPlus: 5299, period: "/ 6 meses", nota: "Ahorras ~11%" },
+  anual:     { name: "Anual",   amount: 7490, amountPlus: 9990, period: "/ año",     nota: "2 meses gratis" },
 } as const;
 
 type PlanKey = keyof typeof PLANES;
 
 /** Describe una suscripción activa a partir del monto cobrado. */
 function describirSuscripcion(amount: number): { name: string; period: string } {
-  const found = Object.values(PLANES).find((p) => p.amount === amount);
+  const found = Object.values(PLANES).find((p) => p.amount === amount || p.amountPlus === amount);
   return found ? { name: found.name, period: found.period } : { name: "Activo", period: "" };
 }
 
@@ -37,10 +37,12 @@ export function BillingClient({
   business,
   subscription,
   paymentStatus,
+  multiSucursal = false,
 }: {
   business: Business;
   subscription: Subscription | null;
   paymentStatus?: string;
+  multiSucursal?: boolean;
 }) {
   const [loading, setLoading] = useState<string | null>(null);
   const [toast, setToast] = useState<{ msg: string; ok: boolean } | null>(null);
@@ -112,13 +114,18 @@ export function BillingClient({
           <p className="font-bold text-paper">
             {isTrial ? "Activa tu plan" : "Reactiva tu cuenta"}
           </p>
+          {multiSucursal && (
+            <p className="text-xs text-magenta font-semibold">Precio multi-sucursal (4+ sucursales)</p>
+          )}
           <div className="grid gap-3 sm:grid-cols-3">
-            {(Object.entries(PLANES) as [PlanKey, typeof PLANES[PlanKey]][]).map(([key, plan]) => (
+            {(Object.entries(PLANES) as [PlanKey, typeof PLANES[PlanKey]][]).map(([key, plan]) => {
+              const precio = multiSucursal ? plan.amountPlus : plan.amount;
+              return (
               <div key={key} className={`card space-y-3 ${key === "anual" ? "border-2 border-magenta" : "border border-white/10"}`}>
                 <div>
                   <p className="font-black text-paper">{plan.name}</p>
                   <div className="flex items-baseline gap-1 mt-1">
-                    <span className="text-2xl font-black text-paper">${plan.amount.toLocaleString("es-MX")}</span>
+                    <span className="text-2xl font-black text-paper">${precio.toLocaleString("es-MX")}</span>
                     <span className="text-mist text-xs">{plan.period}</span>
                   </div>
                   {plan.nota && <p className="text-xs font-bold text-green-400 mt-0.5">{plan.nota}</p>}
@@ -133,7 +140,8 @@ export function BillingClient({
                   {loading === key ? "..." : isTrial ? "Elegir" : "Reactivar"}
                 </button>
               </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}

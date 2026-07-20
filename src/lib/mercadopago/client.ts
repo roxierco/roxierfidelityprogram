@@ -5,17 +5,21 @@ import { getServerEnv } from "@/lib/env";
  * Planes de Roxier Fidelity. Todos son el mismo producto; cambia el período
  * de cobro. `frequency` es cada cuántos meses cobra Mercado Pago de forma
  * automática y recurrente.
- *   - mensual:   $749 cada mes
- *   - semestral: $3,999 cada 6 meses  (~$666/mes · ahorras ~11%)
- *   - anual:     $7,490 cada 12 meses (~$624/mes · "2 meses gratis" · ~17%)
+ *   - amount:     precio con hasta 3 sucursales.
+ *   - amountPlus: precio con 4 o más sucursales (multi-sucursal).
  */
 export const PLANS = {
-  mensual:   { name: "Mensual", amount: 749,  frequency: 1,  period: "mes" },
-  semestral: { name: "6 meses", amount: 3999, frequency: 6,  period: "6 meses" },
-  anual:     { name: "Anual",   amount: 7490, frequency: 12, period: "año" },
+  mensual:   { name: "Mensual", frequency: 1,  period: "mes",     amount: 749,  amountPlus: 999 },
+  semestral: { name: "6 meses", frequency: 6,  period: "6 meses", amount: 3999, amountPlus: 5299 },
+  anual:     { name: "Anual",   frequency: 12, period: "año",     amount: 7490, amountPlus: 9990 },
 } as const;
 
 export type PlanKey = keyof typeof PLANS;
+
+/** Precio del plan según la cantidad de sucursales (4+ = tarifa multi-sucursal). */
+export function precioPlan(plan: PlanKey, sucursalCount: number): number {
+  return sucursalCount >= 4 ? PLANS[plan].amountPlus : PLANS[plan].amount;
+}
 
 function getClient() {
   const env = getServerEnv();
@@ -26,11 +30,13 @@ export async function crearSuscripcion(params: {
   businessEmail: string;
   businessId: string;
   plan: PlanKey;
+  sucursalCount?: number;
 }): Promise<{ initPoint: string; subscriptionId: string }> {
   const env = getServerEnv();
   const preApproval = new PreApproval(getClient());
   const appUrl = env.NEXT_PUBLIC_APP_URL;
-  const { name, amount, frequency } = PLANS[params.plan];
+  const { name, frequency } = PLANS[params.plan];
+  const amount = precioPlan(params.plan, params.sucursalCount ?? 0);
 
   const result = await preApproval.create({
     body: {

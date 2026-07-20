@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { crearSuscripcion, PLANS, type PlanKey } from "@/lib/mercadopago/client";
+import { crearSuscripcion, PLANS, precioPlan, type PlanKey } from "@/lib/mercadopago/client";
 
 export async function POST(req: NextRequest) {
   try {
@@ -21,17 +21,25 @@ export async function POST(req: NextRequest) {
 
     if (!business) return NextResponse.json({ error: "Negocio no encontrado" }, { status: 404 });
 
+    // El precio depende de cuántas sucursales activas tenga (4+ = tarifa multi-sucursal).
+    const { count: sucursalCount } = await supabase
+      .from("sucursales")
+      .select("*", { count: "exact", head: true })
+      .eq("business_id", business.id)
+      .eq("is_active", true);
+
     const { initPoint, subscriptionId } = await crearSuscripcion({
       businessEmail: business.email,
       businessId: business.id,
       plan,
+      sucursalCount: sucursalCount ?? 0,
     });
 
     await supabase.from("subscriptions").upsert({
       business_id: business.id,
       mercadopago_subscription_id: subscriptionId,
       status: "pending",
-      amount: PLANS[plan].amount,
+      amount: precioPlan(plan, sucursalCount ?? 0),
     }, { onConflict: "business_id" });
 
     return NextResponse.json({ initPoint });

@@ -22,7 +22,7 @@ export async function POST(req: Request) {
   if (!parsed.success) {
     return NextResponse.json({ error: "Datos inválidos" }, { status: 400 });
   }
-  const { customerId, cardId, businessId, redeemAmount, idempotencyKey } = parsed.data;
+  const { customerId, cardId, businessId, redeemAmount, idempotencyKey, sucursalId } = parsed.data;
 
   const admin = createAdminClient();
 
@@ -52,6 +52,10 @@ export async function POST(req: Request) {
 
   const result = Array.isArray(data) ? data[0] : data;
   const newBalance = Number(result.new_balance);
+
+  if (sucursalId && result.transaction_id) {
+    await admin.from("cashback_transactions").update({ sucursal_id: sucursalId }).eq("id", result.transaction_id);
+  }
 
   const { data: customer } = await admin
     .from("end_customers")

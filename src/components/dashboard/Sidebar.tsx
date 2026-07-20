@@ -13,6 +13,7 @@ const navItems = [
   { href: "/fidelity/dashboard/tarjetas", label: "Mis tarjetas", icon: "M3 5h18v14H3zM3 10h18" },
   { href: "/fidelity/dashboard/scanner", label: "Escaner QR", icon: "M3 3h5v5H3zM16 3h5v5h-5zM3 16h5v5H3zM16 16h2v2h-2zM16 20h2v2h-2zM18 18h2v2h-2zM14 18h2v2h-2zM14 20h2v2h-2zM14 14h2v2h-2zM8 14h2v2H8z" },
   { href: "/fidelity/dashboard/clientes", label: "Clientes", icon: "M12 12a4 4 0 100-8 4 4 0 000 8zM4 20a8 8 0 0116 0" },
+  { href: "/fidelity/dashboard/sucursales", label: "Sucursales", icon: "M3 21h18M4 21V7l8-4 8 4v14M9 21v-6h6v6" },
   { href: "/fidelity/dashboard/estadisticas", label: "Estadísticas", icon: "M3 3v18h18M8 17V9m5 8V5m5 12v-6" },
   { href: "/fidelity/dashboard/cashback", label: "Cashback", icon: "M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" },
   { href: "/fidelity/dashboard/promociones", label: "Promociones", icon: "M20 12l-8 8-8-8 8-8z" },

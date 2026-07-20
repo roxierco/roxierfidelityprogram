@@ -43,6 +43,7 @@ export default async function EstadisticasPage() {
     { data: customers },
     { data: visits },
     { count: activeCards },
+    { data: sucursales },
   ] = await Promise.all([
     supabase
       .from("end_customers")
@@ -50,7 +51,7 @@ export default async function EstadisticasPage() {
       .eq("business_id", businessId),
     supabase
       .from("visits")
-      .select("created_at")
+      .select("created_at, sucursal_id")
       .eq("business_id", businessId)
       .gte("created_at", hace90dias.toISOString()),
     supabase
@@ -58,10 +59,24 @@ export default async function EstadisticasPage() {
       .select("*", { count: "exact", head: true })
       .eq("business_id", businessId)
       .eq("is_active", true),
+    supabase
+      .from("sucursales")
+      .select("id, name")
+      .eq("business_id", businessId)
+      .eq("is_active", true)
+      .order("created_at", { ascending: true }),
   ]);
 
   const allCustomers = (customers ?? []) as CustomerRow[];
-  const allVisits = (visits ?? []) as { created_at: string }[];
+  const allVisits = (visits ?? []) as { created_at: string; sucursal_id: string | null }[];
+  const allSucursales = (sucursales ?? []) as { id: string; name: string }[];
+
+  // Visitas por sucursal (últimos 90 días)
+  const visitasPorSucursal = allSucursales.map((s) => ({
+    label: s.name,
+    count: allVisits.filter((v) => v.sucursal_id === s.id).length,
+  }));
+  const visitasSinSucursal = allVisits.filter((v) => !v.sucursal_id).length;
 
   const now = Date.now();
   const dia = 86400000;
@@ -235,6 +250,22 @@ export default async function EstadisticasPage() {
           )}
         </div>
       </div>
+
+      {/* Visitas por sucursal — solo si el negocio tiene sucursales */}
+      {allSucursales.length > 0 && (
+        <div className="card space-y-4">
+          <div>
+            <h2 className="font-bold text-paper">Visitas por sucursal</h2>
+            <p className="text-xs text-mist mt-0.5">Últimos 90 días</p>
+          </div>
+          <BarSeries data={visitasPorSucursal} color={COLOR.nuevos} />
+          {visitasSinSucursal > 0 && (
+            <p className="text-xs text-mist">
+              {visitasSinSucursal} visita{visitasSinSucursal !== 1 ? "s" : ""} sin sucursal asignada (registradas sin seleccionar sucursal en el escáner).
+            </p>
+          )}
+        </div>
+      )}
     </div>
   );
 }

@@ -23,7 +23,7 @@ export async function POST(req: Request) {
   if (!parsed.success) {
     return NextResponse.json({ error: "Datos inválidos" }, { status: 400 });
   }
-  const { customerId, cardId, businessId, purchaseAmount, idempotencyKey } = parsed.data;
+  const { customerId, cardId, businessId, purchaseAmount, idempotencyKey, sucursalId } = parsed.data;
 
   const admin = createAdminClient();
 
@@ -56,6 +56,11 @@ export async function POST(req: Request) {
   const result = Array.isArray(data) ? data[0] : data;
   const newBalance = Number(result.new_balance);
   const earned = Number(result.earned);
+
+  // Marca la sucursal en el movimiento recién creado (para estadísticas).
+  if (sucursalId && result.transaction_id) {
+    await admin.from("cashback_transactions").update({ sucursal_id: sucursalId }).eq("id", result.transaction_id);
+  }
 
   // Datos del cliente para la notificación.
   const { data: customer } = await admin

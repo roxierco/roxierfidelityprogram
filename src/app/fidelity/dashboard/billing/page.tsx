@@ -22,17 +22,25 @@ export default async function BillingPage({
 
   if (!business) redirect("/fidelity/login");
 
-  const { data: subscription } = await admin
-    .from("subscriptions")
-    .select("status, amount, next_payment_at, mercadopago_subscription_id")
-    .eq("business_id", business.id)
-    .maybeSingle();
+  const [{ data: subscription }, { count: sucursalCount }] = await Promise.all([
+    admin
+      .from("subscriptions")
+      .select("status, amount, next_payment_at, mercadopago_subscription_id")
+      .eq("business_id", business.id)
+      .maybeSingle(),
+    admin
+      .from("sucursales")
+      .select("*", { count: "exact", head: true })
+      .eq("business_id", business.id)
+      .eq("is_active", true),
+  ]);
 
   return (
     <BillingClient
       business={business}
       subscription={subscription}
       paymentStatus={status}
+      multiSucursal={(sucursalCount ?? 0) >= 4}
     />
   );
 }

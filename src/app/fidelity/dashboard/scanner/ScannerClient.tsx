@@ -83,7 +83,14 @@ function pickBestCamera(cameras: CameraDevice[]): CameraDevice {
   return cameras[0];
 }
 
-export function ScannerClient({ businessId }: { businessId: string; businessName: string }) {
+export function ScannerClient({
+  businessId,
+  sucursales = [],
+}: {
+  businessId: string;
+  businessName: string;
+  sucursales?: { id: string; name: string }[];
+}) {
   const scannerRef = useRef<Html5Qrcode | null>(null);
   const [scanning, setScanning] = useState(false);
   const [result, setResult] = useState<ScanResult | null>(null);
@@ -100,6 +107,20 @@ export function ScannerClient({ businessId }: { businessId: string; businessName
   );
   const [gunInput, setGunInput] = useState("");
   const gunInputRef = useRef<HTMLInputElement | null>(null);
+
+  // Sucursal activa del escáner (se recuerda en el dispositivo)
+  const [sucursalId, setSucursalId] = useState<string>("");
+  useEffect(() => {
+    if (!sucursales.length) return;
+    const saved = localStorage.getItem(`roxier-sucursal-${businessId}`);
+    if (saved && sucursales.some((s) => s.id === saved)) setSucursalId(saved);
+    else setSucursalId(sucursales[0].id);
+  }, [sucursales, businessId]);
+
+  function cambiarSucursal(id: string) {
+    setSucursalId(id);
+    localStorage.setItem(`roxier-sucursal-${businessId}`, id);
+  }
 
   // Estado de cashback (cuando la tarjeta escaneada es de tipo cashback)
   const [cashback, setCashback] = useState<CashbackInfo | null>(null);
@@ -269,8 +290,8 @@ export function ScannerClient({ businessId }: { businessId: string; businessName
     const endpoint = kind === "apply" ? "/api/cashback/apply" : "/api/cashback/redeem";
     const body =
       kind === "apply"
-        ? { customerId: cashback.customerId, cardId: cashback.cardId, businessId: cashback.businessId, purchaseAmount: monto, idempotencyKey: newIdempotencyKey() }
-        : { customerId: cashback.customerId, cardId: cashback.cardId, businessId: cashback.businessId, redeemAmount: monto, idempotencyKey: newIdempotencyKey() };
+        ? { customerId: cashback.customerId, cardId: cashback.cardId, businessId: cashback.businessId, purchaseAmount: monto, idempotencyKey: newIdempotencyKey(), sucursalId: sucursalId || null }
+        : { customerId: cashback.customerId, cardId: cashback.cardId, businessId: cashback.businessId, redeemAmount: monto, idempotencyKey: newIdempotencyKey(), sucursalId: sucursalId || null };
 
     const res = await fetch(endpoint, {
       method: "POST",
@@ -312,7 +333,7 @@ export function ScannerClient({ businessId }: { businessId: string; businessName
     const res = await fetch("/api/stamp", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ customerId, businessId, cardId }),
+      body: JSON.stringify({ customerId, businessId, cardId, sucursalId: sucursalId || null }),
     });
 
     const data = await res.json();
@@ -367,7 +388,7 @@ export function ScannerClient({ businessId }: { businessId: string; businessName
     const res = await fetch("/api/stamp", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ customerId: scannedCustomerId, businessId, cardId: scannedCardId }),
+      body: JSON.stringify({ customerId: scannedCustomerId, businessId, cardId: scannedCardId, sucursalId: sucursalId || null }),
     });
 
     const data = await res.json();
@@ -392,6 +413,22 @@ export function ScannerClient({ businessId }: { businessId: string; businessName
 
   return (
     <div className="mx-auto max-w-lg space-y-4">
+
+      {/* Selector de sucursal — solo si el negocio tiene sucursales registradas */}
+      {sucursales.length > 0 && (
+        <div className="flex items-center gap-2 rounded-xl border border-surface-border bg-surface px-3 py-2.5">
+          <span className="text-sm text-mist flex-shrink-0">🏬 Sucursal:</span>
+          <select
+            value={sucursalId}
+            onChange={(e) => cambiarSucursal(e.target.value)}
+            className="flex-1 rounded-lg border border-surface-border bg-near-black text-paper text-sm px-2 py-1.5 focus:outline-none focus:border-magenta"
+          >
+            {sucursales.map((s) => (
+              <option key={s.id} value={s.id}>{s.name}</option>
+            ))}
+          </select>
+        </div>
+      )}
 
       {/* Selector de modo: cámara o pistola lectora */}
       {!result && !scannedCustomerId && !cashback && (

@@ -57,6 +57,14 @@ export interface LoyaltyCard {
   updated_at: string;
 }
 
+export interface Sucursal {
+  id: string;
+  business_id: string;
+  name: string;
+  is_active: boolean;
+  created_at: string;
+}
+
 export type Gender = "masculino" | "femenino" | "otro" | "prefiero_no_decir";
 
 export interface EndCustomer {
