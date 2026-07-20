@@ -538,42 +538,65 @@ export default function FidelityLanding() {
             </p>
           </div>
 
-          {/* Card de plan único */}
-          <div className="max-w-md mx-auto">
-            <div className="relative rounded-2xl border border-[#FF2E63]/50 bg-gradient-to-b from-[#FF2E63]/10 to-transparent p-8 flex flex-col">
-              <div className="mb-6">
-                <p className="text-xs font-bold uppercase tracking-widest text-[#FF2E63]/70 mb-1">Plan</p>
-                <h3 className="text-2xl font-extrabold text-white mb-1">Roxier Fidelity</h3>
-                <p className="text-white/40 text-sm">Todo lo que necesitas para fidelizar a tus clientes</p>
+          {/* Cards de planes por período */}
+          <div className="grid gap-5 md:grid-cols-3 max-w-4xl mx-auto mt-8">
+            {[
+              { name: "Mensual", price: "$749", period: "/mes MXN", equiv: "", nota: "", highlight: false },
+              { name: "6 meses", price: "$3,999", period: "/6 meses", equiv: "≈ $666/mes", nota: "Ahorras ~11%", highlight: false },
+              { name: "Anual", price: "$7,490", period: "/año", equiv: "≈ $624/mes", nota: "2 meses gratis", highlight: true },
+            ].map((p) => (
+              <div key={p.name}
+                className={`relative rounded-2xl p-7 flex flex-col ${
+                  p.highlight
+                    ? "border-2 border-[#FF2E63] bg-gradient-to-b from-[#FF2E63]/10 to-transparent"
+                    : "border border-white/[0.08] bg-white/[0.03]"
+                }`}>
+                {p.highlight && (
+                  <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-[#FF2E63] px-3 py-1 text-[10px] font-extrabold uppercase tracking-widest text-white whitespace-nowrap shadow-lg shadow-[#FF2E63]/30">
+                    Mejor precio
+                  </span>
+                )}
+                <p className="text-lg font-extrabold text-white mb-3">{p.name}</p>
+                <div className="flex items-end gap-1">
+                  <span className="text-4xl font-extrabold text-white">{p.price}</span>
+                  <span className="text-white/40 text-sm mb-1.5">{p.period}</span>
+                </div>
+                <div className="mb-6 mt-1 h-9">
+                  {p.equiv && <p className="text-xs text-white/40">{p.equiv}</p>}
+                  {p.nota && <p className="text-xs font-bold text-green-400">{p.nota}</p>}
+                </div>
+                <Link href="/fidelity/registro"
+                  className={`w-full rounded-xl py-3 text-center text-sm font-bold transition-all ${
+                    p.highlight
+                      ? "bg-[#FF2E63] text-white hover:bg-[#e0254f] shadow-lg shadow-[#FF2E63]/25"
+                      : "border border-white/15 text-white hover:border-white/30 hover:bg-white/[0.05]"
+                  }`}>
+                  Empezar
+                </Link>
               </div>
-              <div className="flex items-end gap-1 mb-8">
-                <span className="text-5xl font-extrabold text-white">$749</span>
-                <span className="text-white/40 text-sm mb-2">/mes MXN</span>
-              </div>
-              <ul className="space-y-3 mb-8 flex-1">
-                {[
-                  "Tarjetas de lealtad ilimitadas",
-                  "Clientes ilimitados",
-                  "QR para sellos en segundos",
-                  "Guardado en Apple Wallet y Google Wallet",
-                  "Notificaciones push",
-                  "Promociones ilimitadas",
-                  "Dashboard con analytics",
-                  "Soporte prioritario por WhatsApp",
-                ].map((f) => (
-                  <li key={f} className="flex items-center gap-2.5 text-sm text-white/70">
-                    <svg className="h-4 w-4 flex-shrink-0 text-[#FF2E63]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                    </svg>
-                    {f}
-                  </li>
-                ))}
-              </ul>
-              <Link href="/fidelity/registro"
-                className="w-full rounded-xl bg-[#FF2E63] py-3 text-center text-sm font-bold text-white hover:bg-[#e0254f] transition-all shadow-lg shadow-[#FF2E63]/25">
-                Crear mi cuenta
-              </Link>
-            </div>
+            ))}
+          </div>
+
+          {/* Todo incluido en cualquier plan */}
+          <div className="max-w-3xl mx-auto mt-10">
+            <p className="text-center text-xs font-bold uppercase tracking-widest text-white/30 mb-4">Todo incluido en cualquier plan</p>
+            <ul className="grid gap-2.5 sm:grid-cols-2">
+              {[
+                "Tarjetas de lealtad ilimitadas",
+                "Cashback, cupones, sellos y descuentos",
+                "Apple Wallet y Google Wallet",
+                "Notificaciones y promociones",
+                "Dashboard con estadísticas",
+                "Soporte por WhatsApp",
+              ].map((f) => (
+                <li key={f} className="flex items-center gap-2.5 text-sm text-white/70">
+                  <svg className="h-4 w-4 flex-shrink-0 text-[#FF2E63]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                  </svg>
+                  {f}
+                </li>
+              ))}
+            </ul>
           </div>
 
           {/* Garantía / tranquilidad */}

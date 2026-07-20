@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createHmac } from "node:crypto";
 import { rateLimit, getClientIp } from "@/lib/rate-limit";
+import { PLANS, type PlanKey } from "@/lib/mercadopago/client";
 
 function verifyMpSignature(req: NextRequest, rawBody: string, dataId: string): boolean {
   const secret = process.env.MP_WEBHOOK_SECRET;
@@ -78,16 +79,17 @@ export async function POST(req: NextRequest) {
       if (!ref) return NextResponse.json({ ok: true });
 
       const [, businessId, planKey] = ref.split(":");
-      const planAmounts: Record<string, number> = { pro: 749 };
-      const amount = planAmounts[planKey] ?? 749;
+      const plan = PLANS[planKey as PlanKey] ?? PLANS.mensual;
+      const amount = plan.amount;
 
       if (sub.status === "authorized") {
+        // Próximo cobro = ahora + el período del plan (1, 6 o 12 meses).
         const expiresAt = new Date();
-        expiresAt.setMonth(expiresAt.getMonth() + 1);
+        expiresAt.setMonth(expiresAt.getMonth() + plan.frequency);
 
         await admin.from("businesses").update({
           status: "active",
-          plan: planKey ?? "pro",
+          plan: "pro", // el tier del producto es siempre "pro"; el plan solo cambia el período de cobro
           monthly_price: amount,
           trial_ends_at: expiresAt.toISOString(),
         }).eq("id", businessId);

@@ -20,10 +20,18 @@ interface Subscription {
 }
 
 const PLANES = {
-  pro: { name: "Pro", amount: 749 },
+  mensual:   { name: "Mensual", amount: 749,  period: "/ mes",     nota: "" },
+  semestral: { name: "6 meses", amount: 3999, period: "/ 6 meses", nota: "Ahorras ~11%" },
+  anual:     { name: "Anual",   amount: 7490, period: "/ año",     nota: "2 meses gratis" },
 } as const;
 
 type PlanKey = keyof typeof PLANES;
+
+/** Describe una suscripción activa a partir del monto cobrado. */
+function describirSuscripcion(amount: number): { name: string; period: string } {
+  const found = Object.values(PLANES).find((p) => p.amount === amount);
+  return found ? { name: found.name, period: found.period } : { name: "Activo", period: "" };
+}
 
 export function BillingClient({
   business,
@@ -58,7 +66,7 @@ export function BillingClient({
   const isTrial = business.status === "trial";
   const isSuspended = business.status === "suspended";
   const hasActiveSub = subscription?.status === "authorized";
-  const currentPlan = business.plan as PlanKey;
+  const subInfo = subscription ? describirSuscripcion(subscription.amount) : null;
 
   return (
     <div className="space-y-6 max-w-2xl">
@@ -79,14 +87,14 @@ export function BillingClient({
         <div className="flex items-center gap-3">
           <div className={`h-3 w-3 rounded-full animate-pulse ${isActive ? "bg-green-400" : isSuspended ? "bg-red-400" : "bg-yellow-400"}`} />
           <span className="font-bold text-paper text-lg">
-            {isActive && hasActiveSub ? `Plan ${PLANES[currentPlan]?.name ?? business.plan} — Activo` :
+            {isActive && hasActiveSub ? `Plan ${subInfo?.name ?? ""} — Activo` :
              isSuspended ? "Suspendida" : "Pendiente de pago"}
           </span>
         </div>
 
         {isActive && hasActiveSub && subscription?.next_payment_at && (
           <p className="text-sm text-mist">
-            Próximo cobro: ${subscription.amount} MXN el{" "}
+            Próximo cobro: ${subscription.amount.toLocaleString("es-MX")} MXN el{" "}
             {new Date(subscription.next_payment_at).toLocaleDateString("es-MX", { day: "numeric", month: "long", year: "numeric" })}
           </p>
         )}
@@ -104,22 +112,25 @@ export function BillingClient({
           <p className="font-bold text-paper">
             {isTrial ? "Activa tu plan" : "Reactiva tu cuenta"}
           </p>
-          <div className="max-w-xs">
-            {(Object.entries(PLANES) as [PlanKey, { name: string; amount: number }][]).map(([key, plan]) => (
-              <div key={key} className="card space-y-4 border-2 border-magenta">
+          <div className="grid gap-3 sm:grid-cols-3">
+            {(Object.entries(PLANES) as [PlanKey, typeof PLANES[PlanKey]][]).map(([key, plan]) => (
+              <div key={key} className={`card space-y-3 ${key === "anual" ? "border-2 border-magenta" : "border border-white/10"}`}>
                 <div>
-                  <p className="font-black text-paper text-lg">{plan.name}</p>
+                  <p className="font-black text-paper">{plan.name}</p>
                   <div className="flex items-baseline gap-1 mt-1">
-                    <span className="text-3xl font-black text-paper">${plan.amount}</span>
-                    <span className="text-mist text-sm">MXN / mes</span>
+                    <span className="text-2xl font-black text-paper">${plan.amount.toLocaleString("es-MX")}</span>
+                    <span className="text-mist text-xs">{plan.period}</span>
                   </div>
+                  {plan.nota && <p className="text-xs font-bold text-green-400 mt-0.5">{plan.nota}</p>}
                 </div>
                 <button
                   onClick={() => suscribir(key)}
                   disabled={loading !== null}
-                  className="w-full py-2.5 rounded-lg font-bold text-sm disabled:opacity-60 transition-all bg-magenta text-white hover:bg-magenta/90"
+                  className={`w-full py-2.5 rounded-lg font-bold text-sm disabled:opacity-60 transition-all ${
+                    key === "anual" ? "bg-magenta text-white hover:bg-magenta/90" : "border border-magenta text-magenta hover:bg-magenta/10"
+                  }`}
                 >
-                  {loading === key ? "Redirigiendo..." : isTrial ? "Suscribirme" : "Reactivar"}
+                  {loading === key ? "..." : isTrial ? "Elegir" : "Reactivar"}
                 </button>
               </div>
             ))}
@@ -135,7 +146,7 @@ export function BillingClient({
             <span className="rounded-full bg-green-500/15 px-3 py-1 text-xs font-bold text-green-400">Activa</span>
           </div>
           <p className="text-2xl font-black text-paper">
-            ${subscription?.amount} <span className="text-mist text-sm font-normal">MXN / mes</span>
+            ${subscription?.amount.toLocaleString("es-MX")} <span className="text-mist text-sm font-normal">MXN {subInfo?.period}</span>
           </p>
           <p className="text-xs text-mist">
             Para cancelar o cambiar de plan escríbenos por WhatsApp.

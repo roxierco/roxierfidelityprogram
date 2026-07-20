@@ -4,7 +4,7 @@ import { NextResponse } from "next/server";
 // Este endpoint ya no se usa — redirigir al nuevo flujo.
 export async function POST() {
   return NextResponse.json(
-    { error: "Usa /api/mercadopago/crear-suscripcion con { plan: 'pro' }" },
+    { error: "Usa /api/mercadopago/crear-suscripcion con { plan: 'mensual' | 'semestral' | 'anual' }" },
     { status: 410 }
   );
 }
