@@ -71,10 +71,28 @@ export default function PlanesPage() {
 
   return (
     <div className="min-h-screen bg-near-black flex flex-col items-center justify-center px-4 py-16">
-      <div className="mb-10 text-center">
+      <div className="mb-8 text-center">
         <p className="text-magenta text-sm font-bold uppercase tracking-widest mb-2">Roxier Fidelity</p>
         <h1 className="text-4xl font-black text-paper mb-3">Elige tu plan</h1>
         <p className="text-mist text-lg">Mismo servicio completo · paga menos si te comprometes más</p>
+      </div>
+
+      {/* Las dos formas de probar — explicadas sin letras chiquitas */}
+      <div className="mb-10 grid w-full max-w-3xl gap-3 sm:grid-cols-2">
+        <div className="rounded-xl border border-green-500/30 bg-green-500/10 p-4">
+          <p className="text-sm font-bold text-green-400 mb-1">🎁 Prueba sin tarjeta</p>
+          <p className="text-xs text-paper/80 leading-relaxed">
+            Ya tienes <strong>7 días gratis</strong> desde que te registraste, sin poner tarjeta.
+            Al terminar los 7 días <strong>pierdes el acceso</strong> y tendrás que pagar un plan para volver a entrar.
+          </p>
+        </div>
+        <div className="rounded-xl border border-magenta/30 bg-magenta/10 p-4">
+          <p className="text-sm font-bold text-magenta mb-1">💳 Prueba con tarjeta</p>
+          <p className="text-xs text-paper/80 leading-relaxed">
+            Eliges un plan abajo y registras tu tarjeta: también son <strong>7 días gratis</strong>, pero al
+            terminar <strong>el cobro es automático</strong> y no pierdes el acceso. Cancela cuando quieras.
+          </p>
+        </div>
       </div>
 
       <div className="grid w-full max-w-4xl gap-5 md:grid-cols-3">
@@ -111,7 +129,7 @@ export default function PlanesPage() {
                   : "border border-magenta text-magenta hover:bg-magenta/10"
               }`}
             >
-              {loading === plan.key ? "Redirigiendo..." : "Suscribirme"}
+              {loading === plan.key ? "Redirigiendo..." : "Empezar 7 días gratis"}
             </button>
           </div>
         ))}
@@ -127,7 +145,9 @@ export default function PlanesPage() {
       </ul>
 
       <p className="mt-8 text-mist text-xs text-center max-w-md">
-        Incluye ubicaciones ilimitadas. Con 4 o más sucursales aplica la tarifa multi-sucursal (desde $999/mes). El cobro es automático y se renueva al terminar cada período. Sin cuota de activación · Cancela cuando quieras.
+        Al elegir un plan no se te cobra nada hoy: los primeros 7 días son gratis y el cobro empieza al terminar la prueba,
+        renovándose automáticamente cada período. Incluye ubicaciones ilimitadas; con 4 o más sucursales aplica la tarifa
+        multi-sucursal (desde $999/mes). Sin cuota de activación · Cancela cuando quieras.
       </p>
 
       <p className="mt-6 text-mist text-sm">

@@ -16,6 +16,9 @@ export const PLANS = {
 
 export type PlanKey = keyof typeof PLANS;
 
+/** Días de prueba gratis, tanto sin tarjeta (registro) como con tarjeta (Mercado Pago). */
+export const TRIAL_DAYS = 7;
+
 /** Precio del plan según la cantidad de sucursales (4+ = tarifa multi-sucursal). */
 export function precioPlan(plan: PlanKey, sucursalCount: number): number {
   return sucursalCount >= 4 ? PLANS[plan].amountPlus : PLANS[plan].amount;
@@ -46,6 +49,9 @@ export async function crearSuscripcion(params: {
         frequency_type: "months",
         transaction_amount: amount,
         currency_id: "MXN",
+        // 7 días gratis: MP no cobra nada hasta que termine la prueba,
+        // y a partir de ahí cobra automáticamente cada período.
+        free_trial: { frequency: TRIAL_DAYS, frequency_type: "days" },
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } as any,
       back_url: `${appUrl}/fidelity/dashboard/billing?status=subscribed`,

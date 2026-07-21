@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createHmac } from "node:crypto";
 import { rateLimit, getClientIp } from "@/lib/rate-limit";
-import { PLANS, type PlanKey } from "@/lib/mercadopago/client";
+import { PLANS, TRIAL_DAYS, type PlanKey } from "@/lib/mercadopago/client";
 
 function verifyMpSignature(req: NextRequest, rawBody: string, dataId: string): boolean {
   const secret = process.env.MP_WEBHOOK_SECRET;
@@ -85,15 +85,21 @@ export async function POST(req: NextRequest) {
       const amount = Number(sub.auto_recurring?.transaction_amount ?? plan.amount);
 
       if (sub.status === "authorized") {
-        // Próximo cobro = ahora + el período del plan (1, 6 o 12 meses).
-        const expiresAt = new Date();
-        expiresAt.setMonth(expiresAt.getMonth() + plan.frequency);
+        // Con prueba gratis, el PRIMER cobro es al terminar los 7 días;
+        // después ya se cobra cada período del plan. MP nos dice la fecha
+        // real del próximo cobro, así que la usamos si viene.
+        const primerCobro = new Date();
+        if (sub.next_payment_date) {
+          primerCobro.setTime(new Date(sub.next_payment_date).getTime());
+        } else {
+          primerCobro.setDate(primerCobro.getDate() + TRIAL_DAYS);
+        }
 
         await admin.from("businesses").update({
           status: "active",
           plan: "pro", // el tier del producto es siempre "pro"; el plan solo cambia el período de cobro
           monthly_price: amount,
-          trial_ends_at: expiresAt.toISOString(),
+          trial_ends_at: primerCobro.toISOString(),
         }).eq("id", businessId);
 
         await admin.from("subscriptions").upsert({
@@ -101,7 +107,7 @@ export async function POST(req: NextRequest) {
           mercadopago_subscription_id: sub.id,
           status: "authorized",
           amount,
-          next_payment_at: expiresAt.toISOString(),
+          next_payment_at: primerCobro.toISOString(),
         }, { onConflict: "business_id" });
 
       } else if (sub.status === "cancelled") {

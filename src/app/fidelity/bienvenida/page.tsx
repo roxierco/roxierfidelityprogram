@@ -19,17 +19,18 @@ export default function BienvenidaPage() {
             ¡Tu cuenta está lista!
           </h1>
           <p className="text-mist text-base leading-relaxed">
-            Correo verificado correctamente. Activa tu suscripción para empezar a usar tu dashboard.
+            Correo verificado correctamente. Tus <strong className="text-paper">7 días gratis</strong> ya empezaron —
+            entra y arma tu programa de lealtad. Al terminar la prueba necesitarás un plan para seguir entrando.
           </p>
         </div>
 
         {/* CTAs */}
         <div className="flex flex-col gap-3 pt-2">
           <Link
-            href="/fidelity/planes"
+            href="/fidelity/dashboard"
             className="btn-primary w-full py-4 text-base font-bold text-center"
           >
-            Activar mi cuenta
+            Entrar a mi dashboard
           </Link>
           <Link
             href="/fidelity/dashboard"

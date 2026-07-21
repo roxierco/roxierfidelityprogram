@@ -30,7 +30,7 @@ export default function RegistroPage() {
             Crea tu cuenta
           </h1>
           <p className="mb-6 text-sm text-mist">
-            $749 MXN/mes. Sin cuota de activación.
+            <strong className="text-green-400">7 días gratis, sin tarjeta.</strong> Después $749 MXN/mes. Sin cuota de activación.
           </p>
 
           <form action={formAction} className="space-y-4">
@@ -119,8 +119,11 @@ export default function RegistroPage() {
             )}
 
             <button type="submit" disabled={pending || !canSubmit} className="btn-primary w-full disabled:opacity-50">
-              {pending ? "Creando cuenta..." : "Crear mi cuenta"}
+              {pending ? "Creando cuenta..." : "Empezar 7 días gratis"}
             </button>
+            <p className="text-center text-xs text-mist">
+              No pedimos tarjeta. Al terminar los 7 días necesitarás un plan para seguir entrando.
+            </p>
           </form>
         </div>
 

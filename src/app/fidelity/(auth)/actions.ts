@@ -63,6 +63,11 @@ export async function registrarNegocio(
 
   // 2. Crear el registro del negocio con el cliente admin (bypasa RLS)
   // Necesario cuando la confirmación de email está activa y el usuario no tiene sesión aún.
+  // Prueba gratis de 7 días SIN tarjeta: puede usar el dashboard hasta esta
+  // fecha; al vencer se le bloquea el acceso hasta que active un plan.
+  const finPrueba = new Date();
+  finPrueba.setDate(finPrueba.getDate() + 7);
+
   const admin = createAdminClient();
   const { error: bizError } = await admin.from("businesses").insert({
     owner_id: authData.user.id,
@@ -73,7 +78,7 @@ export async function registrarNegocio(
     status: "trial",
     plan: "pro",
     monthly_price: 749,
-    trial_ends_at: null,
+    trial_ends_at: finPrueba.toISOString(),
   });
 
   if (bizError) {

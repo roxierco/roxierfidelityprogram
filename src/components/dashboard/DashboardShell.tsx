@@ -21,10 +21,10 @@ function TrialBanner({ trialEndsAt, hasSubscription }: { trialEndsAt: string | n
     <div className={`flex items-center justify-between gap-4 px-4 py-2.5 text-sm ${urgent ? "bg-red-500/15 border-b border-red-500/30" : "bg-magenta/10 border-b border-magenta/20"}`}>
       <span className={urgent ? "text-red-400 font-medium" : "text-magenta font-medium"}>
         {expired
-          ? "⚠️ Tu período de prueba terminó — activa tu plan para seguir usando Roxier Fidelity"
+          ? "⚠️ Tu prueba gratis terminó — activa un plan para recuperar el acceso"
           : daysLeft !== null
-          ? `⏳ ${daysLeft} día${daysLeft !== 1 ? "s" : ""} de prueba restante${daysLeft !== 1 ? "s" : ""} — activa tu plan para no perder el acceso`
-          : "Estás en período de prueba gratuita — activa tu plan cuando quieras"}
+          ? `⏳ Te queda${daysLeft !== 1 ? "n" : ""} ${daysLeft} día${daysLeft !== 1 ? "s" : ""} de prueba gratis — al terminar perderás el acceso si no activas un plan`
+          : "Estás en tu prueba gratis — activa un plan cuando quieras"}
       </span>
       <Link
         href="/fidelity/planes"

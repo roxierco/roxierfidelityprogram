@@ -103,7 +103,8 @@ export function BillingClient({
 
         {isTrial && (
           <p className="text-sm text-mist">
-            Activa tu suscripción para empezar a usar tu dashboard.
+            Estás en tu prueba gratis de 7 días. Al terminar perderás el acceso al dashboard si no activas un plan.
+            Si registras tu tarjeta ahora, el cobro empieza al terminar la prueba y no pierdes el acceso.
           </p>
         )}
       </div>

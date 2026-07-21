@@ -55,7 +55,8 @@ export default async function ConfiguracionPage() {
         <div className="card mt-6 space-y-3">
           <h3 className="font-bold text-paper">Activa tu suscripción</h3>
           <p className="text-sm text-mist">
-            Activa tu suscripción para empezar a usar tu dashboard. El cobro es mensual y automático.
+            Tienes 7 días gratis desde tu registro. Al terminar perderás el acceso si no activas un plan.
+            Si registras tu tarjeta, el cobro empieza al terminar la prueba y se renueva automáticamente.
           </p>
           <a href="/fidelity/planes" className="btn-primary inline-block text-center py-3 px-6 text-sm font-bold">
             Ver planes y activar

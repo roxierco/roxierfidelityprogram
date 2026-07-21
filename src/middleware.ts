@@ -31,19 +31,27 @@ export async function middleware(req: NextRequest) {
 
   const { data: business } = await supabase
     .from("businesses")
-    .select("status")
+    .select("status, trial_ends_at")
     .eq("owner_id", user.id)
     .single();
 
   if (!business) return NextResponse.redirect(new URL("/fidelity/login", req.url));
 
-  // Solo negocios activos pueden usar el dashboard
-  // trial = no han puesto tarjeta → van a elegir plan
-  // suspended = suscripción cancelada → van a billing
+  // active = suscripción pagada → acceso completo
   if (business.status === "active") return res;
-  if (business.status === "suspended") return NextResponse.redirect(new URL("/fidelity/dashboard/billing", req.url));
 
-  // trial u otro estado → poner tarjeta primero
+  // suspended = suscripción cancelada → van a billing
+  if (business.status === "suspended") {
+    return NextResponse.redirect(new URL("/fidelity/dashboard/billing", req.url));
+  }
+
+  // trial = prueba gratis de 7 días SIN tarjeta. Tiene acceso completo
+  // mientras no venza; al vencer pierde el acceso hasta que pague.
+  if (business.status === "trial" && business.trial_ends_at) {
+    if (new Date(business.trial_ends_at).getTime() > Date.now()) return res;
+  }
+
+  // Prueba vencida (o estado desconocido) → debe elegir plan para volver a entrar
   return NextResponse.redirect(new URL("/fidelity/planes", req.url));
 }
 
