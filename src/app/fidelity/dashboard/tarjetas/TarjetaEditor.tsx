@@ -4,6 +4,7 @@ import { useState, useRef } from "react";
 import type { CSSProperties } from "react";
 import { createClient } from "@/lib/supabase/client";
 import type { LoyaltyCard } from "@/types/database";
+import { StampShape, StampGrid, shapeKeyForIcon } from "@/lib/stamp-shapes";
 
 // ── Constantes ───────────────────────────────────────────────────
 
@@ -207,10 +208,20 @@ function AppleWalletPreview({ card }: { card: Partial<LoyaltyCard> }) {
         </div>
       </div>
 
-      {/* Strip image o banda de color */}
+      {/* Strip: imagen propia, o la cuadrícula de sellos que dibuja el pase */}
       {hasStrip
         ? <img src={card.apple_wallet_strip_url!} alt="" className="w-full object-cover" style={{ height: 100 }} />
-        : <div className="w-full" style={{ height: 100, background: `linear-gradient(to right, ${bg}, ${primary}40)` }} />
+        : (
+          <div className="w-full" style={{ height: 100, background: `linear-gradient(to right, ${bg}, ${primary}40)` }}>
+            <StampGrid
+              total={stamps}
+              filled={filledCount}
+              icon={card.stamp_icon}
+              color={primary}
+              stampSize={stamps <= 5 ? 34 : 26}
+            />
+          </div>
+        )
       }
 
       {/* Campos secundarios */}
@@ -746,16 +757,22 @@ export function TarjetaEditor({
 
             {/* Icono de sello */}
             <div className="card">
-              <p className="label mb-3">Icono del sello</p>
+              <p className="label mb-1">Icono del sello</p>
+              <p className="text-xs text-mist mb-3">Así se dibujará cada sello en Apple Wallet.</p>
               <div className="grid grid-cols-8 gap-1.5">
                 {STAMP_ICONS.map((icon) => (
                   <button key={icon} type="button" onClick={() => update("stamp_icon", icon)}
-                    className={`flex h-9 w-full items-center justify-center rounded-xl text-lg transition-all border-2 ${
+                    title={icon}
+                    className={`flex h-10 w-full items-center justify-center rounded-xl transition-all border-2 ${
                       (card.stamp_icon ?? "✓") === icon
                         ? "border-magenta bg-magenta/15 scale-110"
                         : "border-surface-border bg-surface hover:border-surface-raised"
                     }`}>
-                    {icon}
+                    <StampShape
+                      shape={shapeKeyForIcon(icon)}
+                      color={card.color_primary ?? "#FF2E63"}
+                      size={22}
+                    />
                   </button>
                 ))}
               </div>
