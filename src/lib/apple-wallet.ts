@@ -51,6 +51,8 @@ export interface LoyaltyPassData {
   cashbackPercent?: number;
   // Para cupón / descuento: el beneficio que ofrece la tarjeta
   couponValue?: string | null;
+  // Ícono elegido en el editor — define la plantilla del sello dibujado
+  stampIcon?: string | null;
 }
 
 // ─── PNG generator (no external deps) ───────────────────────────────────────
@@ -126,6 +128,168 @@ function gradientPng(w: number, h: number, hexFrom: string, hexTo: string): Buff
   });
 }
 
+// ─── Plantillas de sellos (se dibujan pixel a pixel, sin dependencias) ───────
+//
+// Cada plantilla es una función que responde: ¿este punto está dentro de la
+// figura? Las coordenadas van de -1 a 1, con la Y hacia ARRIBA.
+
+type ShapeFn = (u: number, v: number) => boolean;
+
+/** Punto dentro de polígono (ray casting) — sirve para cualquier figura. */
+function inPoly(u: number, v: number, pts: number[][]): boolean {
+  let inside = false;
+  for (let i = 0, j = pts.length - 1; i < pts.length; j = i++) {
+    const [xi, yi] = pts[i];
+    const [xj, yj] = pts[j];
+    if ((yi > v) !== (yj > v) && u < ((xj - xi) * (v - yi)) / (yj - yi) + xi) inside = !inside;
+  }
+  return inside;
+}
+
+function starPoints(tips = 5, inner = 0.45): number[][] {
+  const pts: number[][] = [];
+  for (let i = 0; i < tips * 2; i++) {
+    const r = i % 2 === 0 ? 1 : inner;
+    const a = Math.PI / 2 + (i * Math.PI) / tips;
+    pts.push([Math.cos(a) * r, Math.sin(a) * r]);
+  }
+  return pts;
+}
+
+function heartPoints(): number[][] {
+  const pts: number[][] = [];
+  for (let i = 0; i < 48; i++) {
+    const t = (i / 48) * Math.PI * 2;
+    const x = 16 * Math.sin(t) ** 3;
+    const y = 13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t);
+    pts.push([x / 17, y / 17]);
+  }
+  return pts;
+}
+
+const STAR = starPoints();
+const HEART = heartPoints();
+const CROWN = [[-0.9, -0.6], [0.9, -0.6], [0.78, 0.55], [0.42, 0.0], [0, 0.7], [-0.42, 0.0], [-0.78, 0.55]];
+const BOLT = [[0.22, 1], [-0.62, 0.1], [-0.1, 0.1], [-0.28, -1], [0.58, -0.06], [0.06, -0.06]];
+const DIAMOND = [[0, 1], [0.72, 0.02], [0, -1], [-0.72, 0.02]];
+const FLAME = [[0, 1], [0.46, 0.22], [0.52, -0.36], [0.22, -0.82], [-0.22, -0.82], [-0.52, -0.36], [-0.46, 0.22]];
+const CHECK = [[-0.85, 0.05], [-0.55, 0.40], [-0.10, -0.08], [0.62, 0.74], [0.88, 0.42], [-0.10, -0.62]];
+const CUP = [[-0.55, 0.52], [0.42, 0.52], [0.30, -0.62], [-0.43, -0.62]];
+const SLICE = [[0, -0.92], [0.86, 0.68], [-0.86, 0.68]];
+
+const disc = (u: number, v: number, cx: number, cy: number, r: number) =>
+  (u - cx) ** 2 + (v - cy) ** 2 <= r * r;
+
+const SHAPES: Record<string, ShapeFn> = {
+  circle: (u, v) => u * u + v * v <= 1,
+  check: (u, v) => inPoly(u, v, CHECK),
+  star: (u, v) => inPoly(u, v, STAR),
+  heart: (u, v) => inPoly(u, v, HEART),
+  crown: (u, v) => inPoly(u, v, CROWN),
+  bolt: (u, v) => inPoly(u, v, BOLT),
+  diamond: (u, v) => inPoly(u, v, DIAMOND),
+  flame: (u, v) => inPoly(u, v, FLAME),
+  slice: (u, v) => inPoly(u, v, SLICE),
+  coffee: (u, v) => {
+    if (inPoly(u, v, CUP)) return true;
+    const d = Math.hypot(u - 0.6, v - 0.1); // asa de la taza
+    return d <= 0.34 && d >= 0.2 && u > 0.42;
+  },
+  target: (u, v) => {
+    const r = Math.hypot(u, v);
+    return r <= 0.34 || (r >= 0.6 && r <= 0.88);
+  },
+  gift: (u, v) =>
+    (Math.abs(u) <= 0.82 && v <= 0.34 && v >= -0.82) || // caja
+    (Math.abs(u) <= 0.92 && v <= 0.62 && v >= 0.34) ||  // tapa
+    (Math.abs(u) <= 0.13 && v >= -0.82 && v <= 0.62),   // listón
+  paw: (u, v) =>
+    disc(u, v, 0, -0.35, 0.52) ||
+    disc(u, v, -0.55, 0.35, 0.26) ||
+    disc(u, v, -0.2, 0.7, 0.26) ||
+    disc(u, v, 0.2, 0.7, 0.26) ||
+    disc(u, v, 0.55, 0.35, 0.26),
+  flower: (u, v) => {
+    if (disc(u, v, 0, 0, 0.3)) return true;
+    for (let i = 0; i < 5; i++) {
+      const a = Math.PI / 2 + (i * 2 * Math.PI) / 5;
+      if (disc(u, v, Math.cos(a) * 0.55, Math.sin(a) * 0.55, 0.42)) return true;
+    }
+    return false;
+  },
+};
+
+/** Traduce el ícono elegido en el editor a una plantilla dibujable. */
+export function shapeForIcon(icon: string | null | undefined): string {
+  const map: Record<string, string> = {
+    "✓": "check", "★": "star", "🌟": "star", "♥": "heart", "☕": "coffee",
+    "🔥": "flame", "👑": "crown", "💎": "diamond", "⚡": "bolt", "🎯": "target",
+    "🎁": "gift", "🍕": "slice", "🍔": "circle", "🌸": "flower", "💈": "circle",
+    "🐾": "paw",
+  };
+  return map[icon ?? ""] ?? "check";
+}
+
+/**
+ * Dibuja la cuadrícula de sellos en la franja del pase (como las tarjetas
+ * físicas): los ganados van rellenos, los pendientes en tenue.
+ */
+function stampsStripPng(
+  w: number, h: number, hexBg: string, hexFg: string,
+  current: number, total: number, shapeKey: string,
+): Buffer {
+  const [br, bgc, bb] = parseHex(hexBg);
+  const [fr, fgc, fb] = parseHex(hexFg);
+  const shape = SHAPES[shapeKey] ?? SHAPES.check;
+
+  const n = Math.max(1, Math.min(total, 20));
+  const rows = n <= 5 ? 1 : 2;
+  const cols = Math.ceil(n / rows);
+  const padX = w * 0.06;
+  const padY = h * 0.12;
+  const cellW = (w - padX * 2) / cols;
+  const cellH = (h - padY * 2) / rows;
+  const size = (Math.min(cellW, cellH) * 0.66) / 2;
+
+  // Centro de cada sello (la última fila se centra si va incompleta)
+  const stamps: { cx: number; cy: number; filled: boolean }[] = [];
+  for (let i = 0; i < n; i++) {
+    const r = Math.floor(i / cols);
+    const c = i % cols;
+    const inRow = Math.min(cols, n - r * cols);
+    const offX = padX + (w - padX * 2 - inRow * cellW) / 2;
+    stamps.push({
+      cx: offX + c * cellW + cellW / 2,
+      cy: padY + r * cellH + cellH / 2,
+      filled: i < current,
+    });
+  }
+
+  return makePng(w, h, (x, y) => {
+    // Fondo con un degradado sutil hacia el color de acento
+    const t = w > 1 ? x / (w - 1) : 0;
+    const mix = 0.28;
+    const bgR = Math.round(br + (fr - br) * t * mix);
+    const bgG = Math.round(bgc + (fgc - bgc) * t * mix);
+    const bgB = Math.round(bb + (fb - bb) * t * mix);
+
+    for (const s of stamps) {
+      const u = (x - s.cx) / size;
+      const v = (s.cy - y) / size; // Y hacia arriba
+      if (u < -1.05 || u > 1.05 || v < -1.05 || v > 1.05) continue;
+      if (!shape(u, v)) continue;
+      const a = s.filled ? 1 : 0.24; // pendiente = tenue
+      return [
+        Math.round(bgR + (fr - bgR) * a),
+        Math.round(bgG + (fgc - bgG) * a),
+        Math.round(bgB + (fb - bgB) * a),
+        255,
+      ];
+    }
+    return [bgR, bgG, bgB, 255];
+  });
+}
+
 // Draws a progress bar row into the PNG: a thin colored bar at the bottom
 function progressStripPng(w: number, h: number, hexBg: string, hexFg: string, current: number, total: number): Buffer {
   const [br, bg, bb] = parseHex(hexBg);
@@ -177,7 +341,12 @@ export async function generateLoyaltyPass(data: LoyaltyPassData): Promise<Buffer
   let stripBuf: Buffer | null = null;
   if (data.stripUrl) stripBuf = await fetchLogo(data.stripUrl);
   const strip = stripBuf ?? (isSellos
-    ? progressStripPng(750, 246, data.colorBackground, data.colorPrimary, data.currentStamps, data.stampsRequired)
+    ? stampsStripPng(
+        750, 246,
+        data.colorBackground, data.colorPrimary,
+        data.currentStamps, data.stampsRequired,
+        shapeForIcon(data.stampIcon),
+      )
     : null);
 
   const passJson = buildPassJson(data, true);
