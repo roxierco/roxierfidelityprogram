@@ -234,14 +234,8 @@ export function shapeForIcon(icon: string | null | undefined): string {
  * Dibuja la cuadrícula de sellos en la franja del pase (como las tarjetas
  * físicas): los ganados van rellenos, los pendientes en tenue.
  */
-function stampsStripPng(
-  w: number, h: number, hexBg: string, hexFg: string,
-  current: number, total: number, shapeKey: string,
-): Buffer {
-  const [br, bgc, bb] = parseHex(hexBg);
-  const [fr, fgc, fb] = parseHex(hexFg);
-  const shape = SHAPES[shapeKey] ?? SHAPES.check;
-
+/** Calcula dónde va cada sello: ≤5 en una fila, más en dos (última centrada). */
+function stampLayout(w: number, h: number, total: number, current: number) {
   const n = Math.max(1, Math.min(total, 20));
   const rows = n <= 5 ? 1 : 2;
   const cols = Math.ceil(n / rows);
@@ -251,7 +245,6 @@ function stampsStripPng(
   const cellH = (h - padY * 2) / rows;
   const size = (Math.min(cellW, cellH) * 0.66) / 2;
 
-  // Centro de cada sello (la última fila se centra si va incompleta)
   const stamps: { cx: number; cy: number; filled: boolean }[] = [];
   for (let i = 0; i < n; i++) {
     const r = Math.floor(i / cols);
@@ -264,15 +257,20 @@ function stampsStripPng(
       filled: i < current,
     });
   }
+  return { stamps, size };
+}
 
+function stampsStripPng(
+  w: number, h: number, hexBg: string, hexFg: string,
+  current: number, total: number, shapeKey: string,
+): Buffer {
+  const [br, bgc, bb] = parseHex(hexBg);
+  const [fr, fgc, fb] = parseHex(hexFg);
+  const shape = SHAPES[shapeKey] ?? SHAPES.check;
+  const { stamps, size } = stampLayout(w, h, total, current);
+
+  // Fondo liso con el color de la tarjeta — sin degradados.
   return makePng(w, h, (x, y) => {
-    // Fondo con un degradado sutil hacia el color de acento
-    const t = w > 1 ? x / (w - 1) : 0;
-    const mix = 0.28;
-    const bgR = Math.round(br + (fr - br) * t * mix);
-    const bgG = Math.round(bgc + (fgc - bgc) * t * mix);
-    const bgB = Math.round(bb + (fb - bb) * t * mix);
-
     for (const s of stamps) {
       const u = (x - s.cx) / size;
       const v = (s.cy - y) / size; // Y hacia arriba
@@ -280,14 +278,65 @@ function stampsStripPng(
       if (!shape(u, v)) continue;
       const a = s.filled ? 1 : 0.24; // pendiente = tenue
       return [
-        Math.round(bgR + (fr - bgR) * a),
-        Math.round(bgG + (fgc - bgG) * a),
-        Math.round(bgB + (fb - bgB) * a),
+        Math.round(br + (fr - br) * a),
+        Math.round(bgc + (fgc - bgc) * a),
+        Math.round(bb + (fb - bb) * a),
         255,
       ];
     }
-    return [bgR, bgG, bgB, 255];
+    return [br, bgc, bb, 255];
   });
+}
+
+/**
+ * Igual que la cuadrícula anterior pero con fondo TRANSPARENTE, para poder
+ * encimar los sellos sobre la imagen que suba el negocio.
+ */
+function stampsOverlayPng(
+  w: number, h: number, hexFg: string,
+  current: number, total: number, shapeKey: string,
+): Buffer {
+  const [fr, fgc, fb] = parseHex(hexFg);
+  const shape = SHAPES[shapeKey] ?? SHAPES.check;
+  const { stamps, size } = stampLayout(w, h, total, current);
+
+  return makePng(w, h, (x, y) => {
+    for (const s of stamps) {
+      const u = (x - s.cx) / size;
+      const v = (s.cy - y) / size;
+      if (u < -1.05 || u > 1.05 || v < -1.05 || v > 1.05) continue;
+      if (!shape(u, v)) continue;
+      // Sobre foto: los ganados sólidos, los pendientes translúcidos.
+      return [fr, fgc, fb, s.filled ? 255 : 90];
+    }
+    return [0, 0, 0, 0]; // transparente
+  });
+}
+
+/**
+ * Encima la cuadrícula de sellos sobre la imagen que subió el negocio.
+ * Usa sharp (ya venía con Next) porque hay que decodificar el JPG/PNG del
+ * usuario para poder pintar arriba. Si algo falla, devuelve la imagen tal cual
+ * para no romper el pase.
+ */
+async function compositeStampsOverImage(
+  imageBuf: Buffer, hexFg: string, current: number, total: number, shapeKey: string,
+): Promise<Buffer> {
+  try {
+    const { default: sharp } = await import("sharp");
+    const W = 750, H = 246;
+
+    const base = await sharp(imageBuf).resize(W, H, { fit: "cover" }).toBuffer();
+    const overlay = stampsOverlayPng(W, H, hexFg, current, total, shapeKey);
+
+    return await sharp(base)
+      .composite([{ input: overlay, top: 0, left: 0 }])
+      .png()
+      .toBuffer();
+  } catch (e) {
+    console.error("[apple-wallet] no se pudieron encimar los sellos sobre la imagen:", e);
+    return imageBuf;
+  }
 }
 
 // Draws a progress bar row into the PNG: a thin colored bar at the bottom
@@ -340,14 +389,17 @@ export async function generateLoyaltyPass(data: LoyaltyPassData): Promise<Buffer
   const isSellos = !data.cardType || data.cardType === "sellos";
   let stripBuf: Buffer | null = null;
   if (data.stripUrl) stripBuf = await fetchLogo(data.stripUrl);
-  const strip = stripBuf ?? (isSellos
-    ? stampsStripPng(
-        750, 246,
-        data.colorBackground, data.colorPrimary,
-        data.currentStamps, data.stampsRequired,
-        shapeForIcon(data.stampIcon),
-      )
-    : null);
+  let strip: Buffer | null;
+  if (isSellos) {
+    const shapeKey = shapeForIcon(data.stampIcon);
+    strip = stripBuf
+      // Con imagen propia: los sellos van ENCIMA de la foto.
+      ? await compositeStampsOverImage(stripBuf, data.colorPrimary, data.currentStamps, data.stampsRequired, shapeKey)
+      // Sin imagen: fondo liso del color de la tarjeta con los sellos.
+      : stampsStripPng(750, 246, data.colorBackground, data.colorPrimary, data.currentStamps, data.stampsRequired, shapeKey);
+  } else {
+    strip = stripBuf;
+  }
 
   const passJson = buildPassJson(data, true);
 
