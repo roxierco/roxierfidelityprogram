@@ -6,6 +6,7 @@ import { useActionState } from "react";
 import { registrarNegocio, type ActionState } from "../actions";
 import { RoxierLogo } from "@/components/brand/XMark";
 import { PasswordInput, PasswordStrengthMeter } from "@/components/auth/PasswordInput";
+import { sugerirCorreo } from "@/lib/email-typo";
 
 export default function RegistroPage() {
   const [state, formAction, pending] = useActionState<ActionState, FormData>(
@@ -14,6 +15,10 @@ export default function RegistroPage() {
   );
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [email, setEmail] = useState("");
+
+  // "¿Quisiste decir juan@gmail.com?" — solo se muestra si detectamos un error de dedo.
+  const sugerencia = sugerirCorreo(email);
 
   const mismatch = confirmPassword.length > 0 && password !== confirmPassword;
   const canSubmit = password.length >= 8 && confirmPassword.length > 0 && !mismatch;
@@ -60,7 +65,22 @@ export default function RegistroPage() {
                 autoComplete="email"
                 className="input"
                 placeholder="tucorreo@ejemplo.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
               />
+              {sugerencia && (
+                <p className="mt-1.5 text-xs text-mist">
+                  ¿Quisiste decir{" "}
+                  <button
+                    type="button"
+                    onClick={() => setEmail(sugerencia)}
+                    className="font-bold text-magenta underline underline-offset-2 hover:opacity-80"
+                  >
+                    {sugerencia}
+                  </button>
+                  ?
+                </p>
+              )}
             </div>
 
             <div>
