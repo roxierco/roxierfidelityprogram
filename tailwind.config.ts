@@ -54,12 +54,18 @@ const config: Config = {
           "50%": { top: "100%" },
           "100%": { top: "0%" },
         },
+        // Manecilla del reloj: da la vuelta a saltitos, como un segundero real
+        tick: {
+          "0%": { transform: "rotate(0deg)" },
+          "100%": { transform: "rotate(360deg)" },
+        },
       },
       animation: {
         "fade-up": "fade-up 0.5s cubic-bezier(0.22, 1, 0.36, 1) forwards",
         "fade-in": "fade-in 0.4s ease forwards",
         "pulse-once": "pulse-once 0.6s ease-out forwards",
         "scan-line": "scan-line 2s ease-in-out infinite",
+        tick: "tick 12s steps(12) infinite",
       },
     },
   },

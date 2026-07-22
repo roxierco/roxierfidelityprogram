@@ -9,6 +9,24 @@ import Link from "next/link";
 
 const DIAS_PRUEBA = 7;
 
+/** Relojito con la manecilla girando a saltitos, como un segundero. */
+function RelojAnimado({ className = "" }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" className={`h-4 w-4 flex-shrink-0 ${className}`} fill="none" aria-hidden="true">
+      <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="2" />
+      {/* Manecilla corta, fija */}
+      <line x1="12" y1="12" x2="15.2" y2="12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" opacity="0.55" />
+      {/* Segundero girando */}
+      <line
+        x1="12" y1="12" x2="12" y2="6.6"
+        stroke="currentColor" strokeWidth="2" strokeLinecap="round"
+        className="animate-tick"
+        style={{ transformOrigin: "12px 12px" }}
+      />
+    </svg>
+  );
+}
+
 /**
  * Barra de la prueba gratis con cuenta regresiva en vivo.
  * Compacta a propósito: una sola línea, sin robar espacio al dashboard.
@@ -54,15 +72,16 @@ function TrialBanner({ trialEndsAt, hasSubscription }: { trialEndsAt: string | n
 
   return (
     <div className={`flex items-center gap-3 border-b px-4 py-2 text-sm ${color.fondo}`}>
-      <span className={`flex-shrink-0 font-medium ${color.texto}`}>
+      <span className={`flex flex-shrink-0 items-center gap-2 font-medium ${color.texto}`}>
+        <RelojAnimado />
         {expirada ? (
-          <>⚠️ Tu prueba terminó</>
+          <>Tu prueba terminó</>
         ) : tiempo ? (
           <>
-            ⏳ Te quedan <span className="font-black tabular-nums">{tiempo}</span> de prueba
+            Te quedan <span className="font-black tabular-nums">{tiempo}</span> de prueba
           </>
         ) : (
-          <>⏳ Prueba gratis activa</>
+          <>Prueba gratis activa</>
         )}
       </span>
 
