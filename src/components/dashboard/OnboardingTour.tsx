@@ -78,7 +78,7 @@ export function OnboardingTour() {
 
         {/* Contenido */}
         <div className="text-center space-y-3">
-          <Icon name={actual.icon} className="h-12 w-12 text-magenta" />
+          <Icon name={actual.icon} className="mx-auto h-12 w-12 text-magenta" />
           <h2 className="text-xl font-black text-paper">{actual.titulo}</h2>
           <p className="text-mist text-sm leading-relaxed">{actual.desc}</p>
         </div>

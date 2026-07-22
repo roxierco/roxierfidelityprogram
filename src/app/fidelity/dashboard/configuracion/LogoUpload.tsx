@@ -75,7 +75,7 @@ export function LogoUpload({ currentLogoUrl, businessId }: { currentLogoUrl: str
           type="button"
           onClick={() => inputRef.current?.click()}
           disabled={uploading}
-          className="relative h-20 w-20 flex-shrink-0 overflow-hidden rounded-2xl border-2 border-dashed border-surface-border bg-surface transition-colors hover:border-magenta focus:outline-none"
+          className="relative flex h-20 w-20 flex-shrink-0 items-center justify-center overflow-hidden rounded-2xl border-2 border-dashed border-surface-border bg-surface transition-colors hover:border-magenta focus:outline-none"
         >
           {logoUrl ? (
             <img src={logoUrl} alt="Logo del negocio" className="h-full w-full object-contain p-1" />
