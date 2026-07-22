@@ -7,28 +7,82 @@ import { XMark } from "@/components/brand/XMark";
 import { OnboardingTour } from "./OnboardingTour";
 import Link from "next/link";
 
+const DIAS_PRUEBA = 7;
+
+/**
+ * Barra de la prueba gratis con cuenta regresiva en vivo.
+ * Compacta a propósito: una sola línea, sin robar espacio al dashboard.
+ */
 function TrialBanner({ trialEndsAt, hasSubscription }: { trialEndsAt: string | null; hasSubscription: boolean }) {
-  if (hasSubscription) return null;
+  // Se refresca cada 30s para que el contador vaya bajando solo.
+  const [ahora, setAhora] = useState<number | null>(null);
+  useEffect(() => {
+    setAhora(Date.now());
+    const t = setInterval(() => setAhora(Date.now()), 30_000);
+    return () => clearInterval(t);
+  }, []);
 
-  const daysLeft = trialEndsAt
-    ? Math.max(0, Math.ceil((new Date(trialEndsAt).getTime() - Date.now()) / 86400000))
-    : null;
+  if (hasSubscription || !trialEndsAt) return null;
 
-  const urgent = daysLeft !== null && daysLeft <= 2;
-  const expired = daysLeft === 0;
+  const finMs = new Date(trialEndsAt).getTime();
+  // Antes de montar en el cliente usamos la hora del servidor implícita (sin
+  // contador) para no romper la hidratación.
+  const restanteMs = ahora === null ? null : Math.max(0, finMs - ahora);
+
+  const expirada = restanteMs !== null && restanteMs === 0;
+  const dias = restanteMs === null ? null : Math.floor(restanteMs / 86_400_000);
+  const horas = restanteMs === null ? null : Math.floor((restanteMs % 86_400_000) / 3_600_000);
+  const minutos = restanteMs === null ? null : Math.floor((restanteMs % 3_600_000) / 60_000);
+
+  // Últimas 48h = urgente (rojo). El resto, magenta de marca.
+  const urgente = restanteMs !== null && restanteMs <= 2 * 86_400_000;
+
+  // Cuánto se ha consumido de la prueba, para la barrita de progreso.
+  const consumido = restanteMs === null
+    ? 0
+    : Math.min(100, Math.max(0, 100 - (restanteMs / (DIAS_PRUEBA * 86_400_000)) * 100));
+
+  const tiempo =
+    dias === null ? null
+    : dias > 0 ? `${dias}d ${horas}h`
+    : horas! > 0 ? `${horas}h ${minutos}m`
+    : `${minutos}m`;
+
+  const color = urgente
+    ? { texto: "text-red-400", fondo: "bg-red-500/15 border-red-500/30", barra: "bg-red-500", boton: "bg-red-500 hover:bg-red-600" }
+    : { texto: "text-magenta", fondo: "bg-magenta/10 border-magenta/20", barra: "bg-magenta", boton: "bg-magenta hover:bg-magenta/90" };
 
   return (
-    <div className={`flex items-center justify-between gap-4 px-4 py-2.5 text-sm ${urgent ? "bg-red-500/15 border-b border-red-500/30" : "bg-magenta/10 border-b border-magenta/20"}`}>
-      <span className={urgent ? "text-red-400 font-medium" : "text-magenta font-medium"}>
-        {expired
-          ? "⚠️ Tu prueba gratis terminó — activa un plan para recuperar el acceso"
-          : daysLeft !== null
-          ? `⏳ Te queda${daysLeft !== 1 ? "n" : ""} ${daysLeft} día${daysLeft !== 1 ? "s" : ""} de prueba gratis — al terminar perderás el acceso si no activas un plan`
-          : "Estás en tu prueba gratis — activa un plan cuando quieras"}
+    <div className={`flex items-center gap-3 border-b px-4 py-2 text-sm ${color.fondo}`}>
+      <span className={`flex-shrink-0 font-medium ${color.texto}`}>
+        {expirada ? (
+          <>⚠️ Tu prueba terminó</>
+        ) : tiempo ? (
+          <>
+            ⏳ Te quedan <span className="font-black tabular-nums">{tiempo}</span> de prueba
+          </>
+        ) : (
+          <>⏳ Prueba gratis activa</>
+        )}
       </span>
+
+      {/* Barrita de progreso — se llena conforme se acaba la prueba */}
+      {!expirada && (
+        <div className="hidden h-1.5 flex-1 overflow-hidden rounded-full bg-white/10 sm:block">
+          <div
+            className={`h-full rounded-full transition-all duration-1000 ${color.barra}`}
+            style={{ width: `${consumido}%` }}
+          />
+        </div>
+      )}
+
+      <span className="hidden flex-shrink-0 text-xs text-mist md:inline">
+        {expirada ? "Activa un plan para recuperar el acceso" : "Al terminar pierdes el acceso"}
+      </span>
+
       <Link
         href="/fidelity/planes"
-        className={`flex-shrink-0 rounded-lg px-3 py-1 text-xs font-bold transition-colors ${urgent ? "bg-red-500 text-white hover:bg-red-600" : "bg-magenta text-white hover:bg-magenta/90"}`}
+        className={`ml-auto flex-shrink-0 rounded-lg px-3 py-1 text-xs font-bold text-white transition-colors ${color.boton}`}
       >
         Activar plan
       </Link>
