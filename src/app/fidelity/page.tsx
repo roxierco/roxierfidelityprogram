@@ -1,6 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { RoxierLogo } from "@/components/brand/XMark";
+import { WhatsAppFab } from "@/components/ui/WhatsAppFab";
 
 // Tarjetas reales de clientes, capturadas desde Apple Wallet.
 const CARD_EXAMPLES = [
@@ -13,6 +14,9 @@ const CARD_EXAMPLES = [
 export default function FidelityLanding() {
   return (
     <div className="min-h-screen bg-white text-[#0E0E10] overflow-x-hidden">
+
+      {/* Botón flotante de WhatsApp — siempre visible mientras navegan */}
+      <WhatsAppFab />
 
       {/* ── Navbar ────────────────────────────────────────────────── */}
       <header className="sticky top-0 z-50 border-b border-gray-200 bg-white/90 backdrop-blur-xl">
