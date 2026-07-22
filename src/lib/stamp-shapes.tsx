@@ -8,7 +8,8 @@
 
 export type StampShapeKey =
   | "circle" | "check" | "star" | "heart" | "crown" | "bolt" | "diamond"
-  | "flame" | "slice" | "coffee" | "target" | "gift" | "paw" | "flower";
+  | "flame" | "slice" | "coffee" | "target" | "gift" | "paw" | "flower"
+  | "persona";
 
 function starPoints(tips = 5, inner = 0.45): string {
   const pts: string[] = [];
@@ -43,12 +44,20 @@ const POLY: Partial<Record<StampShapeKey, string>> = {
   coffee: "-0.55,0.52 0.42,0.52 0.30,-0.62 -0.43,-0.62",
 };
 
+// Partes de la silueta de persona recostada (espejo de SHAPES.persona)
+const PERSONA = {
+  torso: "-0.70,0.05 -0.10,0.10 0.28,-0.28 0.28,-0.60 -0.55,-0.66 -0.75,-0.28",
+  piernas: "0.05,-0.15 0.58,-0.10 0.93,-0.30 0.95,-0.52 0.56,-0.40 0.14,-0.62",
+  brazo: "-0.18,0.12 0.26,0.44 0.40,0.30 -0.06,-0.02",
+  popote: "0.48,0.72 0.60,0.98 0.68,0.95 0.56,0.70",
+};
+
 /** Traduce el ícono elegido en el editor a la figura que se dibuja. */
 export function shapeKeyForIcon(icon: string | null | undefined): StampShapeKey {
   const map: Record<string, StampShapeKey> = {
     "✓": "check", "★": "star", "🌟": "star", "♥": "heart", "☕": "coffee",
     "🔥": "flame", "👑": "crown", "💎": "diamond", "⚡": "bolt", "🎯": "target",
-    "🎁": "gift", "🍕": "slice", "🍔": "circle", "🌸": "flower", "💈": "circle",
+    "🎁": "gift", "🍕": "slice", "🍹": "persona", "🍔": "circle", "🌸": "flower", "💈": "circle",
     "🐾": "paw",
   };
   return map[icon ?? ""] ?? "check";
@@ -100,6 +109,18 @@ export function StampShape({
             <circle cx="-0.2" cy="0.7" r="0.26" />
             <circle cx="0.2" cy="0.7" r="0.26" />
             <circle cx="0.55" cy="0.35" r="0.26" />
+          </>
+        )}
+
+        {shape === "persona" && (
+          <>
+            <circle cx="-0.50" cy="0.38" r="0.36" />
+            <polygon points={PERSONA.torso} />
+            <polygon points={PERSONA.piernas} />
+            <circle cx="0.93" cy="-0.41" r="0.13" />
+            <polygon points={PERSONA.brazo} />
+            <rect x="0.30" y="0.40" width="0.28" height="0.34" />
+            <polygon points={PERSONA.popote} />
           </>
         )}
 

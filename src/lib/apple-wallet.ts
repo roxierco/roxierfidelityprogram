@@ -177,6 +177,12 @@ const CHECK = [[-0.85, 0.05], [-0.55, 0.40], [-0.10, -0.08], [0.62, 0.74], [0.88
 const CUP = [[-0.55, 0.52], [0.42, 0.52], [0.30, -0.62], [-0.43, -0.62]];
 const SLICE = [[0, -0.92], [0.86, 0.68], [-0.86, 0.68]];
 
+// Partes de la silueta de persona recostada (ver SHAPES.persona)
+const PERSONA_TORSO = [[-0.70, 0.05], [-0.10, 0.10], [0.28, -0.28], [0.28, -0.60], [-0.55, -0.66], [-0.75, -0.28]];
+const PERSONA_PIERNAS = [[0.05, -0.15], [0.58, -0.10], [0.93, -0.30], [0.95, -0.52], [0.56, -0.40], [0.14, -0.62]];
+const PERSONA_BRAZO = [[-0.18, 0.12], [0.26, 0.44], [0.40, 0.30], [-0.06, -0.02]];
+const PERSONA_POPOTE = [[0.48, 0.72], [0.60, 0.98], [0.68, 0.95], [0.56, 0.70]];
+
 const disc = (u: number, v: number, cx: number, cy: number, r: number) =>
   (u - cx) ** 2 + (v - cy) ** 2 <= r * r;
 
@@ -217,6 +223,16 @@ const SHAPES: Record<string, ShapeFn> = {
     }
     return false;
   },
+  // Silueta de persona recostada con una bebida (estilo "lounge").
+  // Va por partes: cabello, torso, piernas, brazo, vaso y popote.
+  persona: (u, v) =>
+    disc(u, v, -0.50, 0.38, 0.36) ||                                   // cabello / cabeza
+    inPoly(u, v, PERSONA_TORSO) ||                                     // torso y cadera
+    inPoly(u, v, PERSONA_PIERNAS) ||                                   // piernas
+    disc(u, v, 0.93, -0.41, 0.13) ||                                   // pie
+    inPoly(u, v, PERSONA_BRAZO) ||                                     // brazo levantado
+    (Math.abs(u - 0.44) <= 0.14 && v >= 0.40 && v <= 0.74) ||          // vaso
+    inPoly(u, v, PERSONA_POPOTE),                                      // popote
 };
 
 /** Traduce el ícono elegido en el editor a una plantilla dibujable. */
@@ -224,7 +240,7 @@ export function shapeForIcon(icon: string | null | undefined): string {
   const map: Record<string, string> = {
     "✓": "check", "★": "star", "🌟": "star", "♥": "heart", "☕": "coffee",
     "🔥": "flame", "👑": "crown", "💎": "diamond", "⚡": "bolt", "🎯": "target",
-    "🎁": "gift", "🍕": "slice", "🍔": "circle", "🌸": "flower", "💈": "circle",
+    "🎁": "gift", "🍕": "slice", "🍹": "persona", "🍔": "circle", "🌸": "flower", "💈": "circle",
     "🐾": "paw",
   };
   return map[icon ?? ""] ?? "check";
