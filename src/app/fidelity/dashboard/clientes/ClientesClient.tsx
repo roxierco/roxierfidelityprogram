@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo, useCallback } from "react";
+import { Icon } from "@/components/ui/Icon";
 
 interface Customer {
   id: string;
@@ -167,7 +168,7 @@ export function ClientesClient({
       {/* Lista de clientes */}
       {visibleCustomers.length === 0 ? (
         <div className="card text-center py-12">
-          <div className="text-5xl mb-4">👥</div>
+          <Icon name="clientes" className="mx-auto mb-4 h-12 w-12 text-mist" />
           <h3 className="text-lg font-bold text-paper">Aún no tienes clientes</h3>
           <p className="text-mist text-sm mt-2 max-w-sm mx-auto">
             Comparte el link de tu tarjeta para que los clientes se registren. Ve a <strong className="text-paper">Mis tarjetas</strong> y copia el enlace.
@@ -252,7 +253,7 @@ export function ClientesClient({
                       <p className="text-xs text-mist">
                         {c.total_visits} visita{c.total_visits !== 1 ? "s" : ""}
                         {c.rewards_redeemed > 0 && (
-                          <span className="text-yellow-400 ml-1">· {c.rewards_redeemed} 🎉</span>
+                          <span className="ml-1 inline-flex items-center gap-1 text-yellow-400">· {c.rewards_redeemed}<Icon name="trofeo" className="h-3.5 w-3.5" /></span>
                         )}
                       </p>
                     </div>

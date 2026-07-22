@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { Icon } from "@/components/ui/Icon";
 
 export default async function NotificacionesPage() {
   const supabase = await createClient();
@@ -29,7 +30,7 @@ export default async function NotificacionesPage() {
 
       {list.length === 0 ? (
         <div className="card mt-8 py-12 text-center">
-          <div className="text-4xl mb-3">📭</div>
+          <Icon name="bandeja" className="mx-auto mb-3 h-10 w-10 text-mist" />
           <p className="font-semibold text-paper mb-1">Sin envíos aún</p>
           <p className="text-sm text-mist">
             Ve a <strong>Promociones</strong> y presiona &quot;Enviar a clientes&quot; para mandar tu primera campaña.

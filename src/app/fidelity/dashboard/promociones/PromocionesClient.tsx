@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { Icon } from "@/components/ui/Icon";
 
 interface Promo {
   id: string;
@@ -63,7 +64,7 @@ export function PromocionesClient({
     const res = await fetch(`/api/promociones/${id}/enviar`, { method: "POST" });
     const data = await res.json();
     if (res.ok) {
-      showToast(`✅ Enviado a ${data.sent} clientes`);
+      showToast(`Enviado a ${data.sent} clientes`);
       router.refresh();
     } else {
       showToast(data.error ?? "Error al enviar", false);
@@ -136,7 +137,7 @@ export function PromocionesClient({
       {/* Lista de promociones */}
       {lista.length === 0 && !creando ? (
         <div className="card py-12 text-center">
-          <div className="text-4xl mb-3">📣</div>
+          <Icon name="promocion" className="mx-auto mb-3 h-10 w-10 text-mist" />
           <p className="font-semibold text-paper mb-1">Sin promociones aún</p>
           <p className="text-sm text-mist">Crea tu primera promoción para avisarle a tus clientes.</p>
         </div>
@@ -177,7 +178,7 @@ export function PromocionesClient({
                   disabled={sending === p.id}
                   className="flex-1 rounded-brand bg-magenta/10 py-2 text-xs font-semibold text-magenta hover:bg-magenta/20 transition-colors disabled:opacity-50"
                 >
-                  {sending === p.id ? "Enviando..." : "📧 Enviar a clientes"}
+                  {sending === p.id ? "Enviando..." : <span className="inline-flex items-center gap-1.5"><Icon name="correo" className="h-4 w-4" />Enviar a clientes</span>}
                 </button>
               </div>
             </div>

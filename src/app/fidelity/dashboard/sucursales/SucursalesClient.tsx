@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { Icon } from "@/components/ui/Icon";
 import type { Sucursal } from "@/types/database";
 
 export function SucursalesClient({
@@ -88,7 +89,7 @@ export function SucursalesClient({
       {/* Lista */}
       {sucursales.length === 0 ? (
         <div className="card text-center py-10">
-          <div className="text-4xl mb-3">🏬</div>
+          <Icon name="sucursal" className="mx-auto mb-3 h-10 w-10 text-mist" />
           <h3 className="text-lg font-bold text-paper">Aún no tienes sucursales</h3>
           <p className="mx-auto mt-2 max-w-sm text-mist text-sm">
             Agrega tu primera sucursal arriba. Si solo tienes una ubicación, no necesitas registrar sucursales — todo funciona igual.

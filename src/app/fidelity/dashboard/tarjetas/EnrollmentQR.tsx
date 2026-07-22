@@ -48,7 +48,7 @@ export function EnrollmentQR({ enrollUrl, slug }: { enrollUrl: string; slug: str
               href={`/fidelity/dashboard/scanner`}
               className="btn-primary !py-2 !px-4 text-sm"
             >
-              📷 Abrir escáner
+              Abrir escáner
             </a>
             <a
               href={enrollUrl}

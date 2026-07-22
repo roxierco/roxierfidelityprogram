@@ -5,6 +5,7 @@ import type { CSSProperties } from "react";
 import { createClient } from "@/lib/supabase/client";
 import type { LoyaltyCard } from "@/types/database";
 import { StampShape, StampGrid, shapeKeyForIcon } from "@/lib/stamp-shapes";
+import { Icon } from "@/components/ui/Icon";
 
 // ── Constantes ───────────────────────────────────────────────────
 
@@ -334,7 +335,7 @@ function GoogleWalletPreview({ card }: { card: Partial<LoyaltyCard> }) {
 function CardPreview({ card }: { card: Partial<LoyaltyCard> }) {
   const [tab, setTab] = useState<"web" | "apple" | "google">("web");
   const tabs = [
-    { id: "web" as const, label: "📱 Web" },
+    { id: "web" as const, label: "Web" },
     { id: "apple" as const, label: "Apple Wallet" },
     { id: "google" as const, label: "Google Wallet" },
   ];
@@ -577,7 +578,7 @@ export function TarjetaEditor({
                   )}
                   {businessLogoUrl && card.logo_url === businessLogoUrl && (
                     <p className="rounded-lg bg-green-500/10 px-3 py-2 text-center text-xs font-semibold text-green-400">
-                      ✓ Usando el logo de tu negocio
+                      Usando el logo de tu negocio
                     </p>
                   )}
 
@@ -602,7 +603,7 @@ export function TarjetaEditor({
             {(card.card_type === "cupon") && (
               <div className="card space-y-4">
                 <div className="flex items-center gap-2 mb-1">
-                  <span className="text-lg">🎟️</span>
+                  <Icon name="cupon" className="h-5 w-5 text-magenta" />
                   <p className="font-bold text-paper text-sm">Configuración del cupón</p>
                   <span className="rounded-full bg-magenta/10 px-2 py-0.5 text-[10px] font-bold text-magenta uppercase tracking-wider">Un solo uso</span>
                 </div>
@@ -663,7 +664,7 @@ export function TarjetaEditor({
             {(card.card_type === "cashback") && (
               <div className="card space-y-4">
                 <div className="flex items-center gap-2 mb-1">
-                  <span className="text-lg">💰</span>
+                  <Icon name="cashback" className="h-5 w-5 text-green-400" />
                   <p className="font-bold text-paper text-sm">Configuración del cashback</p>
                   <span className="rounded-full bg-green-500/10 px-2 py-0.5 text-[10px] font-bold text-green-400 uppercase tracking-wider">
                     {card.cashback_percent ?? 0}% por compra
@@ -708,7 +709,7 @@ export function TarjetaEditor({
                   <p className="mt-1 text-xs text-mist">Si el cliente no usa la tarjeta en este tiempo, su saldo expira. Vacío = nunca expira.</p>
                 </div>
                 <div className="rounded-xl bg-green-500/10 border border-green-500/20 p-3 text-xs text-green-400">
-                  💡 El empleado captura el <strong>monto de la compra</strong> al escanear; el sistema calcula y acredita el {card.cashback_percent ?? 5}% automáticamente. El cliente redime su saldo desde la misma pantalla.
+                  El empleado captura el <strong>monto de la compra</strong> al escanear; el sistema calcula y acredita el {card.cashback_percent ?? 5}% automáticamente. El cliente redime su saldo desde la misma pantalla.
                 </div>
               </div>
             )}
@@ -723,7 +724,7 @@ export function TarjetaEditor({
                 </div>
                 <div>
                   <label className="label">Recompensa</label>
-                  <input className="input mt-1" placeholder="Ej: Un café gratis ☕"
+                  <input className="input mt-1" placeholder="Ej: Un café gratis"
                     value={card.reward_text ?? ""} onChange={(e) => update("reward_text", e.target.value)} />
                   <p className="mt-1 text-xs text-mist">Lo que gana el cliente al completar la tarjeta</p>
                 </div>
@@ -881,7 +882,7 @@ export function TarjetaEditor({
                           {(card.bg_image_position ?? "cover") === "cover" && <div className="h-2.5 w-2.5 rounded-full bg-magenta" />}
                         </div>
                         <div>
-                          <p className={`text-sm font-bold ${(card.bg_image_position ?? "cover") === "cover" ? "text-magenta" : "text-paper"}`}>Fondo completo ✨</p>
+                          <p className={`text-sm font-bold ${(card.bg_image_position ?? "cover") === "cover" ? "text-magenta" : "text-paper"}`}>Fondo completo</p>
                           <p className="text-xs text-mist">La imagen cubre toda la tarjeta con el texto encima</p>
                         </div>
                       </button>
@@ -947,7 +948,7 @@ export function TarjetaEditor({
         {/* Botón guardar */}
         <button onClick={guardar} disabled={saving || uploadingLogo || uploadingBg}
           className="btn-primary w-full py-3.5 text-base font-bold">
-          {saving ? "Guardando..." : saved ? "✓ Guardado" : "Guardar tarjeta"}
+          {saving ? "Guardando..." : saved ? "Guardado" : "Guardar tarjeta"}
         </button>
       </div>
 

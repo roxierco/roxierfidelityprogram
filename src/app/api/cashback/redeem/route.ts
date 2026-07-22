@@ -75,7 +75,7 @@ export async function POST(req: Request) {
     customerName: customer?.full_name ?? "",
     balance: newBalance,
     slug: business.slug,
-    title: "Cashback aplicado ✅",
+    title: "Cashback aplicado",
     body: `Usaste $${redeemAmount.toFixed(2)} — Saldo restante: $${newBalance.toFixed(2)}`,
   });
 

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { QRCodeSVG } from "qrcode.react";
 import { TarjetaEditor } from "./TarjetaEditor";
 import type { LoyaltyCard } from "@/types/database";
+import { Icon } from "@/components/ui/Icon";
 
 function defaultCard(businessId: string, type: CardTypeKey = "sellos", logoUrl: string | null = null): Partial<LoyaltyCard> {
   const base = {
@@ -447,7 +448,7 @@ export function TarjetasClient({
                           onClick={() => { setQrCardId(card.id); setStep("list"); }}
                           className="flex-1 rounded-brand bg-magenta/10 py-2 text-xs font-semibold text-magenta hover:bg-magenta/20"
                         >
-                          📱 Generar QR
+                          Generar QR
                         </button>
                         <button
                           onClick={() => startEdit(card)}
@@ -518,10 +519,10 @@ export function TarjetasClient({
 
                   <div className="flex flex-wrap gap-2">
                     <a href="/fidelity/dashboard/scanner" className="btn-primary inline-flex !py-2 !px-4 text-sm">
-                      📷 Abrir escáner para dar sellos
+                      Abrir escáner para dar sellos
                     </a>
                     <a href="/fidelity/dashboard/scanner?modo=pistola" className="btn-secondary inline-flex !py-2 !px-4 text-sm">
-                      🔫 Usar pistola lectora
+                      Usar pistola lectora
                     </a>
                   </div>
                 </div>

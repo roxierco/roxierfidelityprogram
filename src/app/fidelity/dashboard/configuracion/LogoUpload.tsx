@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState, useTransition } from "react";
+import { Icon } from "@/components/ui/Icon";
 
 export function LogoUpload({ currentLogoUrl, businessId }: { currentLogoUrl: string | null; businessId: string }) {
   const [logoUrl, setLogoUrl] = useState(currentLogoUrl);
@@ -79,7 +80,7 @@ export function LogoUpload({ currentLogoUrl, businessId }: { currentLogoUrl: str
           {logoUrl ? (
             <img src={logoUrl} alt="Logo del negocio" className="h-full w-full object-contain p-1" />
           ) : (
-            <span className="text-2xl">🏪</span>
+            <Icon name="tienda" className="h-7 w-7 text-mist" />
           )}
           {uploading && (
             <div className="absolute inset-0 flex items-center justify-center bg-near-black/60">

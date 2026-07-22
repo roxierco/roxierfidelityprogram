@@ -116,7 +116,7 @@ export async function upsertLoyaltyObject(params: {
     accountName: customerName,
     loyaltyPoints: {
       label: "Sellos",
-      balance: { string: rewarded ? `¡Premio ganado! 🎉` : `${currentStamps} / ${stampsRequired}` },
+      balance: { string: rewarded ? `¡Premio ganado!` : `${currentStamps} / ${stampsRequired}` },
     },
     textModulesData: [
       { header: "Premio al completar", body: rewardText, id: "reward" },
@@ -171,7 +171,7 @@ export async function syncAfterStamp(params: {
   if (!objectId) return;
 
   const msg = params.rewarded
-    ? { header: "🎉 ¡Premio ganado!", body: `${params.rewardText} — preséntalo al cajero` }
+    ? { header: "¡Premio ganado!", body: `${params.rewardText} — preséntalo al cajero` }
     : { header: "Nuevo sello agregado", body: `Llevas ${params.currentStamps} de ${params.stampsRequired} sellos` };
 
   await addMessage(objectId, msg.header, msg.body);

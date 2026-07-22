@@ -82,7 +82,7 @@ export async function POST(req: Request) {
     customerName: customer?.full_name ?? "",
     balance: newBalance,
     slug: business.slug,
-    title: "¡Ganaste cashback! 💰",
+    title: "¡Ganaste cashback!",
     body: `+$${earned.toFixed(2)} — Saldo total: $${newBalance.toFixed(2)}`,
   });
 

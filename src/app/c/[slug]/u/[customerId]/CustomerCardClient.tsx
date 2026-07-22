@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import type { CSSProperties } from "react";
 import { QRCodeSVG } from "qrcode.react";
 import { createClient } from "@/lib/supabase/client";
+import { Icon } from "@/components/ui/Icon";
 
 interface Customer {
   id: string;
@@ -237,7 +238,7 @@ export function CustomerCardClient({
   }
 
   function shareWhatsApp() {
-    const msg = encodeURIComponent(`¡Tengo mi tarjeta de lealtad en ${business.name}! 🎴\nAcumula sellos y gana premios: ${cardUrl}`);
+    const msg = encodeURIComponent(`¡Tengo mi tarjeta de lealtad en ${business.name}!\nAcumula sellos y gana premios: ${cardUrl}`);
     window.open(`https://wa.me/?text=${msg}`, "_blank", "noopener,noreferrer");
   }
 
@@ -279,7 +280,7 @@ export function CustomerCardClient({
           className="fixed inset-0 z-50 flex flex-col items-center justify-center text-center px-8"
           style={{ backgroundColor: primary }}
         >
-          <div className="text-7xl mb-4 animate-bounce">🎉</div>
+          <Icon name="trofeo" className="mx-auto mb-4 h-20 w-20 animate-bounce" strokeWidth={1.2} />
           <h1 className="text-3xl font-extrabold text-white mb-2">
             ¡Tarjeta completada!
           </h1>
@@ -321,7 +322,7 @@ export function CustomerCardClient({
                   <p className="font-bold">{card?.title ?? "Cashback"}</p>
                   <p className="text-xs" style={{ opacity: 0.6 }}>{customer.full_name}</p>
                 </div>
-                {justStamped && <span className="ml-auto text-lg animate-bounce">✨</span>}
+                {justStamped && <Icon name="destello" className="ml-auto h-5 w-5 animate-bounce" />}
               </div>
               <div className="rounded-xl bg-white/10 p-5 text-center">
                 <p className="text-[10px] font-bold uppercase tracking-widest mb-1" style={{ opacity: 0.6 }}>Saldo disponible</p>
@@ -387,7 +388,7 @@ export function CustomerCardClient({
                     <p className="font-bold">{card?.title ?? "Tarjeta de descuento"}</p>
                     <p className="text-xs" style={{ opacity: 0.6 }}>{customer.full_name}</p>
                   </div>
-                  {justStamped && <span className="ml-auto text-lg animate-bounce">✨</span>}
+                  {justStamped && <Icon name="destello" className="ml-auto h-5 w-5 animate-bounce" />}
                 </div>
                 <div className="rounded-xl bg-white/10 p-4 text-center">
                   <p className="text-[10px] font-bold uppercase tracking-widest mb-1" style={{ opacity: 0.6 }}>Tu descuento</p>
@@ -428,7 +429,7 @@ export function CustomerCardClient({
                   <p className="font-bold">{card?.title ?? "Tarjeta de lealtad"}</p>
                   <p className="text-xs" style={{ opacity: 0.6 }}>{customer.full_name}</p>
                 </div>
-                {justStamped && <span className="ml-auto text-lg animate-bounce">✨</span>}
+                {justStamped && <Icon name="destello" className="ml-auto h-5 w-5 animate-bounce" />}
               </div>
               <p className="text-[10px] font-bold uppercase tracking-wider mb-2" style={{ opacity: 0.6 }}>
                 Sellos acumulados
@@ -492,7 +493,7 @@ export function CustomerCardClient({
               opacity: pushState === "denied" ? 0.4 : 1,
             }}
           >
-            <span className="text-lg">{pushState === "denied" ? "🔕" : "🔔"}</span>
+            <Icon name={pushState === "denied" ? "campana-off" : "campana"} className="h-5 w-5" />
             <span className="text-sm font-semibold">
               {pushState === "subscribed" ? "Notificaciones activadas"
                 : pushState === "denied" ? "Notificaciones bloqueadas"

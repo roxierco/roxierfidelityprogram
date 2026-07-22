@@ -66,12 +66,14 @@ function TrialBanner({ trialEndsAt, hasSubscription }: { trialEndsAt: string | n
     : horas! > 0 ? `${horas}h ${minutos}m`
     : `${minutos}m`;
 
+  // El delineado va marcado (border-b-2 + color al 50%) para que la barra se
+  // distinga sobre el fondo blanco del tema claro, donde antes casi se perdía.
   const color = urgente
-    ? { texto: "text-red-400", fondo: "bg-red-500/15 border-red-500/30", boton: "bg-red-500 hover:bg-red-600" }
-    : { texto: "text-magenta", fondo: "bg-magenta/10 border-magenta/20", boton: "bg-magenta hover:bg-magenta/90" };
+    ? { texto: "text-red-500", fondo: "bg-red-500/15 border-red-500/50", boton: "bg-red-500 hover:bg-red-600" }
+    : { texto: "text-magenta", fondo: "bg-magenta/10 border-magenta/50", boton: "bg-magenta hover:bg-magenta/90" };
 
   return (
-    <div className={`flex items-center gap-3 border-b px-4 py-2 text-sm ${color.fondo}`}>
+    <div className={`flex items-center gap-3 border-b-2 px-4 py-2 text-sm ${color.fondo}`}>
       <span className={`flex flex-shrink-0 items-center gap-2 font-medium ${color.texto}`}>
         <RelojAnimado />
         {expirada ? (

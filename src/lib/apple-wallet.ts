@@ -589,7 +589,7 @@ function buildPassJson(data: LoyaltyPassData, hasStrip: boolean): object {
         {
           key: "remaining",
           label: remaining === 0 ? "ESTADO" : "FALTAN",
-          value: remaining === 0 ? "🎉 Premio listo" : `${remaining} sello${remaining !== 1 ? "s" : ""}`,
+          value: remaining === 0 ? "Premio listo" : `${remaining} sello${remaining !== 1 ? "s" : ""}`,
         },
       ],
       auxiliaryFields: [

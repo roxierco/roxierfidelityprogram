@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
 import { Html5Qrcode, Html5QrcodeSupportedFormats } from "html5-qrcode";
+import { Icon } from "@/components/ui/Icon";
 
 interface ScanResult {
   success: boolean;
@@ -311,8 +312,8 @@ export function ScannerClient({
     setCashbackMsg({
       text:
         kind === "apply"
-          ? `✅ +$${Number(data.earned).toFixed(2)} de cashback acreditado`
-          : `✅ Se usaron $${monto.toFixed(2)} del saldo`,
+          ? `+$${Number(data.earned).toFixed(2)} de cashback acreditado`
+          : `Se usaron $${monto.toFixed(2)} del saldo`,
       ok: true,
     });
     playRewardSound();
@@ -417,7 +418,7 @@ export function ScannerClient({
       {/* Selector de sucursal — solo si el negocio tiene sucursales registradas */}
       {sucursales.length > 0 && (
         <div className="flex items-center gap-2 rounded-xl border border-surface-border bg-surface px-3 py-2.5">
-          <span className="text-sm text-mist flex-shrink-0">🏬 Sucursal:</span>
+          <span className="flex flex-shrink-0 items-center gap-1.5 text-sm text-mist"><Icon name="sucursal" className="h-4 w-4" />Sucursal:</span>
           <select
             value={sucursalId}
             onChange={(e) => cambiarSucursal(e.target.value)}
@@ -437,13 +438,13 @@ export function ScannerClient({
             onClick={() => { setMode("camera"); setError(""); }}
             className={`flex-1 rounded-lg py-2 text-sm font-bold transition-colors ${mode === "camera" ? "bg-magenta text-white" : "text-mist"}`}
           >
-            📷 Cámara
+            <span className="inline-flex items-center justify-center gap-1.5"><Icon name="camara" className="h-4 w-4" />Cámara</span>
           </button>
           <button
             onClick={async () => { await stopScanner(); setMode("gun"); setError(""); }}
             className={`flex-1 rounded-lg py-2 text-sm font-bold transition-colors ${mode === "gun" ? "bg-magenta text-white" : "text-mist"}`}
           >
-            🔫 Pistola lectora
+            <span className="inline-flex items-center justify-center gap-1.5"><Icon name="pistola" className="h-4 w-4" />Pistola lectora</span>
           </button>
         </div>
       )}
@@ -452,7 +453,7 @@ export function ScannerClient({
       {mode === "gun" && !result && !scannedCustomerId && !cashback && (
         <div className="rounded-2xl border border-surface-border bg-surface p-6 space-y-4 text-center">
           <div className="h-16 w-16 mx-auto rounded-full bg-magenta/10 flex items-center justify-center text-3xl">
-            🔫
+            <Icon name="pistola" className="h-7 w-7 text-magenta" />
           </div>
           <div>
             <p className="font-bold text-paper">Listo para escanear</p>
@@ -567,7 +568,7 @@ export function ScannerClient({
           {!scanning && (
             <div className="p-6 flex flex-col items-center gap-3">
               <div className="h-16 w-16 rounded-full bg-magenta/10 flex items-center justify-center text-3xl">
-                📷
+                <Icon name="camara" className="h-7 w-7 text-magenta" />
               </div>
               <p className="text-sm text-mist text-center">
                 Apunta la cámara al QR del cliente para agregar un sello
@@ -586,7 +587,7 @@ export function ScannerClient({
           {scanning && (
             <div className="px-4 pt-3 pb-1">
               <p className="text-xs text-mist text-center">
-                💡 Sube el brillo de la pantalla del cliente al máximo · Acerca el QR a la cámara
+                Sube el brillo de la pantalla del cliente al máximo · Acerca el QR a la cámara
               </p>
             </div>
           )}
@@ -619,7 +620,7 @@ export function ScannerClient({
       {scannedCustomerId && !result && (
         <div className="rounded-brand border border-surface-border bg-surface p-6 space-y-4">
           <div className="text-center">
-            <div className="text-4xl mb-2">✅</div>
+            <Icon name="check-circulo" className="mx-auto mb-2 h-10 w-10 text-green-400" />
             <p className="font-bold text-paper">QR leído correctamente</p>
             <p className="text-sm text-mist mt-1">¿Confirmar acción para este cliente?</p>
           </div>
@@ -628,7 +629,7 @@ export function ScannerClient({
               Cancelar
             </button>
             <button onClick={darSello} disabled={stamping} className="btn-primary flex-1">
-              {stamping ? "Procesando..." : "Confirmar ✓"}
+              {stamping ? "Procesando..." : "Confirmar"}
             </button>
           </div>
         </div>
@@ -637,7 +638,7 @@ export function ScannerClient({
       {/* Resultado: cupón canjeado */}
       {result && result.cardType === "cupon" && (
         <div className="rounded-brand border border-purple-500 bg-purple-500/10 p-6 space-y-3 text-center">
-          <div className="text-5xl">🎟️</div>
+          <Icon name="cupon" className="mx-auto h-12 w-12 text-purple-400" />
           <div>
             <p className="font-bold text-lg text-paper">{result.customer.full_name}</p>
             <p className="text-purple-400 font-semibold mt-1">¡Cupón canjeado!</p>
@@ -667,7 +668,7 @@ export function ScannerClient({
       {/* Resultado: sello normal */}
       {result && result.cardType === "sellos" && !result.rewarded && (
         <div className={`rounded-brand border p-6 space-y-3 text-center ${result.nearReward ? "border-yellow-500 bg-yellow-500/10" : "border-green-500 bg-green-500/10"}`}>
-          <div className="text-5xl">{result.nearReward ? "🎯" : "✅"}</div>
+          <Icon name={result.nearReward ? "diana" : "check-circulo"} className={`mx-auto h-12 w-12 ${result.nearReward ? "text-yellow-400" : "text-green-400"}`} />
           <div>
             <p className="font-bold text-lg text-paper">{result.customer.full_name}</p>
             <p className={`font-semibold mt-1 ${result.nearReward ? "text-yellow-400" : "text-green-400"}`}>
@@ -715,7 +716,7 @@ export function ScannerClient({
             <div className="relative flex items-center justify-center">
               <div className="absolute rounded-full"
                 style={{ width: 120, height: 120, background: "radial-gradient(circle, rgba(251,191,36,0.25) 0%, transparent 70%)" }} />
-              <span style={{ fontSize: 72, lineHeight: 1 }}>🏆</span>
+              <Icon name="trofeo" className="h-16 w-16" strokeWidth={1.2} />
             </div>
 
             {/* Título */}
@@ -756,7 +757,7 @@ export function ScannerClient({
               className="w-full rounded-2xl py-4 text-base font-bold active:scale-95 transition-transform"
               style={{ background: "#f59e0b", color: "#0a0a0f" }}
             >
-              ✓ Premio entregado — Continuar
+              Premio entregado — Continuar
             </button>
           </div>
         </div>
@@ -766,7 +767,7 @@ export function ScannerClient({
           (ej. QR viejo sin ?card= que resuelve a otro tipo de tarjeta) */}
       {result && result.cardType !== "sellos" && result.cardType !== "cupon" && result.cardType !== "descuento" && (
         <div className="rounded-brand border border-green-500 bg-green-500/10 p-6 space-y-3 text-center">
-          <div className="text-5xl">✅</div>
+          <Icon name="check-circulo" className="mx-auto h-12 w-12 text-green-400" />
           <div>
             <p className="font-bold text-lg text-paper">{result.customer.full_name}</p>
             <p className="text-green-400 font-semibold mt-1">Visita registrada</p>

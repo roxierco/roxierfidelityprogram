@@ -230,7 +230,6 @@ export default function FidelityLanding() {
           {/* Badge de prueba gratis */}
           <div className="flex justify-center mt-8">
             <div className="inline-flex items-center gap-2 rounded-full border border-green-200 bg-green-50 px-5 py-2.5">
-              <span className="text-base">🎁</span>
               <span className="text-sm font-semibold text-green-700">
                 7 días gratis en todos los planes — empieza sin tarjeta
               </span>

@@ -1,30 +1,31 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { Icon, type IconName } from "@/components/ui/Icon";
 
-const PASOS = [
+const PASOS: { icon: IconName; titulo: string; desc: string }[] = [
   {
-    icon: "🎴",
+    icon: "tarjeta",
     titulo: "Mis tarjetas",
     desc: "Aquí creas y personalizas tu tarjeta de lealtad digital. Define cuántos sellos necesita el cliente para ganar su recompensa y elige los colores de tu marca.",
   },
   {
-    icon: "👥",
+    icon: "clientes",
     titulo: "Clientes",
     desc: "Ve todos los clientes que tienen tu tarjeta. Puedes ver cuántos sellos llevan y cuándo fue su última visita.",
   },
   {
-    icon: "🎁",
+    icon: "promocion",
     titulo: "Promociones",
     desc: "Crea ofertas especiales con tiempo limitado — 2x1, descuentos, sellos dobles. Se mandan automáticamente como notificación push a tus clientes.",
   },
   {
-    icon: "🔔",
+    icon: "campana",
     titulo: "Notificaciones",
     desc: "Envía mensajes directos a todos tus clientes. Útil para anunciar novedades, cambios de horario o eventos especiales.",
   },
   {
-    icon: "⚙️",
+    icon: "ajustes",
     titulo: "Configuración",
     desc: "Sube el logo de tu negocio y gestiona tu suscripción. Tu logo aparece en el sidebar y en la tarjeta de tus clientes.",
   },
@@ -77,7 +78,7 @@ export function OnboardingTour() {
 
         {/* Contenido */}
         <div className="text-center space-y-3">
-          <div className="text-5xl">{actual.icon}</div>
+          <Icon name={actual.icon} className="h-12 w-12 text-magenta" />
           <h2 className="text-xl font-black text-paper">{actual.titulo}</h2>
           <p className="text-mist text-sm leading-relaxed">{actual.desc}</p>
         </div>

@@ -15,7 +15,7 @@ function EmailConfirmBanner() {
   if (msg !== "confirma-tu-email") return null;
   return (
     <div className="mb-4 rounded-brand border border-green-500/30 bg-green-500/10 px-4 py-3 text-sm text-green-400">
-      ✅ Cuenta creada. Te mandamos un correo para confirmar tu cuenta — revisa tu bandeja de entrada
+      Cuenta creada. Te mandamos un correo para confirmar tu cuenta — revisa tu bandeja de entrada
       y tu carpeta de <strong>spam</strong>. Si no llega, puedes reenviarlo aquí abajo.
     </div>
   );

@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { Icon } from "@/components/ui/Icon";
 import type { DashboardMetrics } from "@/types/database";
 
 export default async function DashboardHome() {
@@ -52,7 +53,7 @@ export default async function DashboardHome() {
       {nearRewardCustomers.length > 0 && (
         <div className="card space-y-3">
           <div className="flex items-center gap-2">
-            <span className="text-lg">🎯</span>
+            <Icon name="diana" className="h-5 w-5 text-yellow-400" />
             <h2 className="font-bold text-paper">A 1 sello del premio</h2>
             <span className="ml-auto text-xs font-semibold text-yellow-400 bg-yellow-400/10 px-2 py-0.5 rounded-full">
               {nearRewardCustomers.length} cliente{nearRewardCustomers.length !== 1 ? "s" : ""}
@@ -78,7 +79,7 @@ export default async function DashboardHome() {
 
       {metrics.totalCustomers === 0 && (
         <div className="card text-center py-10">
-          <div className="text-4xl mb-3">🚀</div>
+          <Icon name="cohete" className="mx-auto mb-3 h-10 w-10 text-magenta" />
           <h3 className="text-lg font-bold text-paper">¡Todo listo para empezar!</h3>
           <p className="mx-auto mt-2 max-w-md text-mist text-sm">
             Ve a <strong className="text-paper">Mis tarjetas</strong> para configurar tu programa y comparte el QR con tus clientes.

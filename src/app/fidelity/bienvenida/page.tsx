@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Icon } from "@/components/ui/Icon";
 
 export default function BienvenidaPage() {
   return (
@@ -8,7 +9,7 @@ export default function BienvenidaPage() {
         {/* Icono */}
         <div className="flex justify-center">
           <div className="flex h-20 w-20 items-center justify-center rounded-full bg-magenta/15 text-4xl">
-            🎉
+            <Icon name="check-circulo" className="h-10 w-10 text-magenta" />
           </div>
         </div>
 

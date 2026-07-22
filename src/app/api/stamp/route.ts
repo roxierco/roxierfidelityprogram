@@ -229,8 +229,8 @@ export async function POST(req: NextRequest) {
       if (!subs?.length) return;
 
       const notifTitle = rewarded
-        ? `🎉 ¡Ganaste tu premio en ${ownedBusiness.id}!`
-        : `✅ Sello añadido — ${finalStamps}/${stampsRequired}`;
+        ? `¡Ganaste tu premio en ${ownedBusiness.id}!`
+        : `Sello añadido — ${finalStamps}/${stampsRequired}`;
       const notifBody = rewarded
         ? (card?.reward_text ?? "¡Ve a recoger tu recompensa!")
         : `Te faltan ${stampsRequired - finalStamps} sellos para tu premio.`;

@@ -113,7 +113,7 @@ export async function POST(
           const cardUrl = `${appUrl}/c/${business.slug}/u/${sub.customer_id}`;
           const result = await sendPush(
             { endpoint: sub.endpoint, p256dh: sub.p256dh, auth: sub.auth },
-            { title: `📣 ${business.name}: ${promo.title}`, body: promo.message, url: cardUrl },
+            { title: `${business.name}: ${promo.title}`, body: promo.message, url: cardUrl },
           );
           if (result === "expired") expired.push(sub.id);
           return customer;
@@ -175,13 +175,13 @@ function emailTemplate(data: {
         <!-- Promo badge -->
         <tr><td style="background:#FF2E63;padding:12px 32px;">
           <p style="margin:0;color:#ffffff;font-weight:700;font-size:13px;letter-spacing:1px;text-transform:uppercase;">
-            📣 Promoción especial
+            Promoción especial
           </p>
         </td></tr>
 
         <!-- Body -->
         <tr><td style="padding:32px;">
-          <p style="margin:0 0 8px;color:#0E0E10;font-size:15px;">Hola, <strong>${firstName}</strong> 👋</p>
+          <p style="margin:0 0 8px;color:#0E0E10;font-size:15px;">Hola, <strong>${firstName}</strong></p>
           <h1 style="margin:0 0 16px;color:#0E0E10;font-size:24px;font-weight:800;line-height:1.2;">
             ${promoTitle}
           </h1>

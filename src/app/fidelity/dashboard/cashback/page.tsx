@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { redirect } from "next/navigation";
+import { Icon } from "@/components/ui/Icon";
 import { formatMXN } from "@/lib/utils";
 import type { CashbackTxType } from "@/types/database";
 
@@ -84,7 +85,7 @@ export default async function CashbackPage() {
 
       {!cashbackCard ? (
         <div className="card text-center py-12">
-          <div className="text-4xl mb-3">💰</div>
+          <Icon name="cashback" className="mx-auto mb-3 h-10 w-10 text-magenta" />
           <h3 className="text-lg font-bold text-paper">Aún no tienes una tarjeta de cashback</h3>
           <p className="mx-auto mt-2 max-w-md text-mist text-sm">
             Ve a <strong className="text-paper">Mis tarjetas</strong> y crea una tarjeta tipo{" "}

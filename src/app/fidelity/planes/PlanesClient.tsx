@@ -103,7 +103,7 @@ export function PlanesClient({
         {pruebaActiva ? (
           <div className="rounded-xl border border-green-500/30 bg-green-500/10 p-4 text-center">
             <p className="text-sm font-bold text-green-400 mb-1">
-              🎁 Te quedan {diasRestantes} día{diasRestantes !== 1 ? "s" : ""} de prueba gratis
+              Te quedan {diasRestantes} día{diasRestantes !== 1 ? "s" : ""} de prueba gratis
             </p>
             <p className="text-xs text-paper/80 leading-relaxed">
               Si registras tu tarjeta ahora <strong>no se te cobra nada hoy</strong>: se te respetan los días que te
