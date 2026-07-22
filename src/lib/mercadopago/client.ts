@@ -34,12 +34,20 @@ export async function crearSuscripcion(params: {
   businessId: string;
   plan: PlanKey;
   sucursalCount?: number;
+  /**
+   * Días que le QUEDAN de su prueba gratis (la que arranca al registrarse).
+   * Se los respetamos en Mercado Pago para que la prueba total siga siendo
+   * de 7 días desde el registro — no 7 días extra por poner la tarjeta.
+   */
+  trialDaysRemaining?: number;
 }): Promise<{ initPoint: string; subscriptionId: string }> {
   const env = getServerEnv();
   const preApproval = new PreApproval(getClient());
   const appUrl = env.NEXT_PUBLIC_APP_URL;
   const { name, frequency } = PLANS[params.plan];
   const amount = precioPlan(params.plan, params.sucursalCount ?? 0);
+
+  const diasGratis = Math.min(Math.max(Math.floor(params.trialDaysRemaining ?? 0), 0), TRIAL_DAYS);
 
   const result = await preApproval.create({
     body: {
@@ -49,9 +57,11 @@ export async function crearSuscripcion(params: {
         frequency_type: "months",
         transaction_amount: amount,
         currency_id: "MXN",
-        // 7 días gratis: MP no cobra nada hasta que termine la prueba,
-        // y a partir de ahí cobra automáticamente cada período.
-        free_trial: { frequency: TRIAL_DAYS, frequency_type: "days" },
+        // Solo se le regalan los días que le falten de su prueba. Si ya se le
+        // acabó, se cobra de inmediato (sin free_trial).
+        ...(diasGratis > 0
+          ? { free_trial: { frequency: diasGratis, frequency_type: "days" } }
+          : {}),
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } as any,
       back_url: `${appUrl}/fidelity/dashboard/billing?status=subscribed`,

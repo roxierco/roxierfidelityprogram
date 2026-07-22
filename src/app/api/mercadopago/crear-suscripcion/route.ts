@@ -15,11 +15,18 @@ export async function POST(req: NextRequest) {
 
     const { data: business } = await supabase
       .from("businesses")
-      .select("id, email, status")
+      .select("id, email, status, trial_ends_at")
       .eq("owner_id", user.id)
       .single();
 
     if (!business) return NextResponse.json({ error: "Negocio no encontrado" }, { status: 404 });
+
+    // Días que le quedan de la prueba que empezó al registrarse. Se los
+    // respetamos en Mercado Pago para que NO obtenga 7 días extra por pagar.
+    const trialDaysRemaining =
+      business.status === "trial" && business.trial_ends_at
+        ? Math.ceil((new Date(business.trial_ends_at).getTime() - Date.now()) / 86_400_000)
+        : 0;
 
     // El precio depende de cuántas sucursales activas tenga (4+ = tarifa multi-sucursal).
     const { count: sucursalCount } = await supabase
@@ -33,6 +40,7 @@ export async function POST(req: NextRequest) {
       businessId: business.id,
       plan,
       sucursalCount: sucursalCount ?? 0,
+      trialDaysRemaining,
     });
 
     await supabase.from("subscriptions").upsert({
