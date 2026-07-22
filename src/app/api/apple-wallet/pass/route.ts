@@ -60,9 +60,9 @@ export async function GET(req: NextRequest) {
       colorBackground: card.color_background ?? "#14141e",
       colorPrimary: card.color_primary ?? "#e100ff",
       colorText: card.text_color ?? "#ffffff",
-      // El logo de la tarjeta manda; si no tiene, cae al logo del negocio.
-      // Si ninguno tiene logo, el pase simplemente no muestra logo (diseño sin logo).
-      logoUrl: card.logo_url ?? business.logo_url ?? null,
+      // El logo lo define la tarjeta (en el editor eliges si usa el del negocio,
+      // uno propio, o ninguno). Sin logo = el pase no muestra logo.
+      logoUrl: card.logo_url ?? null,
       stripUrl: card.apple_wallet_strip_url ?? null,
       cardType: card.card_type ?? "sellos",
       cashbackBalance: Number(customer.cashback_balance ?? 0),

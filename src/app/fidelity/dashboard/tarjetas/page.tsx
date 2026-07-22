@@ -8,7 +8,7 @@ export default async function TarjetasPage() {
 
   const { data: business } = await supabase
     .from("businesses")
-    .select("id, slug")
+    .select("id, slug, logo_url")
     .eq("owner_id", user!.id)
     .single();
 
@@ -31,6 +31,7 @@ export default async function TarjetasPage() {
       <TarjetasClient
         cards={(cards as LoyaltyCard[]) ?? []}
         businessId={business!.id}
+        businessLogoUrl={(business as { logo_url?: string | null }).logo_url ?? null}
         slug={business!.slug}
         appUrl={process.env.NEXT_PUBLIC_APP_URL ?? ""}
       />

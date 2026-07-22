@@ -390,10 +390,12 @@ function ColorInput({ label, value, onChange }: { label: string; value: string; 
 export function TarjetaEditor({
   initialCard,
   businessId,
+  businessLogoUrl = null,
   onSaved,
 }: {
   initialCard: Partial<LoyaltyCard>;
   businessId: string;
+  businessLogoUrl?: string | null;
   onSaved?: () => void;
 }) {
   const [card, setCard] = useState<Partial<LoyaltyCard>>(initialCard);
@@ -564,14 +566,31 @@ export function TarjetaEditor({
                 </div>
                 <div className="flex-1 space-y-2">
                   <input ref={fileInputRef} type="file" accept="image/*" onChange={subirLogo} className="hidden" />
+
+                  {/* Usar el logo del negocio (Configuración) */}
+                  {businessLogoUrl && card.logo_url !== businessLogoUrl && (
+                    <button type="button" onClick={() => update("logo_url", businessLogoUrl)}
+                      className="btn-secondary w-full !py-2 text-sm flex items-center justify-center gap-2">
+                      <img src={businessLogoUrl} alt="" className="h-4 w-4 rounded object-contain" />
+                      Usar el logo de mi negocio
+                    </button>
+                  )}
+                  {businessLogoUrl && card.logo_url === businessLogoUrl && (
+                    <p className="rounded-lg bg-green-500/10 px-3 py-2 text-center text-xs font-semibold text-green-400">
+                      ✓ Usando el logo de tu negocio
+                    </p>
+                  )}
+
                   <button type="button" onClick={() => fileInputRef.current?.click()} disabled={uploadingLogo}
                     className="btn-secondary w-full !py-2 text-sm">
-                    {uploadingLogo ? "Subiendo..." : card.logo_url ? "Cambiar logo" : "Subir logo"}
+                    {uploadingLogo
+                      ? "Subiendo..."
+                      : card.logo_url ? "Subir otro logo" : "Subir un logo"}
                   </button>
                   {card.logo_url && (
                     <button type="button" onClick={() => update("logo_url", null as unknown as string)}
                       className="w-full text-xs text-mist hover:text-magenta transition-colors">
-                      Quitar logo
+                      Dejar sin logo
                     </button>
                   )}
                   <p className="text-xs text-mist text-center">PNG, JPG o SVG · Máx 2MB</p>

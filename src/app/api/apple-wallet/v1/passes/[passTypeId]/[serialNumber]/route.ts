@@ -47,7 +47,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ pass
       colorBackground: card.color_background ?? "#14141e",
       colorPrimary: card.color_primary ?? "#e100ff",
       colorText: card.text_color ?? "#ffffff",
-      logoUrl: card.logo_url ?? business.logo_url ?? null,
+      logoUrl: card.logo_url ?? null,
       stripUrl: card.apple_wallet_strip_url ?? null,
       cardType: card.card_type ?? "sellos",
       cashbackBalance: Number(customer.cashback_balance ?? 0),

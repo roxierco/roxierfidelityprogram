@@ -6,9 +6,11 @@ import { QRCodeSVG } from "qrcode.react";
 import { TarjetaEditor } from "./TarjetaEditor";
 import type { LoyaltyCard } from "@/types/database";
 
-function defaultCard(businessId: string, type: CardTypeKey = "sellos"): Partial<LoyaltyCard> {
+function defaultCard(businessId: string, type: CardTypeKey = "sellos", logoUrl: string | null = null): Partial<LoyaltyCard> {
   const base = {
     business_id: businessId,
+    // Por defecto la tarjeta hereda el logo del negocio; se puede cambiar o quitar.
+    logo_url: logoUrl,
     color_primary: "#FF2E63",
     color_background: "#0E0E10",
     text_color: "#F5F4F2",
@@ -262,18 +264,20 @@ type Step = "list" | "selecting" | "editing";
 export function TarjetasClient({
   cards,
   businessId,
+  businessLogoUrl = null,
   slug,
   appUrl,
 }: {
   cards: LoyaltyCard[];
   businessId: string;
+  businessLogoUrl?: string | null;
   slug: string;
   appUrl: string;
 }) {
   const router = useRouter();
   const [step, setStep] = useState<Step>(cards.length === 0 ? "selecting" : "list");
   const [editing, setEditing] = useState<Partial<LoyaltyCard> | null>(
-    cards.length === 0 ? defaultCard(businessId) : null
+    cards.length === 0 ? defaultCard(businessId, "sellos", businessLogoUrl) : null
   );
   const [qrCardId, setQrCardId] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
@@ -287,7 +291,7 @@ export function TarjetasClient({
   }
 
   function handleTypeSelected(type: CardTypeKey) {
-    setEditing(defaultCard(businessId, type));
+    setEditing(defaultCard(businessId, type, businessLogoUrl));
     setStep("editing");
   }
 
@@ -361,6 +365,7 @@ export function TarjetasClient({
             key={editing.id ?? "nueva"}
             initialCard={editing}
             businessId={businessId}
+            businessLogoUrl={businessLogoUrl}
             onSaved={handleSaved}
           />
         </section>
