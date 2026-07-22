@@ -67,8 +67,8 @@ function TrialBanner({ trialEndsAt, hasSubscription }: { trialEndsAt: string | n
     : `${minutos}m`;
 
   const color = urgente
-    ? { texto: "text-red-400", fondo: "bg-red-500/15 border-red-500/30", barra: "bg-red-500", boton: "bg-red-500 hover:bg-red-600" }
-    : { texto: "text-magenta", fondo: "bg-magenta/10 border-magenta/20", barra: "bg-magenta", boton: "bg-magenta hover:bg-magenta/90" };
+    ? { texto: "text-red-400", fondo: "bg-red-500/15 border-red-500/30", boton: "bg-red-500 hover:bg-red-600" }
+    : { texto: "text-magenta", fondo: "bg-magenta/10 border-magenta/20", boton: "bg-magenta hover:bg-magenta/90" };
 
   return (
     <div className={`flex items-center gap-3 border-b px-4 py-2 text-sm ${color.fondo}`}>
@@ -85,12 +85,15 @@ function TrialBanner({ trialEndsAt, hasSubscription }: { trialEndsAt: string | n
         )}
       </span>
 
-      {/* Barrita de progreso — se llena conforme se acaba la prueba */}
+      {/* Barrita de progreso — se llena conforme se acaba la prueba.
+          El riel va en el mismo tono a baja opacidad para que se vea en
+          tema claro y oscuro; si no, con poco avance solo se veía un punto. */}
       {!expirada && (
-        <div className="hidden h-1.5 flex-1 overflow-hidden rounded-full bg-white/10 sm:block">
+        <div className={`relative hidden h-1.5 flex-1 overflow-hidden rounded-full sm:block ${color.texto}`}>
+          <div className="absolute inset-0 rounded-full bg-current opacity-20" />
           <div
-            className={`h-full rounded-full transition-all duration-1000 ${color.barra}`}
-            style={{ width: `${consumido}%` }}
+            className="absolute inset-y-0 left-0 rounded-full bg-current transition-all duration-1000"
+            style={{ width: `${Math.max(consumido, 1.5)}%` }}
           />
         </div>
       )}
