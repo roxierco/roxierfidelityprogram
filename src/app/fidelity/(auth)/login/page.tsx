@@ -1,12 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { Suspense } from "react";
+import { Suspense, useState } from "react";
 import { useActionState } from "react";
 import { useSearchParams } from "next/navigation";
 import { iniciarSesion, type ActionState } from "../actions";
 import { RoxierLogo } from "@/components/brand/XMark";
 import { PasswordInput } from "@/components/auth/PasswordInput";
+import { ReenviarConfirmacion } from "../ReenviarConfirmacion";
 
 function EmailConfirmBanner() {
   const searchParams = useSearchParams();
@@ -14,7 +15,8 @@ function EmailConfirmBanner() {
   if (msg !== "confirma-tu-email") return null;
   return (
     <div className="mb-4 rounded-brand border border-green-500/30 bg-green-500/10 px-4 py-3 text-sm text-green-400">
-      ✅ Cuenta creada. Revisa tu correo y confirma tu email antes de iniciar sesión.
+      ✅ Cuenta creada. Te mandamos un correo para confirmar tu cuenta — revisa tu bandeja de entrada
+      y tu carpeta de <strong>spam</strong>. Si no llega, puedes reenviarlo aquí abajo.
     </div>
   );
 }
@@ -24,6 +26,7 @@ export default function LoginPage() {
     iniciarSesion,
     undefined,
   );
+  const [email, setEmail] = useState("");
 
   return (
     <div className="flex min-h-screen items-center justify-center px-6 py-12">
@@ -57,6 +60,8 @@ export default function LoginPage() {
                 autoComplete="email"
                 className="input"
                 placeholder="tucorreo@ejemplo.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
               />
             </div>
 
@@ -83,6 +88,8 @@ export default function LoginPage() {
               {pending ? "Entrando..." : "Iniciar sesión"}
             </button>
           </form>
+
+          <ReenviarConfirmacion email={email} />
         </div>
 
         <p className="mt-6 text-center text-sm text-mist">
