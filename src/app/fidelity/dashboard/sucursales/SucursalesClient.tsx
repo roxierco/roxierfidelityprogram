@@ -64,7 +64,7 @@ export function SucursalesClient({
         {enPlanBase ? (
           <>Tienes <strong className="text-paper">{total}</strong> sucursal{total !== 1 ? "es" : ""}. Con hasta 3 sucursales pagas el precio normal.</>
         ) : (
-          <>Tienes <strong>{total}</strong> sucursales. Con 4 o más aplica el precio de multi-sucursal (desde <strong>$999/mes</strong>). El cambio de precio aplica en tu próxima suscripción.</>
+          <>Tienes <strong>{total}</strong> sucursales. Con 4 o más aplica el precio de multi-sucursal (desde <strong>$699/mes</strong>). El cambio de precio aplica en tu próxima suscripción.</>
         )}
       </div>
 

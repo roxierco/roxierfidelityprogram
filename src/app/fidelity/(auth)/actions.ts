@@ -85,7 +85,7 @@ export async function registrarNegocio(
     phone: phone || null,
     status: "trial",
     plan: "pro",
-    monthly_price: 749,
+    monthly_price: 599,
     trial_ends_at: finPrueba.toISOString(),
   });
 

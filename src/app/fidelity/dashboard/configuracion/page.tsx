@@ -47,7 +47,7 @@ export default async function ConfiguracionPage() {
         <BusinessNameEdit currentName={business.name} />
         <Row label="Correo" value={business.email} />
         <Row label="Plan" value="Roxier Fidelity" />
-        <Row label="Mensualidad" value="$749 MXN" />
+        <Row label="Mensualidad" value="$599 MXN" />
         <Row label="Estado" value={estadoLabel[business.status] ?? business.status} />
       </div>
 

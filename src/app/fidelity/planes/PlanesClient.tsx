@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { PromoCountdown } from "@/components/ui/PromoCountdown";
 
 type PlanKey = "mensual" | "semestral" | "anual";
 
@@ -18,27 +19,28 @@ const PLANES: {
   key: PlanKey;
   name: string;
   price: number;
+  antes?: number;
   period: string;
   equivalente?: string;
   ahorro?: string;
   badge?: string;
   highlight?: boolean;
 }[] = [
-  { key: "mensual", name: "Mensual", price: 749, period: "/ mes" },
+  { key: "mensual", name: "Mensual", price: 599, antes: 749, period: "/ mes", ahorro: "Precio de lanzamiento" },
   {
     key: "semestral",
     name: "6 meses",
-    price: 3999,
+    price: 3199,
     period: "/ 6 meses",
-    equivalente: "≈ $666 / mes",
+    equivalente: "≈ $533 / mes",
     ahorro: "Ahorras ~11%",
   },
   {
     key: "anual",
     name: "Anual",
-    price: 7490,
+    price: 5990,
     period: "/ año",
-    equivalente: "≈ $624 / mes",
+    equivalente: "≈ $499 / mes",
     ahorro: "2 meses gratis",
     badge: "Mejor precio",
     highlight: true,
@@ -92,10 +94,14 @@ export function PlanesClient({
         </Link>
       )}
 
-      <div className="mb-8 text-center">
+      <div className="mb-6 text-center">
         <p className="text-magenta text-sm font-bold uppercase tracking-widest mb-2">Roxier Fidelity</p>
         <h1 className="text-4xl font-black text-paper mb-3">Elige tu plan</h1>
         <p className="text-mist text-lg">Mismo servicio completo · paga menos si te comprometes más</p>
+      </div>
+
+      <div className="mb-8 w-full">
+        <PromoCountdown theme="dark" />
       </div>
 
       {/* Estado de la prueba — sin letras chiquitas */}
@@ -138,9 +144,12 @@ export function PlanesClient({
 
             <p className="text-lg font-black text-paper">{plan.name}</p>
 
-            <div className="mt-3 mb-1">
+            <div className="mt-3 mb-1 flex items-end gap-1.5">
+              {plan.antes && (
+                <span className="text-xl font-bold text-mist line-through mb-0.5">${plan.antes.toLocaleString("es-MX")}</span>
+              )}
               <span className="text-4xl font-black text-paper">${plan.price.toLocaleString("es-MX")}</span>
-              <span className="text-mist ml-1 text-sm">{plan.period}</span>
+              <span className="text-mist ml-0.5 text-sm mb-1">{plan.period}</span>
             </div>
             <div className="mb-5 h-8">
               {plan.equivalente && <p className="text-xs text-mist">{plan.equivalente}</p>}
@@ -172,7 +181,7 @@ export function PlanesClient({
       </ul>
 
       <p className="mt-8 text-mist text-xs text-center max-w-md">
-        La prueba gratis dura 7 días contados desde que te registraste — registrar tu tarjeta no te da días extra, solo evita que pierdas el acceso. Después el cobro se renueva automáticamente cada período. Incluye ubicaciones ilimitadas; con 4 o más sucursales aplica la tarifa multi-sucursal (desde $999/mes). Sin cuota de activación · Cancela cuando quieras.
+        La prueba gratis dura 7 días contados desde que te registraste — registrar tu tarjeta no te da días extra, solo evita que pierdas el acceso. Después el cobro se renueva automáticamente cada período. Incluye ubicaciones ilimitadas; con 4 o más sucursales aplica la tarifa multi-sucursal (desde $699/mes). Sin cuota de activación · Cancela cuando quieras.
       </p>
 
       <p className="mt-6 text-mist text-sm">

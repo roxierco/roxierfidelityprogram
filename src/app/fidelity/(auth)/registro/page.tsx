@@ -35,7 +35,7 @@ export default function RegistroPage() {
             Crea tu cuenta
           </h1>
           <p className="mb-6 text-sm text-mist">
-            <strong className="text-green-400">7 días gratis, sin tarjeta.</strong> Después $749 MXN/mes. Sin cuota de activación.
+            <strong className="text-green-400">7 días gratis, sin tarjeta.</strong> Después <span className="text-mist line-through">$749</span> <strong className="text-paper">$599 MXN/mes</strong> — precio de lanzamiento. Sin cuota de activación.
           </p>
 
           <form action={formAction} className="space-y-4">
