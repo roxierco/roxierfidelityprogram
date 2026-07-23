@@ -1,5 +1,7 @@
+import { Suspense } from "react";
 import { createClient } from "@/lib/supabase/server";
 import { Icon } from "@/components/ui/Icon";
+import { PixelRegistro } from "@/components/analytics/PixelRegistro";
 import type { DashboardMetrics } from "@/types/database";
 
 export default async function DashboardHome() {
@@ -20,6 +22,9 @@ export default async function DashboardHome() {
 
   return (
     <div className="animate-fade-up space-y-8">
+      <Suspense fallback={null}>
+        <PixelRegistro />
+      </Suspense>
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-extrabold text-paper">Resumen</h1>

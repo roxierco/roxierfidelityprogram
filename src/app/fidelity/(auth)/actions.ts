@@ -100,8 +100,10 @@ export async function registrarNegocio(
     redirect("/fidelity/login?msg=confirma-tu-email");
   }
 
+  // ?bienvenido=1 le avisa al dashboard que es un registro recién hecho,
+  // para disparar el evento de conversión del píxel de Meta una sola vez.
   revalidatePath("/fidelity/dashboard");
-  redirect("/fidelity/dashboard");
+  redirect("/fidelity/dashboard?bienvenido=1");
 }
 
 const loginSchema = z.object({
