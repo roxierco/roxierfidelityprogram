@@ -7,8 +7,14 @@ import { isGoogleWalletConfigured, syncAfterStamp } from "@/lib/google-wallet";
 import { isAppleWalletConfigured, sendApnsPassUpdate } from "@/lib/apple-wallet";
 import { logWalletEvent } from "@/lib/wallet-events";
 import { isPushConfigured, sendPush } from "@/lib/web-push";
+import { rateLimit, getClientIp } from "@/lib/rate-limit";
 
 export async function POST(req: NextRequest) {
+  // Límite anti-abuso: 120 sellos por minuto por IP (holgado para un mostrador real).
+  if (!rateLimit(getClientIp(req), "stamp", 120, 60 * 1000)) {
+    return NextResponse.json({ error: "Demasiadas peticiones, espera un momento." }, { status: 429 });
+  }
+
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) {

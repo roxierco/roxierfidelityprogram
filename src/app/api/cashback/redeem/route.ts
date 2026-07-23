@@ -6,6 +6,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { redeemCashbackSchema } from "@/lib/cashback/schemas";
 import { logWalletEvent } from "@/lib/wallet-events";
 import { notifyCashbackUpdate } from "@/lib/cashback/notify";
+import { rateLimit, getClientIp } from "@/lib/rate-limit";
 
 const ERROR_MAP: Record<string, { status: number; message: string }> = {
   CARD_NOT_FOUND: { status: 404, message: "Tarjeta no encontrada" },
@@ -14,6 +15,10 @@ const ERROR_MAP: Record<string, { status: number; message: string }> = {
 };
 
 export async function POST(req: Request) {
+  if (!rateLimit(getClientIp(req), "cashback", 60, 60 * 1000)) {
+    return NextResponse.json({ error: "Demasiadas peticiones, espera un momento." }, { status: 429 });
+  }
+
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "No autorizado" }, { status: 401 });

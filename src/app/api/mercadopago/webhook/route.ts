@@ -1,29 +1,34 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { createHmac } from "node:crypto";
+import { createHmac, timingSafeEqual } from "node:crypto";
 import { rateLimit, getClientIp } from "@/lib/rate-limit";
 import { PLANS, TRIAL_DAYS, type PlanKey } from "@/lib/mercadopago/client";
 
-function verifyMpSignature(req: NextRequest, rawBody: string, dataId: string): boolean {
+type FirmaResultado = "ok" | "invalida" | "sin-secret";
+
+function verifyMpSignature(req: NextRequest, dataId: string): FirmaResultado {
   const secret = process.env.MP_WEBHOOK_SECRET;
-  if (!secret) return true; // si no está configurado, se omite la verificación
+  // Sin secreto configurado no podemos verificar. NO fingimos que es válida:
+  // se marca aparte para que el POST decida, apoyándose en la reconsulta a MP.
+  if (!secret) return "sin-secret";
 
   const xSignature = req.headers.get("x-signature") ?? "";
-  const xRequestId = req.headers.get("x-request-id") ?? "";
-
   const tsMatch = xSignature.match(/ts=(\d+)/);
   const v1Match = xSignature.match(/v1=([a-f0-9]+)/);
-  if (!tsMatch || !v1Match) return false;
+  if (!tsMatch || !v1Match) return "invalida";
 
   const ts = tsMatch[1];
-  const expected = v1Match[1];
+  const recibido = v1Match[1];
 
   // Mensaje firmado por MercadoPago: id:{id};request-date:{ts};
   const message = `id:${dataId};request-date:${ts};`;
-  const hmac = createHmac("sha256", secret).update(message).digest("hex");
+  const esperado = createHmac("sha256", secret).update(message).digest("hex");
 
-  return hmac === expected;
-  void rawBody; void xRequestId;
+  // Comparación en tiempo constante para no filtrar la firma por timing.
+  const a = Buffer.from(recibido, "hex");
+  const b = Buffer.from(esperado, "hex");
+  if (a.length !== b.length) return "invalida";
+  return timingSafeEqual(a, b) ? "ok" : "invalida";
 }
 
 export async function POST(req: NextRequest) {
@@ -37,10 +42,20 @@ export async function POST(req: NextRequest) {
     const body = JSON.parse(rawBody) as { type?: string; data?: { id?: string } };
     const { type, data } = body;
 
-    // Verificar firma si el secret está configurado
-    if (data?.id && !verifyMpSignature(req, rawBody, data.id)) {
-      console.warn("MP webhook: firma inválida");
-      return NextResponse.json({ ok: true }); // 200 para que MP no reintente
+    // Verificación de firma. Con secreto configurado, una firma inválida se
+    // rechaza de inmediato. Sin secreto, se registra la advertencia y se
+    // continúa: la reconsulta a la API de MercadoPago (con el token privado,
+    // más abajo) es la barrera real — solo actuamos sobre pagos/suscripciones
+    // que existen de verdad en la cuenta del negocio.
+    if (data?.id) {
+      const firma = verifyMpSignature(req, data.id);
+      if (firma === "invalida") {
+        console.warn("MP webhook: firma inválida — rechazado");
+        return NextResponse.json({ ok: true }); // 200 para que MP no reintente
+      }
+      if (firma === "sin-secret") {
+        console.warn("MP webhook: MP_WEBHOOK_SECRET no configurado — configúralo en Vercel para verificar firmas.");
+      }
     }
 
     const token = process.env.MP_ACCESS_TOKEN || process.env.MP_ACCESS_TOKEN_TEST;

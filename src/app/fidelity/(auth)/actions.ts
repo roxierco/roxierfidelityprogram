@@ -1,11 +1,19 @@
 "use server";
 
 import { z } from "zod";
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { slugify } from "@/lib/utils";
+import { rateLimit } from "@/lib/rate-limit";
+
+/** IP del cliente para el rate limit (las server actions no reciben Request). */
+async function clientIp(): Promise<string> {
+  const h = await headers();
+  return h.get("x-forwarded-for")?.split(",")[0].trim() ?? "unknown";
+}
 
 /**
  * Acciones de servidor para autenticación.
@@ -108,6 +116,11 @@ export async function iniciarSesion(
   _prev: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
+  // Anti fuerza bruta: 8 intentos de login por minuto por IP.
+  if (!rateLimit(await clientIp(), "login", 8, 60 * 1000)) {
+    return { error: "Demasiados intentos. Espera un minuto e inténtalo de nuevo." };
+  }
+
   const parsed = loginSchema.safeParse({
     email: formData.get("email"),
     password: formData.get("password"),
