@@ -6,12 +6,12 @@ import type { NextConfig } from "next";
 // Para hacerlo obligatorio: cambia la key a "Content-Security-Policy".
 const csp = [
   "default-src 'self'",
-  "script-src 'self' 'unsafe-inline' 'unsafe-eval'",   // Next inyecta scripts inline
+  "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://connect.facebook.net", // Next + píxel de Meta
   "style-src 'self' 'unsafe-inline'",                  // estilos inline de Next/Tailwind
-  "img-src 'self' data: blob: https://*.supabase.co",  // logos, QR, video del escáner
+  "img-src 'self' data: blob: https://*.supabase.co https://www.facebook.com", // logos, QR, cámara, píxel
   "media-src 'self' blob:",                            // cámara del escáner
   "font-src 'self'",
-  "connect-src 'self' https://*.supabase.co wss://*.supabase.co", // API + realtime
+  "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://connect.facebook.net", // API + realtime + píxel
   "frame-ancestors 'none'",                            // que nadie embeba el sitio
   "base-uri 'self'",
   "form-action 'self'",

@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { Plus_Jakarta_Sans } from "next/font/google";
+import { Suspense } from "react";
+import { MetaPixel } from "@/components/analytics/MetaPixel";
 import "./globals.css";
 
 const syne = Plus_Jakarta_Sans({
@@ -35,7 +37,12 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body>{children}</body>
+      <body>
+        <Suspense fallback={null}>
+          <MetaPixel />
+        </Suspense>
+        {children}
+      </body>
     </html>
   );
 }
