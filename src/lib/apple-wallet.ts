@@ -292,7 +292,7 @@ function stampsStripPng(
       const v = (s.cy - y) / size; // Y hacia arriba
       if (u < -1.05 || u > 1.05 || v < -1.05 || v > 1.05) continue;
       if (!shape(u, v)) continue;
-      const a = s.filled ? 1 : 0.24; // pendiente = tenue
+      const a = s.filled ? 1 : 0.42; // pendiente = tenue pero visible
       return [
         Math.round(br + (fr - br) * a),
         Math.round(bgc + (fgc - bgc) * a),
@@ -323,7 +323,7 @@ function stampsOverlayPng(
       if (u < -1.05 || u > 1.05 || v < -1.05 || v > 1.05) continue;
       if (!shape(u, v)) continue;
       // Sobre foto: los ganados sólidos, los pendientes translúcidos.
-      return [fr, fgc, fb, s.filled ? 255 : 90];
+      return [fr, fgc, fb, s.filled ? 255 : 150];
     }
     return [0, 0, 0, 0]; // transparente
   });

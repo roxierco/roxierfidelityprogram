@@ -74,7 +74,7 @@ export function StampShape({
   filled?: boolean;
   size?: number;
 }) {
-  const opacity = filled ? 1 : 0.25;
+  const opacity = filled ? 1 : 0.42;
 
   return (
     <svg width={size} height={size} viewBox="-1.1 -1.1 2.2 2.2" aria-hidden="true">
