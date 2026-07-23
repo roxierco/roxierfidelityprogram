@@ -7,7 +7,7 @@ const serverEnvSchema = z.object({
   // Acepta MP_ACCESS_TOKEN (producción) o MP_ACCESS_TOKEN_TEST
   MP_ACCESS_TOKEN: z.string().optional(),
   MP_ACCESS_TOKEN_TEST: z.string().optional(),
-  MERCADOPAGO_WEBHOOK_SECRET: z.string().optional(),
+  MP_WEBHOOK_SECRET: z.string().optional(),
   NEXT_PUBLIC_APP_URL: z.string().url(),
 });
 

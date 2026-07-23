@@ -1,14 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
+import { timingSafeEqual } from "node:crypto";
 import { createAdminClient } from "@/lib/supabase/admin";
 
-// GET /api/admin/wallet-events?serial=XXXX&secret=YYY
-// O con header: x-admin-secret: YYY
+// GET /api/admin/wallet-events?serial=XXXX
+// Autenticación SOLO por header: x-admin-secret: YYY
+// (no por query string: la URL queda registrada en logs e historial).
 export async function GET(req: NextRequest) {
-  const secret =
-    req.headers.get("x-admin-secret") ??
-    req.nextUrl.searchParams.get("secret");
+  const secret = req.headers.get("x-admin-secret") ?? "";
+  const esperado = process.env.ADMIN_SECRET ?? "";
 
-  if (!process.env.ADMIN_SECRET || secret !== process.env.ADMIN_SECRET) {
+  const ok =
+    esperado.length > 0 &&
+    secret.length === esperado.length &&
+    timingSafeEqual(Buffer.from(secret), Buffer.from(esperado));
+
+  if (!ok) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
