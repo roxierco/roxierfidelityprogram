@@ -63,6 +63,7 @@ export function CustomerCardClient({
   business,
   cardUrl,
   cardId,
+  cardRedemptions: initialCardRedemptions = 0,
   googleWalletEnabled,
   appleWalletEnabled,
   vapidPublicKey,
@@ -72,11 +73,13 @@ export function CustomerCardClient({
   business: Business;
   cardUrl: string;
   cardId?: string;
+  cardRedemptions?: number;
   googleWalletEnabled: boolean;
   appleWalletEnabled: boolean;
   vapidPublicKey?: string;
 }) {
   const [customer, setCustomer] = useState(initialCustomer);
+  const [cardRedemptions, setCardRedemptions] = useState(initialCardRedemptions);
   const [walletLoading, setWalletLoading] = useState(false);
   const [copied, setCopied] = useState(false);
   const [pushState, setPushState] = useState<"idle" | "asking" | "subscribed" | "denied" | "unsupported">("idle");
@@ -180,13 +183,18 @@ export function CustomerCardClient({
   useEffect(() => {
     const poll = async () => {
       try {
-        const res = await fetch(`/api/customer-status?customerId=${initialCustomer.id}`, { cache: "no-store" });
-        if (res.ok) applyUpdate(await res.json());
+        const url = `/api/customer-status?customerId=${initialCustomer.id}${cardId ? `&cardId=${cardId}` : ""}`;
+        const res = await fetch(url, { cache: "no-store" });
+        if (res.ok) {
+          const data = await res.json();
+          applyUpdate(data);
+          if (typeof data.card_redemptions === "number") setCardRedemptions(data.card_redemptions);
+        }
       } catch { /* sin conexión */ }
     };
     const interval = setInterval(poll, 5000);
     return () => clearInterval(interval);
-  }, [initialCustomer.id, applyUpdate]);
+  }, [initialCustomer.id, cardId, applyUpdate]);
 
   // Broadcast Supabase Realtime como camino rápido (Chrome/Android)
   useEffect(() => {
@@ -341,7 +349,7 @@ export function CustomerCardClient({
 
         {/* ── Cupón ── */}
         {card?.card_type === "cupon" && (() => {
-          const isRedeemed = customer.rewards_redeemed > 0;
+          const isRedeemed = cardRedemptions > 0;
           return (
             <div className="relative overflow-hidden rounded-2xl shadow-2xl" style={{ ...cardBgStyle(card), color: text, border: `2px solid ${primary}` }}>
               {card?.bg_type === "image" && card?.bg_image_url && <div className="absolute inset-0 bg-black/45" />}
@@ -373,7 +381,7 @@ export function CustomerCardClient({
 
         {/* ── Descuento ── */}
         {card?.card_type === "descuento" && (() => {
-          const usesLeft = card.max_uses != null ? Math.max(0, card.max_uses - customer.rewards_redeemed) : null;
+          const usesLeft = card.max_uses != null ? Math.max(0, card.max_uses - cardRedemptions) : null;
           const exhausted = usesLeft !== null && usesLeft <= 0;
           return (
             <div className="relative overflow-hidden rounded-2xl shadow-2xl" style={{ ...cardBgStyle(card), color: text, border: `2px solid ${primary}` }}>

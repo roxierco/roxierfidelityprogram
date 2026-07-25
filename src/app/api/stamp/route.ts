@@ -88,13 +88,25 @@ export async function POST(req: NextRequest) {
     card = data;
   }
 
+  // Canjes de ESTE cliente en ESTA tarjeta (cupón/descuento se llevan por-tarjeta,
+  // nunca con el contador global rewards_redeemed que es compartido entre tarjetas).
+  let cardRedemptions = 0;
+  if (card && (card.card_type === "cupon" || card.card_type === "descuento")) {
+    const { count } = await admin
+      .from("card_redemptions")
+      .select("id", { count: "exact", head: true })
+      .eq("customer_id", customerId)
+      .eq("card_id", card.id);
+    cardRedemptions = count ?? 0;
+  }
+
   // Cupón: bloquear si ya fue canjeado
-  if (card?.card_type === "cupon" && customer.rewards_redeemed > 0) {
+  if (card?.card_type === "cupon" && cardRedemptions > 0) {
     return NextResponse.json({ error: "Este cupón ya fue canjeado" }, { status: 409 });
   }
 
   // Descuento con límite de usos: bloquear si ya alcanzó el máximo
-  if (card?.card_type === "descuento" && card.max_uses != null && customer.rewards_redeemed >= card.max_uses) {
+  if (card?.card_type === "descuento" && card.max_uses != null && cardRedemptions >= card.max_uses) {
     return NextResponse.json({ error: "Esta tarjeta ya alcanzó su límite de usos" }, { status: 409 });
   }
 
@@ -120,6 +132,16 @@ export async function POST(req: NextRequest) {
     is_redemption: rewarded,
     sucursal_id: sucursalIdValida,
   });
+
+  // Cupón/descuento: registrar el canje por-tarjeta al momento de premiar.
+  if (rewarded && card && (card.card_type === "cupon" || card.card_type === "descuento")) {
+    await admin.from("card_redemptions").insert({
+      business_id: businessId,
+      customer_id: customerId,
+      card_id: card.id,
+    });
+    cardRedemptions += 1;
+  }
 
   const slug = (ownedBusiness as { id: string; slug: string }).slug;
   const cardUrl = `${process.env.NEXT_PUBLIC_APP_URL}/c/${slug}/u/${customerId}${cardId ? `?card=${cardId}` : ""}`;

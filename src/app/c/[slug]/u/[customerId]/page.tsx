@@ -54,6 +54,18 @@ export default async function CustomerCardPage({
     card = data;
   }
 
+  // Canjes de este cliente en esta tarjeta (cupón/descuento se llevan por-tarjeta,
+  // NO con el contador global rewards_redeemed que es compartido entre tarjetas).
+  let cardRedemptions = 0;
+  if (card && (card.card_type === "cupon" || card.card_type === "descuento")) {
+    const { count } = await supabase
+      .from("card_redemptions")
+      .select("id", { count: "exact", head: true })
+      .eq("customer_id", customerId)
+      .eq("card_id", card.id);
+    cardRedemptions = count ?? 0;
+  }
+
   // Siempre incluir cardId en el QR aunque la URL no lo traiga — si el cliente
   // abre la tarjeta sin ?card= (bookmark, WhatsApp sin param), el QR debe seguir
   // teniendo el card correcto para que el scanner pueda enviar el push de Apple Wallet.
@@ -67,6 +79,7 @@ export default async function CustomerCardPage({
       business={business}
       cardUrl={cardUrl}
       cardId={resolvedCardId ?? undefined}
+      cardRedemptions={cardRedemptions}
       googleWalletEnabled={isGoogleWalletConfigured()}
       appleWalletEnabled={isAppleWalletConfigured()}
       vapidPublicKey={process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY}

@@ -8,6 +8,7 @@ export async function GET(req: NextRequest) {
   }
 
   const customerId = req.nextUrl.searchParams.get("customerId");
+  const cardId = req.nextUrl.searchParams.get("cardId");
 
   const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
   if (!customerId || !uuidRegex.test(customerId)) {
@@ -23,10 +24,22 @@ export async function GET(req: NextRequest) {
 
   if (!data) return NextResponse.json({ error: "No encontrado" }, { status: 404 });
 
+  // Canjes por-tarjeta (cupón/descuento) para reflejar CANJEADO en vivo.
+  let cardRedemptions = 0;
+  if (cardId && uuidRegex.test(cardId)) {
+    const { count } = await admin
+      .from("card_redemptions")
+      .select("id", { count: "exact", head: true })
+      .eq("customer_id", customerId)
+      .eq("card_id", cardId);
+    cardRedemptions = count ?? 0;
+  }
+
   return NextResponse.json({
     current_stamps: data.current_stamps,
     total_visits: data.total_visits,
     rewards_redeemed: data.rewards_redeemed,
+    card_redemptions: cardRedemptions,
   }, {
     headers: { "Cache-Control": "no-store" },
   });
