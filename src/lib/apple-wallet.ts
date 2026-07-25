@@ -531,14 +531,10 @@ function buildPassJson(data: LoyaltyPassData, hasStrip: boolean): object {
       labelColor: hexToRgb(data.colorText),
       stripColor: hexToRgb(data.colorPrimary),
       storeCard: {
-        primaryFields: [
-          {
-            key: "offer",
-            label: esCupon ? "Cupón" : "Descuento",
-            value: oferta,
-          },
-        ],
+        // Sin primaryFields: así la imagen del strip queda limpia y la info
+        // (oferta + miembro) se muestra DEBAJO de la imagen.
         secondaryFields: [
+          { key: "offer", label: esCupon ? "Cupón" : "Descuento", value: oferta },
           { key: "member", label: "MIEMBRO", value: data.customerName },
         ],
         backFields: [

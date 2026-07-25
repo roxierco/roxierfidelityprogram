@@ -192,6 +192,51 @@ function AppleWalletPreview({ card }: { card: Partial<LoyaltyCard> }) {
   const hasStrip = !!card.apple_wallet_strip_url;
   const stampBar = "●".repeat(filledCount) + "○".repeat(Math.max(0, Math.min(stamps, 10) - filledCount));
 
+  // ── Cupón / descuento: sin sellos ni progreso; la info va DEBAJO de la imagen ──
+  if (card.card_type === "cupon" || card.card_type === "descuento") {
+    const esCupon = card.card_type === "cupon";
+    const oferta = card.coupon_value || card.reward_text || (esCupon ? "Beneficio especial" : "Descuento");
+    return (
+      <div className="w-full overflow-hidden rounded-[20px] shadow-2xl border border-white/10" style={{ fontFamily: "-apple-system, BlinkMacSystemFont, sans-serif", backgroundColor: bg }}>
+        {/* Header — logo + nombre */}
+        <div className="flex items-center justify-between px-4 pt-4 pb-2">
+          <div className="flex items-center gap-2">
+            {card.logo_url
+              ? <img src={card.logo_url} alt="" className="h-9 w-9 rounded-lg object-contain" style={{ backgroundColor: "rgba(255,255,255,0.1)" }} />
+              : <div className="h-9 w-9 rounded-lg flex items-center justify-center font-black text-xs" style={{ backgroundColor: primary, color: bg }}>{(card.title ?? "?")[0]}</div>
+            }
+            <span className="text-sm font-bold truncate max-w-[160px]" style={{ color: text }}>{card.title ?? "Tu negocio"}</span>
+          </div>
+        </div>
+
+        {/* Imagen (strip) — limpia, sin sellos encima */}
+        <div className="relative w-full" style={{ height: 100, backgroundColor: bg }}>
+          {hasStrip && (
+            <img src={card.apple_wallet_strip_url!} alt="" className="absolute inset-0 h-full w-full object-cover" />
+          )}
+        </div>
+
+        {/* Info DEBAJO de la imagen */}
+        <div className="px-4 py-3 grid grid-cols-2 gap-2">
+          <div>
+            <p className="text-[9px] font-bold uppercase tracking-widest mb-0.5" style={{ color: text, opacity: 0.5 }}>{esCupon ? "Cupón" : "Descuento"}</p>
+            <p className="text-sm font-bold truncate" style={{ color: text }}>{oferta}</p>
+          </div>
+          <div>
+            <p className="text-[9px] font-bold uppercase tracking-widest mb-0.5" style={{ color: text, opacity: 0.5 }}>MIEMBRO</p>
+            <p className="text-xs font-semibold truncate" style={{ color: text }}>Carlos</p>
+          </div>
+        </div>
+
+        {/* QR */}
+        <div className="mx-4 mb-4 flex flex-col items-center rounded-xl bg-white py-3 px-3 gap-1">
+          <div className="h-14 w-14"><QRPlaceholder color="#0E0E10" /></div>
+          <p className="text-[9px] text-gray-400">Muestra al cajero</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="w-full overflow-hidden rounded-[20px] shadow-2xl border border-white/10" style={{ fontFamily: "-apple-system, BlinkMacSystemFont, sans-serif", backgroundColor: bg }}>
       {/* Header — logo + nombre + sellos */}
