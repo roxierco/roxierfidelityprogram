@@ -7,7 +7,6 @@ import { useSearchParams } from "next/navigation";
 import { iniciarSesion, type ActionState } from "../actions";
 import { RoxierLogo } from "@/components/brand/XMark";
 import { PasswordInput } from "@/components/auth/PasswordInput";
-import { ReenviarConfirmacion } from "../ReenviarConfirmacion";
 
 function EmailConfirmBanner() {
   const searchParams = useSearchParams();
@@ -15,8 +14,7 @@ function EmailConfirmBanner() {
   if (msg !== "confirma-tu-email") return null;
   return (
     <div className="mb-4 rounded-brand border border-green-500/30 bg-green-500/10 px-4 py-3 text-sm text-green-400">
-      Cuenta creada. Te mandamos un correo para confirmar tu cuenta — revisa tu bandeja de entrada
-      y tu carpeta de <strong>spam</strong>. Si no llega, puedes reenviarlo aquí abajo.
+      Cuenta creada. Ya puedes iniciar sesión con tu correo y contraseña.
     </div>
   );
 }
@@ -88,8 +86,6 @@ export default function LoginPage() {
               {pending ? "Entrando..." : "Iniciar sesión"}
             </button>
           </form>
-
-          <ReenviarConfirmacion email={email} />
         </div>
 
         <p className="mt-6 text-center text-sm text-mist">

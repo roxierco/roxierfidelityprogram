@@ -148,42 +148,6 @@ export async function iniciarSesion(
 }
 
 /**
- * Reenvía el correo de confirmación de la cuenta.
- * Por privacidad, Supabase no revela si el correo existe o no.
- */
-export async function reenviarConfirmacion(
-  email: string,
-): Promise<{ ok?: boolean; error?: string }> {
-  const parsed = z.string().email().safeParse(email?.trim());
-  if (!parsed.success) {
-    return { error: "Escribe un correo válido arriba para reenviarte la confirmación." };
-  }
-
-  const supabase = await createClient();
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://fidelity.roxierco.com";
-
-  const { error } = await supabase.auth.resend({
-    type: "signup",
-    email: parsed.data,
-    options: { emailRedirectTo: `${appUrl}/auth/callback` },
-  });
-
-  if (error) {
-    // Caso típico: la cuenta ya estaba confirmada.
-    if (/already confirmed|already been confirmed/i.test(error.message)) {
-      return { error: "Esa cuenta ya está confirmada. Intenta iniciar sesión." };
-    }
-    // Caso típico: se pidió demasiado seguido.
-    if (/rate|too many|seconds/i.test(error.message)) {
-      return { error: "Espera un momento antes de volver a pedirlo." };
-    }
-    return { error: "No se pudo reenviar el correo. Inténtalo de nuevo en un minuto." };
-  }
-
-  return { ok: true };
-}
-
-/**
  * Cierra sesión.
  */
 export async function cerrarSesion() {
