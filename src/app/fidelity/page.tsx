@@ -10,6 +10,7 @@ const CARD_EXAMPLES = [
   { src: "/ejemplos/barberia.jpg", alt: "Tarjeta de lealtad de BarberShop en Apple Wallet" },
   { src: "/ejemplos/carnitas.jpg", alt: "Tarjeta de lealtad de Carnitas en Apple Wallet" },
   { src: "/ejemplos/cafe.jpg", alt: "Tarjeta de lealtad de RoxierCompany en Apple Wallet" },
+  { src: "/ejemplos/TarjetaRoxier.jpg", alt: "Tarjeta de sellos con estrellas de RoxierCompany en Apple Wallet" },
 ];
 
 export default function FidelityLanding() {
