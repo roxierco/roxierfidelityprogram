@@ -51,8 +51,14 @@ export interface LoyaltyPassData {
   cashbackPercent?: number;
   // Para cupón / descuento: el beneficio que ofrece la tarjeta
   couponValue?: string | null;
+  // Cupón / descuento ya canjeado — cambia el pase para disparar la notificación.
+  redeemed?: boolean;
   // Ícono elegido en el editor — define la plantilla del sello dibujado
   stampIcon?: string | null;
+  // Última promoción del negocio. Va en el reverso con changeMessage para que,
+  // al enviarse una promo nueva, el iPhone reciba la notificación en la pantalla
+  // de bloqueo (Apple solo notifica cuando CAMBIA un dato del pase).
+  promoText?: string | null;
 }
 
 // ─── PNG generator (no external deps) ───────────────────────────────────────
@@ -451,6 +457,23 @@ function hexToRgb(hex: string): string {
   return `rgb(${r}, ${g}, ${b})`;
 }
 
+/**
+ * Campo de promoción para el reverso del pase. Lleva `changeMessage` con %@ para
+ * que, cuando el negocio envíe una promo nueva (cambia el valor), Apple muestre
+ * la notificación en la pantalla de bloqueo. Va siempre presente (con un texto
+ * por defecto) para que el PRIMER cambio también dispare el aviso.
+ */
+function promoBackField(data: LoyaltyPassData) {
+  return [
+    {
+      key: "promo",
+      label: "Promoción",
+      value: data.promoText || "Aún no hay promociones nuevas.",
+      changeMessage: "%@",
+    },
+  ];
+}
+
 function buildPassJson(data: LoyaltyPassData, hasStrip: boolean): object {
   const authToken = generateAuthToken(data.customerId, data.cardId);
   const appUrl = process.env.NEXT_PUBLIC_APP_URL!;
@@ -480,6 +503,7 @@ function buildPassJson(data: LoyaltyPassData, hasStrip: boolean): object {
             value: balance,
             currencyCode: "MXN",
             textAlignment: "PKTextAlignmentRight",
+            changeMessage: "Tu saldo ahora es %@",
           },
         ],
         secondaryFields: [
@@ -498,6 +522,7 @@ function buildPassJson(data: LoyaltyPassData, hasStrip: boolean): object {
               : `Presenta este QR en ${data.businessName} en cada compra para acumular cashback. Usa tu saldo cuando quieras.`,
           },
           { key: "card", label: "Programa", value: data.cardTitle },
+          ...promoBackField(data),
           { key: "powered", label: "", value: "Powered by Roxier Fidelity · roxierco.com" },
         ],
       },
@@ -532,9 +557,15 @@ function buildPassJson(data: LoyaltyPassData, hasStrip: boolean): object {
       stripColor: hexToRgb(data.colorPrimary),
       storeCard: {
         // Sin primaryFields: así la imagen del strip queda limpia y la info
-        // (oferta + miembro) se muestra DEBAJO de la imagen.
+        // (oferta + miembro) se muestra DEBAJO de la imagen. El campo "offer"
+        // lleva changeMessage: al canjearse cambia su valor y el iPhone avisa.
         secondaryFields: [
-          { key: "offer", label: esCupon ? "Cupón" : "Descuento", value: oferta },
+          {
+            key: "offer",
+            label: esCupon ? "Cupón" : "Descuento",
+            value: data.redeemed ? "Canjeado ✓" : oferta,
+            changeMessage: esCupon ? "Tu cupón fue canjeado: %@" : "Tu descuento fue aplicado: %@",
+          },
           { key: "member", label: "MIEMBRO", value: data.customerName },
         ],
         backFields: [
@@ -546,6 +577,7 @@ function buildPassJson(data: LoyaltyPassData, hasStrip: boolean): object {
               : `Presenta este QR en ${data.businessName} para obtener tu descuento.`,
           },
           { key: "card", label: "Programa", value: data.cardTitle },
+          ...promoBackField(data),
           { key: "powered", label: "", value: "Powered by Roxier Fidelity · roxierco.com" },
         ],
       },
@@ -585,6 +617,7 @@ function buildPassJson(data: LoyaltyPassData, hasStrip: boolean): object {
           label: "SELLOS",
           value: `${Math.min(data.currentStamps, data.stampsRequired)}/${data.stampsRequired}`,
           textAlignment: "PKTextAlignmentRight",
+          changeMessage: "Ahora tienes %@ sellos",
         },
       ],
       secondaryFields: [
@@ -622,6 +655,7 @@ function buildPassJson(data: LoyaltyPassData, hasStrip: boolean): object {
           label: "Programa",
           value: data.cardTitle,
         },
+        ...promoBackField(data),
         {
           key: "powered",
           label: "",

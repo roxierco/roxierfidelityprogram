@@ -31,6 +31,22 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ pass
   const { data: business } = await admin.from("businesses").select("name, slug, logo_url").eq("id", customer.business_id).single();
   if (!business) return new NextResponse(null, { status: 404 });
 
+  // Promo por separado y tolerante: si la columna aún no existe (SQL sin correr),
+  // queda null y la generación del pase sigue funcionando igual.
+  const { data: promoRow } = await admin.from("businesses").select("latest_promo_text").eq("id", customer.business_id).maybeSingle();
+  const promoText = (promoRow as { latest_promo_text?: string | null } | null)?.latest_promo_text ?? null;
+
+  // Cupón/descuento: ¿ya lo canjeó? (por-tarjeta, no con el contador global)
+  let redeemed = false;
+  if (card.card_type === "cupon" || card.card_type === "descuento") {
+    const { count } = await admin
+      .from("card_redemptions")
+      .select("id", { count: "exact", head: true })
+      .eq("customer_id", customerId)
+      .eq("card_id", cardId);
+    redeemed = (count ?? 0) > 0;
+  }
+
   const cardUrl = `${process.env.NEXT_PUBLIC_APP_URL}/c/${business.slug}/u/${customerId}?card=${cardId}`;
 
   try {
@@ -53,7 +69,9 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ pass
       cashbackBalance: Number(customer.cashback_balance ?? 0),
       cashbackPercent: Number(card.cashback_percent ?? 0),
       couponValue: card.coupon_value ?? null,
+      redeemed,
       stampIcon: card.stamp_icon ?? null,
+      promoText,
     });
 
     return new NextResponse(new Uint8Array(passBuffer), {

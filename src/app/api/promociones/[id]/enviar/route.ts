@@ -4,6 +4,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { Resend } from "resend";
 import { isGoogleWalletConfigured, sendWalletPromoMessage } from "@/lib/google-wallet";
 import { isPushConfigured, sendPush } from "@/lib/web-push";
+import { isAppleWalletConfigured, sendApnsPassUpdate } from "@/lib/apple-wallet";
 
 export async function POST(
   _req: NextRequest,
@@ -122,6 +123,33 @@ export async function POST(
       if (expired.length) {
         await admin.from("push_subscriptions").delete().in("id", expired);
       }
+    }
+  }
+
+  // 4. Apple Wallet: Apple no permite mensajes libres. Guardamos el texto de la
+  //    promo en el negocio (el pase lo muestra en el reverso con changeMessage) y
+  //    empujamos un refresh por APNs; al cambiar el valor, el iPhone notifica.
+  if (isAppleWalletConfigured() && customers.length > 0) {
+    await admin
+      .from("businesses")
+      .update({
+        latest_promo_text: `${promo.title}: ${promo.message}`,
+        latest_promo_at: new Date().toISOString(),
+      })
+      .eq("id", business.id);
+
+    const customerIds = new Set(customers.map((c) => c.id));
+    const { data: registrations } = await admin
+      .from("apple_wallet_registrations")
+      .select("push_token, serial_number");
+
+    // serial = "{customerId}-{cardId}"; el customerId son los primeros 36 chars.
+    const mios = (registrations ?? []).filter((r) =>
+      customerIds.has(r.serial_number.slice(0, 36)),
+    );
+
+    if (mios.length) {
+      await Promise.allSettled(mios.map((r) => sendApnsPassUpdate(r.push_token).catch(() => null)));
     }
   }
 
