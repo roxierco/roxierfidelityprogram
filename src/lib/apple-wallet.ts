@@ -464,11 +464,15 @@ function hexToRgb(hex: string): string {
  * por defecto) para que el PRIMER cambio también dispare el aviso.
  */
 function promoBackField(data: LoyaltyPassData) {
+  // Sin promo → no incluimos el campo (evita notificaciones vacías). Cuando el
+  // negocio envía una promo, el campo aparece con el texto real y el iPhone
+  // muestra la notificación con ese texto (changeMessage "%@").
+  if (!data.promoText) return [];
   return [
     {
       key: "promo",
       label: "Promoción",
-      value: data.promoText || "Aún no hay promociones nuevas.",
+      value: data.promoText,
       changeMessage: "%@",
     },
   ];
