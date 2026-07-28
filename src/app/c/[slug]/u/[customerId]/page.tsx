@@ -1,8 +1,7 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { notFound } from "next/navigation";
 import { CustomerCardClient } from "./CustomerCardClient";
-import { isGoogleWalletConfigured } from "@/lib/google-wallet";
-import { isAppleWalletConfigured } from "@/lib/apple-wallet";
+import { isAppleWalletConfigured, isGoogleWalletConfigured } from "@/lib/wallet-config";
 
 export default async function CustomerCardPage({
   params,
@@ -24,28 +23,24 @@ export default async function CustomerCardPage({
 
   if (!customer) notFound();
 
-  const { data: business } = await supabase
-    .from("businesses")
-    .select("name, slug")
-    .eq("id", customer.business_id)
-    .single();
+  const CARD_COLS = "id, title, stamps_required, reward_text, color_primary, color_background, text_color, logo_url, bg_type, color_gradient_end, gradient_direction, bg_image_url, bg_image_position, stamp_icon, card_type, coupon_value, max_uses, cashback_percent";
+
+  // Negocio y tarjeta se piden EN PARALELO (ambos solo dependen del business_id
+  // del cliente), en vez de una tras otra. Menos ida y vuelta = abre más rápido.
+  const [{ data: business }, cardByIdRes] = await Promise.all([
+    supabase.from("businesses").select("name, slug").eq("id", customer.business_id).single(),
+    cardId
+      ? supabase.from("loyalty_cards").select(CARD_COLS).eq("id", cardId).eq("business_id", customer.business_id).single()
+      : Promise.resolve({ data: null }),
+  ]);
 
   if (!business || business.slug !== slug) notFound();
 
-  let card = null;
-  if (cardId) {
-    const { data } = await supabase
-      .from("loyalty_cards")
-      .select("id, title, stamps_required, reward_text, color_primary, color_background, text_color, logo_url, bg_type, color_gradient_end, gradient_direction, bg_image_url, bg_image_position, stamp_icon, card_type, coupon_value, max_uses, cashback_percent")
-      .eq("id", cardId)
-      .eq("business_id", customer.business_id)
-      .single();
-    card = data;
-  }
+  let card = cardByIdRes.data;
   if (!card) {
     const { data } = await supabase
       .from("loyalty_cards")
-      .select("id, title, stamps_required, reward_text, color_primary, color_background, text_color, logo_url, bg_type, color_gradient_end, gradient_direction, bg_image_url, bg_image_position, stamp_icon, card_type, coupon_value, max_uses, cashback_percent")
+      .select(CARD_COLS)
       .eq("business_id", customer.business_id)
       .eq("is_active", true)
       .order("created_at", { ascending: false })

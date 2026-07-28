@@ -3,13 +3,9 @@ import { sign } from "jsonwebtoken";
 
 const API = "https://walletobjects.googleapis.com/walletobjects/v1";
 
-export function isGoogleWalletConfigured() {
-  return !!(
-    process.env.GOOGLE_WALLET_ISSUER_ID &&
-    process.env.GOOGLE_WALLET_SERVICE_ACCOUNT_EMAIL &&
-    process.env.GOOGLE_WALLET_SERVICE_ACCOUNT_PRIVATE_KEY
-  );
-}
+// El chequeo de configuración vive en wallet-config.ts (sin deps pesadas).
+// Se re-exporta aquí para no romper importaciones existentes.
+export { isGoogleWalletConfigured } from "@/lib/wallet-config";
 
 function sanitize(id: string) {
   return id.replace(/-/g, "_");

@@ -4,16 +4,9 @@ import { createHash, createHmac, timingSafeEqual } from "node:crypto";
 import { deflateSync } from "node:zlib";
 import { connect } from "node:http2";
 
-export function isAppleWalletConfigured(): boolean {
-  return !!(
-    process.env.APPLE_WALLET_TEAM_ID &&
-    process.env.APPLE_WALLET_PASS_TYPE_ID &&
-    process.env.APPLE_WALLET_CERTIFICATE &&
-    process.env.APPLE_WALLET_PRIVATE_KEY &&
-    process.env.APPLE_WALLET_WWDR_CERTIFICATE &&
-    process.env.APPLE_WALLET_AUTH_SECRET
-  );
-}
+// El chequeo de configuración vive en wallet-config.ts (sin deps pesadas).
+// Se re-exporta aquí para no romper importaciones existentes.
+export { isAppleWalletConfigured } from "@/lib/wallet-config";
 
 export function generateAuthToken(customerId: string, cardId: string): string {
   return createHmac("sha256", process.env.APPLE_WALLET_AUTH_SECRET!)
