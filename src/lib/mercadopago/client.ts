@@ -9,9 +9,9 @@ import { getServerEnv } from "@/lib/env";
  *   - amountPlus: precio con 4 o más sucursales (multi-sucursal).
  */
 export const PLANS = {
-  mensual:   { name: "Mensual", frequency: 1,  period: "mes",     amount: 599,  amountPlus: 699 },
-  semestral: { name: "6 meses", frequency: 6,  period: "6 meses", amount: 3199, amountPlus: 3730 },
-  anual:     { name: "Anual",   frequency: 12, period: "año",     amount: 5990, amountPlus: 6990 },
+  mensual:   { name: "Mensual", frequency: 1,  period: "mes",     amount: 547,  amountPlus: 647 },
+  semestral: { name: "6 meses", frequency: 6,  period: "6 meses", amount: 2735, amountPlus: 3235 },
+  anual:     { name: "Anual",   frequency: 12, period: "año",     amount: 4923, amountPlus: 5823 },
 } as const;
 
 export type PlanKey = keyof typeof PLANS;

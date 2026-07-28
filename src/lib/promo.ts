@@ -1,6 +1,6 @@
 /**
- * Promo de lanzamiento: precio de $749 tachado → $599, por tiempo limitado.
- * El precio real ya es $599 (permanente); esto es solo el marco visual con
+ * Promo de lanzamiento: precio de $749 tachado → $547, por tiempo limitado.
+ * El precio real ya es $547 (permanente); esto es solo el marco visual con
  * urgencia. Al pasar la fecha, las páginas dejan de mostrar el tachado y el
  * contador — el precio sigue igual.
  */

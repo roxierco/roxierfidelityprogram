@@ -26,22 +26,22 @@ const PLANES: {
   badge?: string;
   highlight?: boolean;
 }[] = [
-  { key: "mensual", name: "Mensual", price: 599, antes: 749, period: "/ mes", ahorro: "Precio de lanzamiento" },
+  { key: "mensual", name: "Mensual", price: 547, antes: 749, period: "/ mes", ahorro: "Precio de lanzamiento" },
   {
     key: "semestral",
     name: "6 meses",
-    price: 3199,
+    price: 2735,
     period: "/ 6 meses",
-    equivalente: "≈ $533 / mes",
-    ahorro: "Ahorras ~11%",
+    equivalente: "≈ $456 / mes",
+    ahorro: "1 mes gratis",
   },
   {
     key: "anual",
     name: "Anual",
-    price: 5990,
+    price: 4923,
     period: "/ año",
-    equivalente: "≈ $499 / mes",
-    ahorro: "2 meses gratis",
+    equivalente: "≈ $410 / mes",
+    ahorro: "3 meses gratis",
     badge: "Mejor precio",
     highlight: true,
   },
@@ -181,7 +181,7 @@ export function PlanesClient({
       </ul>
 
       <p className="mt-8 text-mist text-xs text-center max-w-md">
-        La prueba gratis dura 7 días contados desde que te registraste — registrar tu tarjeta no te da días extra, solo evita que pierdas el acceso. Después el cobro se renueva automáticamente cada período. Incluye ubicaciones ilimitadas; con 4 o más sucursales aplica la tarifa multi-sucursal (desde $699/mes). Sin cuota de activación · Cancela cuando quieras.
+        La prueba gratis dura 7 días contados desde que te registraste — registrar tu tarjeta no te da días extra, solo evita que pierdas el acceso. Después el cobro se renueva automáticamente cada período. Incluye ubicaciones ilimitadas; con 4 o más sucursales aplica la tarifa multi-sucursal (desde $647/mes). Sin cuota de activación · Cancela cuando quieras.
       </p>
 
       <p className="mt-6 text-mist text-sm">

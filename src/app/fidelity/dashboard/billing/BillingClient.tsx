@@ -20,9 +20,9 @@ interface Subscription {
 }
 
 const PLANES = {
-  mensual:   { name: "Mensual", amount: 599,  amountPlus: 699,  period: "/ mes",     nota: "" },
-  semestral: { name: "6 meses", amount: 3199, amountPlus: 3730, period: "/ 6 meses", nota: "Ahorras ~11%" },
-  anual:     { name: "Anual",   amount: 5990, amountPlus: 6990, period: "/ año",     nota: "2 meses gratis" },
+  mensual:   { name: "Mensual", amount: 547,  amountPlus: 647,  period: "/ mes",     nota: "" },
+  semestral: { name: "6 meses", amount: 2735, amountPlus: 3235, period: "/ 6 meses", nota: "1 mes gratis" },
+  anual:     { name: "Anual",   amount: 4923, amountPlus: 5823, period: "/ año",     nota: "3 meses gratis" },
 } as const;
 
 type PlanKey = keyof typeof PLANES;

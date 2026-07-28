@@ -246,9 +246,9 @@ export default function FidelityLanding() {
           {/* Cards de planes por período */}
           <div className="grid gap-5 md:grid-cols-3 max-w-4xl mx-auto mt-8">
             {[
-              { name: "Mensual", price: "$599", antes: "$749", period: "/mes MXN", equiv: "", nota: "Precio de lanzamiento", highlight: false },
-              { name: "6 meses", price: "$3,199", antes: "", period: "/6 meses", equiv: "≈ $533/mes", nota: "Ahorras ~11%", highlight: false },
-              { name: "Anual", price: "$5,990", antes: "", period: "/año", equiv: "≈ $499/mes", nota: "2 meses gratis", highlight: true },
+              { name: "Mensual", price: "$547", antes: "$749", period: "/mes MXN", equiv: "", nota: "Precio de lanzamiento", highlight: false },
+              { name: "6 meses", price: "$2,735", antes: "", period: "/6 meses", equiv: "≈ $456/mes", nota: "1 mes gratis", highlight: false },
+              { name: "Anual", price: "$4,923", antes: "", period: "/año", equiv: "≈ $410/mes", nota: "3 meses gratis", highlight: true },
             ].map((p) => (
               <div key={p.name}
                 className={`relative rounded-2xl p-7 flex flex-col bg-white ${
@@ -285,7 +285,7 @@ export default function FidelityLanding() {
 
           {/* Nota multi-sucursal */}
           <p className="text-center text-xs text-gray-500 mt-6">
-            Ubicaciones ilimitadas incluidas · Con 4+ sucursales aplica tarifa multi-sucursal (desde $699/mes)
+            Ubicaciones ilimitadas incluidas · Con 4+ sucursales aplica tarifa multi-sucursal (desde $647/mes)
           </p>
 
           {/* Todo incluido en cualquier plan */}
