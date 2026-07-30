@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { PromoCountdown } from "@/components/ui/PromoCountdown";
 
 type PlanKey = "mensual" | "semestral" | "anual";
 
@@ -26,21 +25,21 @@ const PLANES: {
   badge?: string;
   highlight?: boolean;
 }[] = [
-  { key: "mensual", name: "Mensual", price: 547, antes: 749, period: "/ mes", ahorro: "Precio de lanzamiento" },
+  { key: "mensual", name: "Mensual", price: 479, period: "/ mes", ahorro: "" },
   {
     key: "semestral",
     name: "6 meses",
-    price: 2735,
+    price: 2395,
     period: "/ 6 meses",
-    equivalente: "≈ $456 / mes",
+    equivalente: "≈ $399 / mes",
     ahorro: "1 mes gratis",
   },
   {
     key: "anual",
     name: "Anual",
-    price: 4923,
+    price: 4311,
     period: "/ año",
-    equivalente: "≈ $410 / mes",
+    equivalente: "≈ $359 / mes",
     ahorro: "3 meses gratis",
     badge: "Mejor precio",
     highlight: true,
@@ -98,10 +97,6 @@ export function PlanesClient({
         <p className="text-magenta text-sm font-bold uppercase tracking-widest mb-2">Roxier Fidelity</p>
         <h1 className="text-4xl font-black text-paper mb-3">Elige tu plan</h1>
         <p className="text-mist text-lg">Mismo servicio completo · paga menos si te comprometes más</p>
-      </div>
-
-      <div className="mb-8 w-full">
-        <PromoCountdown theme="dark" />
       </div>
 
       {/* Estado de la prueba — sin letras chiquitas */}
@@ -181,7 +176,7 @@ export function PlanesClient({
       </ul>
 
       <p className="mt-8 text-mist text-xs text-center max-w-md">
-        La prueba gratis dura 7 días contados desde que te registraste — registrar tu tarjeta no te da días extra, solo evita que pierdas el acceso. Después el cobro se renueva automáticamente cada período. Incluye ubicaciones ilimitadas; con 4 o más sucursales aplica la tarifa multi-sucursal (desde $647/mes). Sin cuota de activación · Cancela cuando quieras.
+        La prueba gratis dura 7 días contados desde que te registraste — registrar tu tarjeta no te da días extra, solo evita que pierdas el acceso. Después el cobro se renueva automáticamente cada período. Incluye ubicaciones ilimitadas; con 4 o más sucursales aplica la tarifa multi-sucursal (desde $579/mes). Sin cuota de activación · Cancela cuando quieras.
       </p>
 
       <p className="mt-6 text-mist text-sm">

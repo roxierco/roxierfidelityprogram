@@ -2,7 +2,6 @@ import Link from "next/link";
 import Image from "next/image";
 import { RoxierLogo } from "@/components/brand/XMark";
 import { WhatsAppFab } from "@/components/ui/WhatsAppFab";
-import { PromoCountdown } from "@/components/ui/PromoCountdown";
 
 // Tarjetas reales de clientes, capturadas desde Apple Wallet.
 const CARD_EXAMPLES = [
@@ -233,9 +232,8 @@ export default function FidelityLanding() {
             </p>
           </div>
 
-          {/* Promo de lanzamiento + prueba gratis */}
+          {/* Prueba gratis */}
           <div className="mt-8 flex flex-col items-center gap-3">
-            <PromoCountdown theme="light" />
             <div className="inline-flex items-center gap-2 rounded-full border border-green-200 bg-green-50 px-5 py-2.5">
               <span className="text-sm font-semibold text-green-700">
                 7 días gratis en todos los planes — empieza sin tarjeta
@@ -246,9 +244,9 @@ export default function FidelityLanding() {
           {/* Cards de planes por período */}
           <div className="grid gap-5 md:grid-cols-3 max-w-4xl mx-auto mt-8">
             {[
-              { name: "Mensual", price: "$547", antes: "$749", period: "/mes MXN", equiv: "", nota: "Precio de lanzamiento", highlight: false },
-              { name: "6 meses", price: "$2,735", antes: "", period: "/6 meses", equiv: "≈ $456/mes", nota: "1 mes gratis", highlight: false },
-              { name: "Anual", price: "$4,923", antes: "", period: "/año", equiv: "≈ $410/mes", nota: "3 meses gratis", highlight: true },
+              { name: "Mensual", price: "$479", antes: "", period: "/mes MXN", equiv: "", nota: "", highlight: false },
+              { name: "6 meses", price: "$2,395", antes: "", period: "/6 meses", equiv: "≈ $399/mes", nota: "1 mes gratis", highlight: false },
+              { name: "Anual", price: "$4,311", antes: "", period: "/año", equiv: "≈ $359/mes", nota: "3 meses gratis", highlight: true },
             ].map((p) => (
               <div key={p.name}
                 className={`relative rounded-2xl p-7 flex flex-col bg-white ${
@@ -285,7 +283,7 @@ export default function FidelityLanding() {
 
           {/* Nota multi-sucursal */}
           <p className="text-center text-xs text-gray-500 mt-6">
-            Ubicaciones ilimitadas incluidas · Con 4+ sucursales aplica tarifa multi-sucursal (desde $647/mes)
+            Ubicaciones ilimitadas incluidas · Con 4+ sucursales aplica tarifa multi-sucursal (desde $579/mes)
           </p>
 
           {/* Todo incluido en cualquier plan */}
