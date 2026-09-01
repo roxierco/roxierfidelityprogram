@@ -59,3 +59,21 @@ que ya rompió las promociones una vez (commit `0ea7b96`, arreglado en `de37e66`
   desglose real por canal; si no salió nada, se le dice al negocio.
 - Las consultas de registros de Wallet **se filtran por el negocio**, nunca se traen todas
   para filtrar en JS: Supabase corta en ~1000 filas y los clientes de más se quedan sin aviso.
+
+### Credenciales de Google Wallet — cómo se configuran
+- **Usa una sola variable: `GOOGLE_WALLET_SERVICE_ACCOUNT_JSON`**, con el JSON de la cuenta
+  de servicio en base64. Las dos variables sueltas (`..._EMAIL` y `..._PRIVATE_KEY`) siguen
+  funcionando por compatibilidad, pero se desincronizan con facilidad: si el correo apunta a
+  una cuenta y la llave a otra, Google responde `invalid_grant: account not found` y el
+  mensaje no dice cuál de las dos está mal. En una sola variable siempre viajan juntas.
+- Una llave PEM tiene varios renglones y las variables de entorno guardan una sola línea.
+  Al copiarla se le pegan comillas o se le rompen los saltos, y OpenSSL solo dice
+  `DECODER routines::unsupported`. En base64 no hay nada que se pueda romper al copiar.
+- **`account not found` no significa que la llave esté vencida.** Significa que el
+  `client_email` no existe — casi siempre porque la credencial es de OTRO proyecto de Google
+  Cloud. Si la llave estuviera mal, el error sería `Invalid JWT Signature`.
+- Autenticar y tener permiso son cosas distintas: además de la credencial, el correo de la
+  cuenta de servicio debe estar dado de alta como Desarrollador en el Wallet Console
+  (pay.google.com/business/console), y `GOOGLE_WALLET_ISSUER_ID` debe ser el de esa cuenta.
+  Si falta ese alta, autentica bien y luego rebota con 403.
+- Cambiar variables en Vercel **no aplica solo**: hay que redesplegar.
