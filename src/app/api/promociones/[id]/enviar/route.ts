@@ -43,13 +43,13 @@ export async function POST(
   const customers = allCustomers ?? [];
   const withEmail = customers.filter((c) => c.email);
 
-  // Tarjetas activas del negocio: las usan tanto Google Wallet como Apple para
-  // armar los seriales ({customerId}-{cardId}).
-  const { data: activeCards } = await admin
+  // TODAS las tarjetas del negocio, activas o no. No filtrar por `is_active`:
+  // el cliente conserva el pase en su celular aunque el negocio haya desactivado
+  // ese diseño, y esos son justo los pases a los que hay que avisarles.
+  const { data: businessCards } = await admin
     .from("loyalty_cards")
     .select("id")
-    .eq("business_id", business.id)
-    .eq("is_active", true);
+    .eq("business_id", business.id);
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "";
 
@@ -91,8 +91,8 @@ export async function POST(
   // 2. Google Wallet addMessage para clientes con tarjeta guardada en Wallet.
   //    Ojo: sendWalletPromoMessage no lanza excepción si Google responde error,
   //    así que hay que mirar `ok` — que la promesa se resuelva no basta.
-  if (isGoogleWalletConfigured() && activeCards?.length) {
-    const pares = customers.flatMap((c) => activeCards.map((card) => ({ c, card })));
+  if (isGoogleWalletConfigured() && businessCards?.length) {
+    const pares = customers.flatMap((c) => businessCards.map((card) => ({ c, card })));
     const results = await Promise.allSettled(
       pares.map(({ c, card }) => sendWalletPromoMessage(c.id, card.id, promo.title, promo.message)),
     );
@@ -104,10 +104,14 @@ export async function POST(
         if (r.status === "fulfilled" && r.value.ok) {
           canales.google += 1;
         } else if (r.status === "fulfilled") {
-          await logWalletEvent("promo_push_failed", serial, undefined, {
-            canal: "google",
-            status: r.value.status,
-          });
+          // 404 = ese cliente no guardó ESA tarjeta en Google Wallet. Es lo
+          // normal (se prueban todas las tarjetas del negocio), no un fallo.
+          if (r.value.status !== 404) {
+            await logWalletEvent("promo_push_failed", serial, undefined, {
+              canal: "google",
+              status: r.value.status,
+            });
+          }
         } else {
           await logWalletEvent("promo_push_failed", serial, undefined, {
             canal: "google",
@@ -159,45 +163,54 @@ export async function POST(
       })
       .eq("id", business.id);
 
-    // Seriales de ESTE negocio: "{customerId}-{cardId}". Antes se traían todos
-    // los registros de todos los negocios y se filtraban en JS, lo que además de
-    // leer datos ajenos topaba con el límite de filas de Supabase (~1000): a
-    // partir de ahí, a algunos clientes no les llegaba nada y sin error visible.
-    const seriales = customers.flatMap((c) =>
-      (activeCards ?? []).map((card) => `${c.id}-${card.id}`),
-    );
-
+    // El serial es "{customerId}-{cardId}", así que buscamos por prefijo de
+    // cliente. NO se filtra por tarjeta activa a propósito: el cliente trae el
+    // pase guardado en su celular aunque el negocio haya desactivado o
+    // reemplazado ese diseño después. Exigir `is_active` deja fuera a casi
+    // todos los dispositivos reales y la promo no le llega a nadie.
+    //
+    // Se filtra en la base (en lotes de OR ... LIKE) en vez de traer todos los
+    // registros de todos los negocios: eso leía datos ajenos y topaba con el
+    // límite de ~1000 filas de Supabase.
     const registrations: { push_token: string; serial_number: string; device_library_id: string }[] = [];
-    const CHUNK = 200;
-    for (let i = 0; i < seriales.length; i += CHUNK) {
+    const CHUNK = 50;
+    for (let i = 0; i < customers.length; i += CHUNK) {
+      const filtro = customers
+        .slice(i, i + CHUNK)
+        .map((c) => `serial_number.like.${c.id}-%`)
+        .join(",");
       const { data } = await admin
         .from("apple_wallet_registrations")
         .select("push_token, serial_number, device_library_id")
-        .in("serial_number", seriales.slice(i, i + CHUNK));
+        .or(filtro);
       if (data) registrations.push(...data);
     }
 
-    if (!registrations.length) {
+    // Un mismo dispositivo puede tener varias filas para el mismo pase (se
+    // re-registra); sin deduplicar le llegarían pushes repetidos.
+    const unicos = [...new Map(registrations.map((r) => [r.push_token, r])).values()];
+
+    if (!unicos.length) {
       await logWalletEvent("promo_push_skipped_no_registration", `promo:${promo.id}`);
     } else {
       // Marcamos los registros como actualizados para que el iPhone los pida.
       await Promise.allSettled(
-        Array.from({ length: Math.ceil(registrations.length / CHUNK) }, (_, i) =>
+        Array.from({ length: Math.ceil(unicos.length / CHUNK) }, (_, i) =>
           admin
             .from("apple_wallet_registrations")
             .update({ updated_at: new Date().toISOString() })
-            .in("serial_number", registrations.slice(i * CHUNK, (i + 1) * CHUNK).map((r) => r.serial_number)),
+            .in("serial_number", unicos.slice(i * CHUNK, (i + 1) * CHUNK).map((r) => r.serial_number)),
         ),
       );
 
       const results = await Promise.allSettled(
-        registrations.map((r) => sendApnsPassUpdate(r.push_token)),
+        unicos.map((r) => sendApnsPassUpdate(r.push_token)),
       );
 
       const deadTokens: string[] = [];
       await Promise.allSettled(
         results.map(async (r, i) => {
-          const reg = registrations[i];
+          const reg = unicos[i];
           if (r.status === "fulfilled" && r.value.ok) {
             canales.apple += 1;
             await logWalletEvent("promo_push_sent", reg.serial_number, reg.device_library_id, { canal: "apple", status: 200 });

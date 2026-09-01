@@ -20,10 +20,26 @@ export function getObjectId(customerId: string, cardId: string) {
 }
 
 async function getAccessToken(): Promise<string> {
+  // Quita comillas envolventes (Vercel las conserva si se pegan) y des-escapa
+  // los saltos de línea. Sin esto OpenSSL falla con "DECODER routines::
+  // unsupported", que no dice nada sobre la causa real.
+  const rawKey = (process.env.GOOGLE_WALLET_SERVICE_ACCOUNT_PRIVATE_KEY ?? "")
+    .trim()
+    .replace(/^["']|["']$/g, "")
+    .replace(/\\n/g, "\n");
+
+  if (!rawKey.includes("BEGIN") || !rawKey.includes("PRIVATE KEY")) {
+    throw new Error(
+      "GOOGLE_WALLET_SERVICE_ACCOUNT_PRIVATE_KEY no parece una llave PEM válida: " +
+        "debe incluir la línea -----BEGIN PRIVATE KEY----- y sus saltos de línea " +
+        "(literales o escapados como \\n).",
+    );
+  }
+
   const auth = new GoogleAuth({
     credentials: {
       client_email: process.env.GOOGLE_WALLET_SERVICE_ACCOUNT_EMAIL,
-      private_key: process.env.GOOGLE_WALLET_SERVICE_ACCOUNT_PRIVATE_KEY!.replace(/\\n/g, "\n"),
+      private_key: rawKey,
     },
     scopes: ["https://www.googleapis.com/auth/wallet_object.issuer"],
   });
