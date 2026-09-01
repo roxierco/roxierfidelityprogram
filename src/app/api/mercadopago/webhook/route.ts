@@ -58,8 +58,15 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    const token = process.env.MP_ACCESS_TOKEN || process.env.MP_ACCESS_TOKEN_TEST;
-    if (!token) return NextResponse.json({ ok: true });
+    // MERCADOPAGO_ACCESS_TOKEN es alias de MP_ACCESS_TOKEN (ver src/lib/env.ts).
+    const token =
+      process.env.MP_ACCESS_TOKEN ||
+      process.env.MERCADOPAGO_ACCESS_TOKEN ||
+      process.env.MP_ACCESS_TOKEN_TEST;
+    if (!token) {
+      console.error("MP webhook: sin access token — el pago NO se procesó. Configura MP_ACCESS_TOKEN.");
+      return NextResponse.json({ ok: true });
+    }
 
     const admin = createAdminClient();
 

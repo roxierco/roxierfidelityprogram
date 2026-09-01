@@ -4,9 +4,14 @@ const serverEnvSchema = z.object({
   NEXT_PUBLIC_SUPABASE_URL: z.string().url(),
   NEXT_PUBLIC_SUPABASE_ANON_KEY: z.string().min(1),
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(1),
-  // Acepta MP_ACCESS_TOKEN (producción) o MP_ACCESS_TOKEN_TEST
+  // Acepta MP_ACCESS_TOKEN (producción) o MP_ACCESS_TOKEN_TEST.
+  // MERCADOPAGO_ACCESS_TOKEN es un alias: es el nombre que documentaba
+  // .env.example y el que quedó configurado en varios entornos. Sin él, un
+  // nombre distinto dejaba los pagos muertos con un error que solo aparece
+  // cuando alguien intenta pagar — es decir, en el peor momento posible.
   MP_ACCESS_TOKEN: z.string().optional(),
   MP_ACCESS_TOKEN_TEST: z.string().optional(),
+  MERCADOPAGO_ACCESS_TOKEN: z.string().optional(),
   MP_WEBHOOK_SECRET: z.string().optional(),
   NEXT_PUBLIC_APP_URL: z.string().url(),
 });
@@ -18,8 +23,14 @@ export function getServerEnv() {
     throw new Error("Faltan variables de entorno del servidor.");
   }
   const env = parsed.data;
-  const token = env.MP_ACCESS_TOKEN || env.MP_ACCESS_TOKEN_TEST;
-  if (!token) throw new Error("Falta MP_ACCESS_TOKEN en las variables de entorno.");
+  const token =
+    env.MP_ACCESS_TOKEN || env.MERCADOPAGO_ACCESS_TOKEN || env.MP_ACCESS_TOKEN_TEST;
+  if (!token) {
+    throw new Error(
+      "Falta el access token de Mercado Pago. Configura MP_ACCESS_TOKEN " +
+        "(o MP_ACCESS_TOKEN_TEST para pruebas) en las variables de entorno.",
+    );
+  }
   return { ...env, MERCADOPAGO_ACCESS_TOKEN: token };
 }
 
