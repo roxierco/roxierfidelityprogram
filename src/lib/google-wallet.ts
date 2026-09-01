@@ -90,12 +90,34 @@ async function getAccessToken(): Promise<string> {
  * intentaba tarjeta por tarjeta y se escribía el mismo error decenas de veces
  * en la bitácora, enterrando los fallos que sí son distintos entre sí.
  */
-export async function checkGoogleWalletAuth(): Promise<{ ok: boolean; error?: string }> {
+export async function checkGoogleWalletAuth(): Promise<{
+  ok: boolean;
+  error?: string;
+  clientEmail?: string;
+  issuerId?: string;
+}> {
+  // El correo de la cuenta de servicio y el issuer id NO son secretos (la llave
+  // privada sí, y nunca se registra). Anotarlos convierte un "account not found"
+  // indescifrable en algo que se diagnostica de un vistazo: casi siempre las
+  // credenciales apuntan a un proyecto de Google distinto al que se cree.
+  let clientEmail: string | undefined;
+  try {
+    clientEmail = getServiceAccount().client_email;
+  } catch {
+    // Credenciales ilegibles; el error de abajo lo explica.
+  }
+  const issuerId = process.env.GOOGLE_WALLET_ISSUER_ID;
+
   try {
     await getAccessToken();
-    return { ok: true };
+    return { ok: true, clientEmail, issuerId };
   } catch (e) {
-    return { ok: false, error: e instanceof Error ? e.message : String(e) };
+    return {
+      ok: false,
+      error: e instanceof Error ? e.message : String(e),
+      clientEmail,
+      issuerId,
+    };
   }
 }
 

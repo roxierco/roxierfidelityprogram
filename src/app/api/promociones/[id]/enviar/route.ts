@@ -100,6 +100,8 @@ export async function POST(
       await logWalletEvent("promo_push_failed", `promo:${promo.id}`, undefined, {
         canal: "google",
         error: auth.error,
+        cuenta: auth.clientEmail,
+        issuer_id: auth.issuerId,
         nota: "credenciales de Google Wallet rechazadas; no se intentó ningún envío",
       });
     } else {
