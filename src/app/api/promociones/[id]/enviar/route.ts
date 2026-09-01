@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { Resend } from "resend";
-import { isGoogleWalletConfigured, sendWalletPromoMessage } from "@/lib/google-wallet";
+import { isGoogleWalletConfigured, sendWalletPromoMessage, checkGoogleWalletAuth } from "@/lib/google-wallet";
 import { isPushConfigured, sendPush } from "@/lib/web-push";
 import { isAppleWalletConfigured, sendApnsPassUpdate } from "@/lib/apple-wallet";
 import { logWalletEvent } from "@/lib/wallet-events";
@@ -92,34 +92,46 @@ export async function POST(
   //    Ojo: sendWalletPromoMessage no lanza excepción si Google responde error,
   //    así que hay que mirar `ok` — que la promesa se resuelva no basta.
   if (isGoogleWalletConfigured() && businessCards?.length) {
-    const pares = customers.flatMap((c) => businessCards.map((card) => ({ c, card })));
-    const results = await Promise.allSettled(
-      pares.map(({ c, card }) => sendWalletPromoMessage(c.id, card.id, promo.title, promo.message)),
-    );
+    // Si las credenciales no sirven, no sirven para nadie: se comprueba una vez
+    // y se anota un solo evento, en vez de repetir el mismo error por cada
+    // cliente y cada tarjeta.
+    const auth = await checkGoogleWalletAuth();
+    if (!auth.ok) {
+      await logWalletEvent("promo_push_failed", `promo:${promo.id}`, undefined, {
+        canal: "google",
+        error: auth.error,
+        nota: "credenciales de Google Wallet rechazadas; no se intentó ningún envío",
+      });
+    } else {
+      const pares = customers.flatMap((c) => businessCards.map((card) => ({ c, card })));
+      const results = await Promise.allSettled(
+        pares.map(({ c, card }) => sendWalletPromoMessage(c.id, card.id, promo.title, promo.message)),
+      );
 
-    await Promise.allSettled(
-      results.map(async (r, i) => {
-        const { c, card } = pares[i];
-        const serial = `${c.id}-${card.id}`;
-        if (r.status === "fulfilled" && r.value.ok) {
-          canales.google += 1;
-        } else if (r.status === "fulfilled") {
-          // 404 = ese cliente no guardó ESA tarjeta en Google Wallet. Es lo
-          // normal (se prueban todas las tarjetas del negocio), no un fallo.
-          if (r.value.status !== 404) {
+      await Promise.allSettled(
+        results.map(async (r, i) => {
+          const { c, card } = pares[i];
+          const serial = `${c.id}-${card.id}`;
+          if (r.status === "fulfilled" && r.value.ok) {
+            canales.google += 1;
+          } else if (r.status === "fulfilled") {
+            // 404 = ese cliente no guardó ESA tarjeta en Google Wallet. Es lo
+            // normal (se prueban todas las tarjetas del negocio), no un fallo.
+            if (r.value.status !== 404) {
+              await logWalletEvent("promo_push_failed", serial, undefined, {
+                canal: "google",
+                status: r.value.status,
+              });
+            }
+          } else {
             await logWalletEvent("promo_push_failed", serial, undefined, {
               canal: "google",
-              status: r.value.status,
+              error: String(r.reason),
             });
           }
-        } else {
-          await logWalletEvent("promo_push_failed", serial, undefined, {
-            canal: "google",
-            error: String(r.reason),
-          });
-        }
-      }),
-    );
+        }),
+      );
+    }
   }
 
   // 3. Web Push para clientes con suscripción activa en el navegador

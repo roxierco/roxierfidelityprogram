@@ -84,6 +84,21 @@ async function getAccessToken(): Promise<string> {
   return token.token as string;
 }
 
+/**
+ * Comprueba UNA vez que las credenciales sirven, antes de recorrer clientes.
+ * Si la autenticación falla, falla para todos por igual: sin este chequeo se
+ * intentaba tarjeta por tarjeta y se escribía el mismo error decenas de veces
+ * en la bitácora, enterrando los fallos que sí son distintos entre sí.
+ */
+export async function checkGoogleWalletAuth(): Promise<{ ok: boolean; error?: string }> {
+  try {
+    await getAccessToken();
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : String(e) };
+  }
+}
+
 async function walletFetch(method: string, path: string, body?: object) {
   const token = await getAccessToken();
   const res = await fetch(`${API}${path}`, {
