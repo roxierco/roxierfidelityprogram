@@ -25,6 +25,8 @@ export function PromocionesClient({
   const [form, setForm] = useState({ title: "", message: "" });
   const [saving, setSaving] = useState(false);
   const [sending, setSending] = useState<string | null>(null);
+  const [confirmId, setConfirmId] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState<string | null>(null);
   const [toast, setToast] = useState<{ msg: string; ok: boolean } | null>(null);
 
   function showToast(msg: string, ok = true) {
@@ -57,6 +59,20 @@ export function PromocionesClient({
     if (res.ok) {
       setLista(lista.map((p) => p.id === id ? { ...p, is_active: !actual } : p));
     }
+  }
+
+  async function eliminar(id: string) {
+    setDeleting(id);
+    const res = await fetch(`/api/promociones/${id}`, { method: "DELETE" });
+    if (res.ok) {
+      setLista((prev) => prev.filter((p) => p.id !== id));
+      setConfirmId(null);
+      showToast("Promoción borrada");
+    } else {
+      const data = await res.json().catch(() => ({}));
+      showToast(data.error ?? "Error al borrar", false);
+    }
+    setDeleting(null);
   }
 
   async function enviar(id: string) {
@@ -166,20 +182,50 @@ export function PromocionesClient({
                 </div>
               </div>
 
-              <div className="flex gap-2 border-t border-surface-border pt-3">
-                <button
-                  onClick={() => toggleActiva(p.id, p.is_active)}
-                  className="flex-1 rounded-brand border border-surface-border py-2 text-xs font-semibold text-mist hover:text-paper transition-colors"
-                >
-                  {p.is_active ? "Desactivar" : "Activar"}
-                </button>
-                <button
-                  onClick={() => enviar(p.id)}
-                  disabled={sending === p.id}
-                  className="flex-1 rounded-brand bg-magenta/10 py-2 text-xs font-semibold text-magenta hover:bg-magenta/20 transition-colors disabled:opacity-50"
-                >
-                  {sending === p.id ? "Enviando..." : <span className="inline-flex items-center gap-1.5"><Icon name="correo" className="h-4 w-4" />Enviar a clientes</span>}
-                </button>
+              <div className="flex items-center gap-2 border-t border-surface-border pt-3">
+                {confirmId === p.id ? (
+                  <>
+                    <p className="flex-1 text-sm font-medium text-paper">¿Borrar esta promoción?</p>
+                    <button
+                      onClick={() => setConfirmId(null)}
+                      className="rounded-brand px-3 py-2 text-xs font-semibold text-mist hover:text-paper transition-colors"
+                    >
+                      Cancelar
+                    </button>
+                    <button
+                      onClick={() => eliminar(p.id)}
+                      disabled={deleting === p.id}
+                      className="rounded-brand bg-red-500/15 px-3 py-2 text-xs font-semibold text-red-400 hover:bg-red-500/25 transition-colors disabled:opacity-50"
+                    >
+                      {deleting === p.id ? "Borrando..." : "Sí, borrar"}
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <button
+                      onClick={() => toggleActiva(p.id, p.is_active)}
+                      className="flex-1 rounded-brand border border-surface-border py-2 text-xs font-semibold text-mist hover:text-paper transition-colors"
+                    >
+                      {p.is_active ? "Desactivar" : "Activar"}
+                    </button>
+                    <button
+                      onClick={() => enviar(p.id)}
+                      disabled={sending === p.id}
+                      className="flex-1 rounded-brand bg-magenta/10 py-2 text-xs font-semibold text-magenta hover:bg-magenta/20 transition-colors disabled:opacity-50"
+                    >
+                      {sending === p.id ? "Enviando..." : <span className="inline-flex items-center gap-1.5"><Icon name="correo" className="h-4 w-4" />Enviar a clientes</span>}
+                    </button>
+                    <button
+                      onClick={() => setConfirmId(p.id)}
+                      className="flex-shrink-0 rounded-brand p-2 text-red-400/40 hover:bg-red-500/10 hover:text-red-400 transition-colors"
+                      title="Eliminar promoción"
+                    >
+                      <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
+                      </svg>
+                    </button>
+                  </>
+                )}
               </div>
             </div>
           ))}
