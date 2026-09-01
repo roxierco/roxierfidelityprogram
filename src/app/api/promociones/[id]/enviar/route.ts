@@ -88,16 +88,34 @@ export async function POST(
     }
   }
 
-  // 2. Google Wallet addMessage para clientes con tarjeta guardada en Wallet
+  // 2. Google Wallet addMessage para clientes con tarjeta guardada en Wallet.
+  //    Ojo: sendWalletPromoMessage no lanza excepción si Google responde error,
+  //    así que hay que mirar `ok` — que la promesa se resuelva no basta.
   if (isGoogleWalletConfigured() && activeCards?.length) {
+    const pares = customers.flatMap((c) => activeCards.map((card) => ({ c, card })));
     const results = await Promise.allSettled(
-      customers.flatMap((c) =>
-        activeCards.map((card) =>
-          sendWalletPromoMessage(c.id, card.id, promo.title, promo.message),
-        ),
-      ),
+      pares.map(({ c, card }) => sendWalletPromoMessage(c.id, card.id, promo.title, promo.message)),
     );
-    canales.google = results.filter((r) => r.status === "fulfilled").length;
+
+    await Promise.allSettled(
+      results.map(async (r, i) => {
+        const { c, card } = pares[i];
+        const serial = `${c.id}-${card.id}`;
+        if (r.status === "fulfilled" && r.value.ok) {
+          canales.google += 1;
+        } else if (r.status === "fulfilled") {
+          await logWalletEvent("promo_push_failed", serial, undefined, {
+            canal: "google",
+            status: r.value.status,
+          });
+        } else {
+          await logWalletEvent("promo_push_failed", serial, undefined, {
+            canal: "google",
+            error: String(r.reason),
+          });
+        }
+      }),
+    );
   }
 
   // 3. Web Push para clientes con suscripción activa en el navegador
@@ -182,15 +200,15 @@ export async function POST(
           const reg = registrations[i];
           if (r.status === "fulfilled" && r.value.ok) {
             canales.apple += 1;
-            await logWalletEvent("promo_push_sent", reg.serial_number, reg.device_library_id, { status: 200 });
+            await logWalletEvent("promo_push_sent", reg.serial_number, reg.device_library_id, { canal: "apple", status: 200 });
           } else if (r.status === "fulfilled") {
             const { status, reason } = r.value;
-            await logWalletEvent("promo_push_failed", reg.serial_number, reg.device_library_id, { status, reason });
+            await logWalletEvent("promo_push_failed", reg.serial_number, reg.device_library_id, { canal: "apple", status, reason });
             if (status === 410 || (status === 400 && reason === "BadDeviceToken")) {
               deadTokens.push(reg.push_token);
             }
           } else {
-            await logWalletEvent("promo_push_failed", reg.serial_number, reg.device_library_id, { error: String(r.reason) });
+            await logWalletEvent("promo_push_failed", reg.serial_number, reg.device_library_id, { canal: "apple", error: String(r.reason) });
           }
         }),
       );

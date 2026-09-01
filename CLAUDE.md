@@ -27,3 +27,35 @@
 - La config de cashback (%, mínimo, tope, vigencia) vive en `loyalty_cards`, no en una tabla aparte,
   porque `card_type` ya es por-tarjeta.
 - El SQL del módulo está en `supabase/cashback.sql` — se corre a mano en el SQL Editor de Supabase.
+
+## Notificaciones de Wallet — reglas no negociables
+
+Los dos wallets notifican de formas **completamente distintas**. Confundirlos es el error
+que ya rompió las promociones una vez (commit `0ea7b96`, arreglado en `de37e66`).
+
+### Apple Wallet — notifica por CAMBIO DE VALOR, no por mensaje
+- Apple **no permite mandar mensajes libres**. El push de APNs va con payload vacío `{}` y
+  solo despierta al iPhone; si el payload trae `aps.alert`, PassKit lo ignora y nunca
+  actualiza el pase.
+- El iPhone descarga el pase nuevo y **solo muestra una notificación si cambió el valor de
+  un campo que YA existía**, y ese campo tiene `changeMessage`.
+- **Por eso el campo de promo (`promoBackField` en `src/lib/apple-wallet.ts`) va SIEMPRE
+  presente, incluso sin promo, con un texto por defecto.** Si se omite mientras no hay
+  promo, la primera promoción es un campo *nuevo* y no un cambio de valor → el pase se
+  actualiza en silencio y el aviso nunca aparece. No quites ese valor por defecto.
+- El texto de la promo vive en `businesses.latest_promo_text`, no en el push.
+
+### Google Wallet — sí notifica por mensaje
+- Usa `addMessage` sobre el `loyaltyObject`: el texto viaja en la petición.
+- **`walletFetch` NO lanza excepción cuando Google responde error**, devuelve
+  `{ ok, status }`. Que la promesa se resuelva NO significa que se envió: hay que mirar
+  `ok`, o un 404/403 se cuenta como éxito.
+
+### Reglas comunes
+- **Todo envío se cuenta por canal y se registra en `wallet_events`** (`promo_push_sent` /
+  `promo_push_failed`, con `detail.canal`). Nunca `.catch(() => null)` en un envío: un fallo
+  silencioso aquí es invisible durante meses.
+- **El panel nunca debe reportar éxito sin haberlo verificado.** El endpoint devuelve el
+  desglose real por canal; si no salió nada, se le dice al negocio.
+- Las consultas de registros de Wallet **se filtran por el negocio**, nunca se traen todas
+  para filtrar en JS: Supabase corta en ~1000 filas y los clientes de más se quedan sin aviso.

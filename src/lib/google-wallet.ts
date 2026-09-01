@@ -134,22 +134,30 @@ export async function upsertLoyaltyObject(params: {
   return id;
 }
 
-// Envía una notificación push al celular del cliente
+// Envía una notificación push al celular del cliente.
+// Devuelve el resultado: walletFetch NO lanza excepción cuando Google responde
+// con error, así que quien llame tiene que mirar `ok` — si se ignora, un 404 o
+// un 403 pasa por envío exitoso.
 async function addMessage(objectId: string, header: string, body: string) {
-  await walletFetch("POST", `/loyaltyObject/${encodeURIComponent(objectId)}/addMessage`, {
+  return walletFetch("POST", `/loyaltyObject/${encodeURIComponent(objectId)}/addMessage`, {
     message: { header, body },
   });
 }
 
-// Envía mensaje de promoción a un cliente específico
+/**
+ * Envía mensaje de promoción a un cliente específico.
+ * Devuelve `{ ok, status }` para poder contar los envíos reales y registrar los
+ * fallos; no confíes en que la promesa se resuelva como señal de éxito.
+ */
 export async function sendWalletPromoMessage(
   customerId: string,
   cardId: string,
   title: string,
   message: string,
-) {
+): Promise<{ ok: boolean; status: number }> {
   const objectId = getObjectId(customerId, cardId);
-  await addMessage(objectId, title, message);
+  const { ok, status } = await addMessage(objectId, title, message);
+  return { ok, status };
 }
 
 // Actualiza sellos Y envía notificación — llamar después de cada sello
