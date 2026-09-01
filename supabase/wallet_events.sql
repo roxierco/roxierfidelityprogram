@@ -14,6 +14,11 @@ CREATE TABLE IF NOT EXISTS wallet_events (
   --   'push_failed'                   APNs devolvió non-200 (incluye 410/BadDeviceToken)
   --   'push_skipped_no_registration'  0 dispositivos registrados para ese serial
   --   'get_registrations'             iOS pidió lista de passes actualizados
+  --   'cashback_earned'               se acreditó cashback
+  --   'cashback_redeemed'             se canjeó cashback
+  --   'promo_push_sent'               APNs 200 al enviar una promoción
+  --   'promo_push_failed'             APNs falló al enviar una promoción
+  --   'promo_push_skipped_no_registration'  la promo no tenía dispositivos a los que avisar
   detail                    jsonb
 );
 

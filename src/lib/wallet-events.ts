@@ -8,7 +8,10 @@ export type WalletEventType =
   | "push_skipped_no_registration"
   | "get_registrations"
   | "cashback_earned"
-  | "cashback_redeemed";
+  | "cashback_redeemed"
+  | "promo_push_sent"
+  | "promo_push_failed"
+  | "promo_push_skipped_no_registration";
 
 export async function logWalletEvent(
   event_type: WalletEventType,

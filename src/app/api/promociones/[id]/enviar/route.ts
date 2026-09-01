@@ -5,6 +5,7 @@ import { Resend } from "resend";
 import { isGoogleWalletConfigured, sendWalletPromoMessage } from "@/lib/google-wallet";
 import { isPushConfigured, sendPush } from "@/lib/web-push";
 import { isAppleWalletConfigured, sendApnsPassUpdate } from "@/lib/apple-wallet";
+import { logWalletEvent } from "@/lib/wallet-events";
 
 export async function POST(
   _req: NextRequest,
@@ -42,8 +43,19 @@ export async function POST(
   const customers = allCustomers ?? [];
   const withEmail = customers.filter((c) => c.email);
 
+  // Tarjetas activas del negocio: las usan tanto Google Wallet como Apple para
+  // armar los seriales ({customerId}-{cardId}).
+  const { data: activeCards } = await admin
+    .from("loyalty_cards")
+    .select("id")
+    .eq("business_id", business.id)
+    .eq("is_active", true);
+
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "";
-  let sent = 0;
+
+  // Conteo real por canal. Antes se devolvía solo el de emails, así que el panel
+  // decía "Enviado a N clientes" aunque no hubiera salido una sola notificación.
+  const canales = { email: 0, apple: 0, google: 0, web: 0 };
 
   // 1. Emails via Resend
   if (process.env.RESEND_API_KEY && process.env.RESEND_API_KEY !== "re_placeholder" && withEmail.length > 0) {
@@ -54,7 +66,7 @@ export async function POST(
     const BATCH = 50;
     for (let i = 0; i < withEmail.length; i += BATCH) {
       const batch = withEmail.slice(i, i + BATCH);
-      await Promise.allSettled(
+      const okBatch = await Promise.allSettled(
         batch.map((c) =>
           resend.emails.send({
             from,
@@ -72,30 +84,20 @@ export async function POST(
           })
         )
       );
-      sent += batch.length;
+      canales.email += okBatch.filter((r) => r.status === "fulfilled").length;
     }
-  } else {
-    // Sin Resend configurado — registrar como enviado de todas formas
-    sent = withEmail.length;
   }
 
   // 2. Google Wallet addMessage para clientes con tarjeta guardada en Wallet
-  if (isGoogleWalletConfigured()) {
-    const { data: activeCards } = await admin
-      .from("loyalty_cards")
-      .select("id")
-      .eq("business_id", business.id)
-      .eq("is_active", true);
-
-    if (activeCards?.length) {
-      await Promise.allSettled(
-        customers.flatMap((c) =>
-          activeCards.map((card) =>
-            sendWalletPromoMessage(c.id, card.id, promo.title, promo.message).catch(() => null),
-          ),
+  if (isGoogleWalletConfigured() && activeCards?.length) {
+    const results = await Promise.allSettled(
+      customers.flatMap((c) =>
+        activeCards.map((card) =>
+          sendWalletPromoMessage(c.id, card.id, promo.title, promo.message),
         ),
-      );
-    }
+      ),
+    );
+    canales.google = results.filter((r) => r.status === "fulfilled").length;
   }
 
   // 3. Web Push para clientes con suscripción activa en el navegador
@@ -117,6 +119,7 @@ export async function POST(
             { title: `${business.name}: ${promo.title}`, body: promo.message, url: cardUrl },
           );
           if (result === "expired") expired.push(sub.id);
+          else canales.web += 1;
           return customer;
         }),
       );
@@ -138,30 +141,80 @@ export async function POST(
       })
       .eq("id", business.id);
 
-    const customerIds = new Set(customers.map((c) => c.id));
-    const { data: registrations } = await admin
-      .from("apple_wallet_registrations")
-      .select("push_token, serial_number");
-
-    // serial = "{customerId}-{cardId}"; el customerId son los primeros 36 chars.
-    const mios = (registrations ?? []).filter((r) =>
-      customerIds.has(r.serial_number.slice(0, 36)),
+    // Seriales de ESTE negocio: "{customerId}-{cardId}". Antes se traían todos
+    // los registros de todos los negocios y se filtraban en JS, lo que además de
+    // leer datos ajenos topaba con el límite de filas de Supabase (~1000): a
+    // partir de ahí, a algunos clientes no les llegaba nada y sin error visible.
+    const seriales = customers.flatMap((c) =>
+      (activeCards ?? []).map((card) => `${c.id}-${card.id}`),
     );
 
-    if (mios.length) {
-      await Promise.allSettled(mios.map((r) => sendApnsPassUpdate(r.push_token).catch(() => null)));
+    const registrations: { push_token: string; serial_number: string; device_library_id: string }[] = [];
+    const CHUNK = 200;
+    for (let i = 0; i < seriales.length; i += CHUNK) {
+      const { data } = await admin
+        .from("apple_wallet_registrations")
+        .select("push_token, serial_number, device_library_id")
+        .in("serial_number", seriales.slice(i, i + CHUNK));
+      if (data) registrations.push(...data);
+    }
+
+    if (!registrations.length) {
+      await logWalletEvent("promo_push_skipped_no_registration", `promo:${promo.id}`);
+    } else {
+      // Marcamos los registros como actualizados para que el iPhone los pida.
+      await Promise.allSettled(
+        Array.from({ length: Math.ceil(registrations.length / CHUNK) }, (_, i) =>
+          admin
+            .from("apple_wallet_registrations")
+            .update({ updated_at: new Date().toISOString() })
+            .in("serial_number", registrations.slice(i * CHUNK, (i + 1) * CHUNK).map((r) => r.serial_number)),
+        ),
+      );
+
+      const results = await Promise.allSettled(
+        registrations.map((r) => sendApnsPassUpdate(r.push_token)),
+      );
+
+      const deadTokens: string[] = [];
+      await Promise.allSettled(
+        results.map(async (r, i) => {
+          const reg = registrations[i];
+          if (r.status === "fulfilled" && r.value.ok) {
+            canales.apple += 1;
+            await logWalletEvent("promo_push_sent", reg.serial_number, reg.device_library_id, { status: 200 });
+          } else if (r.status === "fulfilled") {
+            const { status, reason } = r.value;
+            await logWalletEvent("promo_push_failed", reg.serial_number, reg.device_library_id, { status, reason });
+            if (status === 410 || (status === 400 && reason === "BadDeviceToken")) {
+              deadTokens.push(reg.push_token);
+            }
+          } else {
+            await logWalletEvent("promo_push_failed", reg.serial_number, reg.device_library_id, { error: String(r.reason) });
+          }
+        }),
+      );
+
+      if (deadTokens.length) {
+        await admin.from("apple_wallet_registrations").delete().in("push_token", deadTokens);
+      }
     }
   }
+
+  // Total real de avisos entregados, sumando canales. Un mismo cliente puede
+  // recibir por más de uno (email + Wallet), así que esto no es "clientes
+  // alcanzados" sino avisos enviados.
+  const totalAvisos = canales.email + canales.apple + canales.google + canales.web;
 
   // Registrar en historial
   await admin.from("push_notifications").insert({
     business_id: business.id,
     title: promo.title,
     message: promo.message,
-    recipients_count: sent || customers.length,
+    recipients_count: totalAvisos,
   });
 
-  return NextResponse.json({ sent: sent || customers.length });
+  return NextResponse.json({ sent: totalAvisos, canales, clientes: customers.length });
 }
 
 function emailTemplate(data: {

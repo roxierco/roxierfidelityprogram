@@ -80,7 +80,20 @@ export function PromocionesClient({
     const res = await fetch(`/api/promociones/${id}/enviar`, { method: "POST" });
     const data = await res.json();
     if (res.ok) {
-      showToast(`Enviado a ${data.sent} clientes`);
+      // El servidor devuelve el desglose real por canal. Si no salió nada hay
+      // que decirlo: antes siempre reportaba éxito y los fallos pasaban de largo.
+      const c = data.canales ?? {};
+      if (!data.sent) {
+        showToast("No se envió ningún aviso. Revisa que tus clientes tengan la tarjeta guardada o un correo registrado.", false);
+      } else {
+        const detalle = [
+          c.email ? `${c.email} por correo` : null,
+          c.apple ? `${c.apple} a Apple Wallet` : null,
+          c.google ? `${c.google} a Google Wallet` : null,
+          c.web ? `${c.web} al navegador` : null,
+        ].filter(Boolean).join(" · ");
+        showToast(`Enviado: ${detalle}`);
+      }
       router.refresh();
     } else {
       showToast(data.error ?? "Error al enviar", false);

@@ -457,15 +457,19 @@ function hexToRgb(hex: string): string {
  * por defecto) para que el PRIMER cambio también dispare el aviso.
  */
 function promoBackField(data: LoyaltyPassData) {
-  // Sin promo → no incluimos el campo (evita notificaciones vacías). Cuando el
-  // negocio envía una promo, el campo aparece con el texto real y el iPhone
-  // muestra la notificación con ese texto (changeMessage "%@").
-  if (!data.promoText) return [];
+  // El campo va SIEMPRE, incluso sin promo, y esto no es opcional: Apple solo
+  // muestra el changeMessage cuando cambia el valor de un campo que YA existía.
+  // Si lo omitimos mientras no hay promo, la primera promo del negocio no es un
+  // cambio de valor sino un campo nuevo, y el iPhone actualiza el pase en
+  // silencio — la promo nunca aparece en la pantalla de bloqueo.
+  //
+  // Ojo si se vuelve a tocar: quitar el valor por defecto rompe la primera
+  // notificación de cada cliente. Ya pasó una vez (commit 0ea7b96).
   return [
     {
       key: "promo",
       label: "Promoción",
-      value: data.promoText,
+      value: data.promoText || `Aquí verás las promociones de ${data.businessName}.`,
       changeMessage: "%@",
     },
   ];
