@@ -19,28 +19,64 @@ export function getObjectId(customerId: string, cardId: string) {
   return `${process.env.GOOGLE_WALLET_ISSUER_ID}.cust_${sanitize(customerId)}_card_${sanitize(cardId)}`;
 }
 
-async function getAccessToken(): Promise<string> {
-  // Quita comillas envolventes (Vercel las conserva si se pegan) y des-escapa
-  // los saltos de línea. Sin esto OpenSSL falla con "DECODER routines::
-  // unsupported", que no dice nada sobre la causa real.
-  const rawKey = (process.env.GOOGLE_WALLET_SERVICE_ACCOUNT_PRIVATE_KEY ?? "")
+/**
+ * Credenciales de la cuenta de servicio.
+ *
+ * Forma preferida: `GOOGLE_WALLET_SERVICE_ACCOUNT_JSON` con el archivo JSON que
+ * descarga Google, en base64. Una llave PEM tiene saltos de línea y al pasarla
+ * por una variable de entorno se mutila de mil formas (comillas que se quedan
+ * pegadas, `\n` sin des-escapar, saltos convertidos en espacios), y el error que
+ * suelta OpenSSL —"DECODER routines::unsupported"— no dice nada sobre la causa.
+ * En base64 no hay nada que se pueda romper al copiar y pegar.
+ *
+ * Se mantienen las dos variables sueltas por compatibilidad.
+ */
+function getServiceAccount(): { client_email: string; private_key: string } {
+  const raw = process.env.GOOGLE_WALLET_SERVICE_ACCOUNT_JSON?.trim();
+
+  if (raw) {
+    const texto = raw.startsWith("{")
+      ? raw
+      : Buffer.from(raw.replace(/^["']|["']$/g, ""), "base64").toString("utf-8");
+
+    let parsed: { client_email?: string; private_key?: string };
+    try {
+      parsed = JSON.parse(texto);
+    } catch {
+      throw new Error(
+        "GOOGLE_WALLET_SERVICE_ACCOUNT_JSON no se pudo leer: debe ser el JSON de " +
+          "la cuenta de servicio, en base64 o tal cual.",
+      );
+    }
+    if (!parsed.client_email || !parsed.private_key) {
+      throw new Error(
+        "GOOGLE_WALLET_SERVICE_ACCOUNT_JSON no trae client_email y/o private_key.",
+      );
+    }
+    return { client_email: parsed.client_email, private_key: parsed.private_key };
+  }
+
+  // Compatibilidad: las dos variables por separado.
+  const email = process.env.GOOGLE_WALLET_SERVICE_ACCOUNT_EMAIL;
+  const key = (process.env.GOOGLE_WALLET_SERVICE_ACCOUNT_PRIVATE_KEY ?? "")
     .trim()
     .replace(/^["']|["']$/g, "")
     .replace(/\\n/g, "\n");
 
-  if (!rawKey.includes("BEGIN") || !rawKey.includes("PRIVATE KEY")) {
+  if (!email) throw new Error("Falta GOOGLE_WALLET_SERVICE_ACCOUNT_EMAIL.");
+  if (!key.includes("BEGIN") || !key.includes("PRIVATE KEY")) {
     throw new Error(
-      "GOOGLE_WALLET_SERVICE_ACCOUNT_PRIVATE_KEY no parece una llave PEM válida: " +
-        "debe incluir la línea -----BEGIN PRIVATE KEY----- y sus saltos de línea " +
-        "(literales o escapados como \\n).",
+      "GOOGLE_WALLET_SERVICE_ACCOUNT_PRIVATE_KEY no es una llave PEM válida: le " +
+        "falta la línea -----BEGIN PRIVATE KEY----- o sus saltos de línea. " +
+        "Lo más fácil es usar GOOGLE_WALLET_SERVICE_ACCOUNT_JSON en base64.",
     );
   }
+  return { client_email: email, private_key: key };
+}
 
+async function getAccessToken(): Promise<string> {
   const auth = new GoogleAuth({
-    credentials: {
-      client_email: process.env.GOOGLE_WALLET_SERVICE_ACCOUNT_EMAIL,
-      private_key: rawKey,
-    },
+    credentials: getServiceAccount(),
     scopes: ["https://www.googleapis.com/auth/wallet_object.issuer"],
   });
   const client = await auth.getClient();

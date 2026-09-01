@@ -18,9 +18,12 @@ export function isAppleWalletConfigured(): boolean {
 }
 
 export function isGoogleWalletConfigured(): boolean {
-  return !!(
-    process.env.GOOGLE_WALLET_ISSUER_ID &&
-    process.env.GOOGLE_WALLET_SERVICE_ACCOUNT_EMAIL &&
-    process.env.GOOGLE_WALLET_SERVICE_ACCOUNT_PRIVATE_KEY
+  // Las credenciales pueden venir como el JSON completo de la cuenta de
+  // servicio (preferido, en base64) o como las dos variables sueltas.
+  const tieneCredenciales = !!(
+    process.env.GOOGLE_WALLET_SERVICE_ACCOUNT_JSON ||
+    (process.env.GOOGLE_WALLET_SERVICE_ACCOUNT_EMAIL &&
+      process.env.GOOGLE_WALLET_SERVICE_ACCOUNT_PRIVATE_KEY)
   );
+  return !!(process.env.GOOGLE_WALLET_ISSUER_ID && tieneCredenciales);
 }
