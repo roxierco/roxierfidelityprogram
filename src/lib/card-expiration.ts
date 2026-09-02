@@ -58,6 +58,18 @@ export function formatearExpiracion(fecha: Date): string {
   });
 }
 
+/**
+ * "30 nov 2026" — para los campos del FRENTE del pase, que son angostos.
+ * La fecha larga no cabe y se corta con puntos suspensivos.
+ */
+export function fechaCorta(fecha: Date): string {
+  return fecha.toLocaleDateString("es-MX", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+}
+
 /** Texto corto para el pase: "Vence el 15 de marzo de 2027". */
 export function textoVigencia(fecha: Date): string {
   return `Vence el ${formatearExpiracion(fecha)}`;

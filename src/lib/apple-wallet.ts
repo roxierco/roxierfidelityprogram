@@ -4,7 +4,7 @@ import { createHash, createHmac, timingSafeEqual } from "node:crypto";
 import { deflateSync } from "node:zlib";
 import { connect } from "node:http2";
 
-import { textoVigencia } from "@/lib/card-expiration";
+import { fechaCorta } from "@/lib/card-expiration";
 
 // El chequeo de configuración vive en wallet-config.ts (sin deps pesadas).
 // Se re-exporta aquí para no romper importaciones existentes.
@@ -481,18 +481,24 @@ function promoBackField(data: LoyaltyPassData) {
 }
 
 /**
- * Campo visible con la vigencia, para el reverso del pase.
- * Va aparte de `expirationDate`: esa es la fecha que Apple usa internamente
- * para atenuar el pase cuando caduca, pero no se la enseña al cliente. Si
- * queremos que la vea, tiene que haber un campo.
+ * Campo de vigencia para el FRENTE del pase.
+ *
+ * Tiene que ir al frente, no en el reverso: el reverso existe (se abre con el
+ * botón "..." del pase) pero está tan escondido que un cliente normal nunca lo
+ * ve, y una fecha de vencimiento que nadie ve no sirve de nada.
+ *
+ * Va aparte de `expirationDate`, que es la fecha interna con la que Apple
+ * atenúa el pase pero que no le muestra al cliente en ningún lado.
+ *
+ * Fecha corta a propósito: estos campos son angostos y la fecha larga se corta.
  */
-function vigenciaBackField(data: LoyaltyPassData) {
+function vigenciaFrontField(data: LoyaltyPassData) {
   if (!data.expiresAt) return [];
   return [
     {
       key: "vigencia",
-      label: "Vigencia",
-      value: textoVigencia(data.expiresAt),
+      label: "VENCE",
+      value: fechaCorta(data.expiresAt),
       changeMessage: "Nueva vigencia: %@",
     },
   ];
@@ -546,6 +552,7 @@ function buildPassJson(data: LoyaltyPassData, hasStrip: boolean): object {
           ...(data.cashbackPercent
             ? [{ key: "percent", label: "CASHBACK", value: `${data.cashbackPercent}% por compra` }]
             : []),
+          ...vigenciaFrontField(data),
         ],
         backFields: [
           {
@@ -556,8 +563,7 @@ function buildPassJson(data: LoyaltyPassData, hasStrip: boolean): object {
               : `Presenta este QR en ${data.businessName} en cada compra para acumular cashback. Usa tu saldo cuando quieras.`,
           },
           { key: "card", label: "Programa", value: data.cardTitle },
-          ...vigenciaBackField(data),
-          ...promoBackField(data),
+            ...promoBackField(data),
           { key: "powered", label: "", value: "Powered by Roxier Fidelity · roxierco.com" },
         ],
       },
@@ -603,6 +609,7 @@ function buildPassJson(data: LoyaltyPassData, hasStrip: boolean): object {
             changeMessage: esCupon ? "Tu cupón fue canjeado: %@" : "Tu descuento fue aplicado: %@",
           },
           { key: "member", label: "MIEMBRO", value: data.customerName },
+          ...vigenciaFrontField(data),
         ],
         backFields: [
           {
@@ -613,8 +620,7 @@ function buildPassJson(data: LoyaltyPassData, hasStrip: boolean): object {
               : `Presenta este QR en ${data.businessName} para obtener tu descuento.`,
           },
           { key: "card", label: "Programa", value: data.cardTitle },
-          ...vigenciaBackField(data),
-          ...promoBackField(data),
+            ...promoBackField(data),
           { key: "powered", label: "", value: "Powered by Roxier Fidelity · roxierco.com" },
         ],
       },
@@ -664,16 +670,22 @@ function buildPassJson(data: LoyaltyPassData, hasStrip: boolean): object {
           label: "MIEMBRO",
           value: data.customerName,
         },
-        {
-          key: "progress",
-          label: "PROGRESO",
-          value: stampBar.length <= 8 ? stampBar : `${Math.min(data.currentStamps, data.stampsRequired)} de ${data.stampsRequired}`,
-        },
+        // Con vencimiento se omite PROGRESO: la fila del frente solo muestra
+        // 4 campos y este es el más prescindible — repite lo que ya dicen el
+        // "SELLOS x/y" del encabezado y el "FALTAN" de al lado.
+        ...(data.expiresAt
+          ? []
+          : [{
+              key: "progress",
+              label: "PROGRESO",
+              value: stampBar.length <= 8 ? stampBar : `${Math.min(data.currentStamps, data.stampsRequired)} de ${data.stampsRequired}`,
+            }]),
         {
           key: "remaining",
           label: remaining === 0 ? "ESTADO" : "FALTAN",
           value: remaining === 0 ? "Premio listo" : `${remaining} sello${remaining !== 1 ? "s" : ""}`,
         },
+        ...vigenciaFrontField(data),
       ],
       auxiliaryFields: [
         {
@@ -693,7 +705,6 @@ function buildPassJson(data: LoyaltyPassData, hasStrip: boolean): object {
           label: "Programa",
           value: data.cardTitle,
         },
-        ...vigenciaBackField(data),
         ...promoBackField(data),
         {
           key: "powered",

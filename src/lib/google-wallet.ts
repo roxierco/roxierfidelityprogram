@@ -1,5 +1,5 @@
 import { GoogleAuth } from "google-auth-library";
-import { textoVigencia } from "@/lib/card-expiration";
+import { textoVigencia, fechaCorta } from "@/lib/card-expiration";
 import { sign } from "jsonwebtoken";
 
 const API = "https://walletobjects.googleapis.com/walletobjects/v1";
@@ -213,10 +213,21 @@ export async function upsertLoyaltyObject(params: {
     ...(expiresAt
       ? { validTimeInterval: { end: { date: expiresAt.toISOString() } } }
       : {}),
+    // La fecha va en secondaryLoyaltyPoints porque es de lo poco que Google
+    // pinta en el FRENTE de la tarjeta, junto al contador de sellos.
+    // textModulesData (abajo) vive en la pantalla de detalles, que el cliente
+    // solo ve si abre la tarjeta y hace scroll — ahí nadie se entera.
+    ...(expiresAt
+      ? {
+          secondaryLoyaltyPoints: {
+            label: "Vence",
+            balance: { string: fechaCorta(expiresAt) },
+          },
+        }
+      : {}),
     textModulesData: [
       { header: "Premio al completar", body: rewardText, id: "reward" },
-      // El cliente no ve validTimeInterval; para que sepa la fecha hace falta
-      // un texto visible, igual que en Apple.
+      // Repetida en detalles con la fecha completa, para quien sí abra el pase.
       ...(expiresAt
         ? [{ header: "Vigencia", body: textoVigencia(expiresAt), id: "vigencia" }]
         : []),
