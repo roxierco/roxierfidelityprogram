@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isAppleWalletConfigured, generateLoyaltyPass } from "@/lib/apple-wallet";
+import { calcularExpiracion } from "@/lib/card-expiration";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -21,7 +22,7 @@ export async function GET(req: NextRequest) {
 
   const { data: customer } = await admin
     .from("end_customers")
-    .select("id, full_name, current_stamps, cashback_balance, business_id")
+    .select("id, full_name, current_stamps, cashback_balance, business_id, enrolled_at")
     .eq("id", customerId)
     .single();
 
@@ -30,7 +31,7 @@ export async function GET(req: NextRequest) {
   const [{ data: card }, { data: business }] = await Promise.all([
     admin
       .from("loyalty_cards")
-      .select("title, stamps_required, reward_text, color_primary, color_background, text_color, logo_url, stamp_icon, apple_wallet_strip_url, card_type, coupon_value, cashback_percent")
+      .select("title, stamps_required, reward_text, color_primary, color_background, text_color, logo_url, stamp_icon, apple_wallet_strip_url, card_type, coupon_value, cashback_percent, expiration_enabled, expiration_type, expiration_days, expiration_date")
       .eq("id", cardId)
       .eq("business_id", customer.business_id)
       .eq("is_active", true)
@@ -87,6 +88,7 @@ export async function GET(req: NextRequest) {
       redeemed,
       stampIcon: card.stamp_icon ?? null,
       promoText,
+      expiresAt: calcularExpiracion(card, customer.enrolled_at),
     });
 
     return new NextResponse(new Uint8Array(passBuffer), {

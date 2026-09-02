@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { isGoogleWalletConfigured, syncAfterStamp } from "@/lib/google-wallet";
+import { calcularExpiracion } from "@/lib/card-expiration";
 import { isAppleWalletConfigured, sendApnsPassUpdate } from "@/lib/apple-wallet";
 import { logWalletEvent } from "@/lib/wallet-events";
 import { isPushConfigured, sendPush } from "@/lib/web-push";
@@ -52,7 +53,7 @@ export async function POST(req: NextRequest) {
   // Verificar que el cliente pertenece a este negocio
   const { data: customer } = await admin
     .from("end_customers")
-    .select("id, full_name, current_stamps, total_visits, rewards_redeemed, business_id")
+    .select("id, full_name, current_stamps, total_visits, rewards_redeemed, business_id, enrolled_at")
     .eq("id", customerId)
     .eq("business_id", businessId)
     .single();
@@ -66,7 +67,7 @@ export async function POST(req: NextRequest) {
   if (cardId && uuidRegex.test(cardId)) {
     const { data } = await admin
       .from("loyalty_cards")
-      .select("id, stamps_required, reward_text, card_type, coupon_value, max_uses")
+      .select("id, stamps_required, reward_text, card_type, coupon_value, max_uses, expiration_enabled, expiration_type, expiration_days, expiration_date")
       .eq("id", cardId)
       .eq("business_id", businessId)
       .eq("is_active", true)
@@ -78,7 +79,7 @@ export async function POST(req: NextRequest) {
     // pero NUNCA una de cashback (esas se manejan por /api/cashback, no con sellos).
     const { data } = await admin
       .from("loyalty_cards")
-      .select("id, stamps_required, reward_text, card_type, coupon_value, max_uses")
+      .select("id, stamps_required, reward_text, card_type, coupon_value, max_uses, expiration_enabled, expiration_type, expiration_days, expiration_date")
       .eq("business_id", businessId)
       .eq("is_active", true)
       .neq("card_type", "cashback")
@@ -181,6 +182,7 @@ export async function POST(req: NextRequest) {
       rewardText: card?.reward_text ?? "",
       cardUrl,
       rewarded,
+      expiresAt: calcularExpiracion(card, customer.enrolled_at),
     }).catch(() => null);
   }
 

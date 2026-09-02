@@ -4,6 +4,8 @@ import { createHash, createHmac, timingSafeEqual } from "node:crypto";
 import { deflateSync } from "node:zlib";
 import { connect } from "node:http2";
 
+import { textoVigencia } from "@/lib/card-expiration";
+
 // El chequeo de configuración vive en wallet-config.ts (sin deps pesadas).
 // Se re-exporta aquí para no romper importaciones existentes.
 export { isAppleWalletConfigured } from "@/lib/wallet-config";
@@ -52,6 +54,9 @@ export interface LoyaltyPassData {
   // al enviarse una promo nueva, el iPhone reciba la notificación en la pantalla
   // de bloqueo (Apple solo notifica cuando CAMBIA un dato del pase).
   promoText?: string | null;
+  // Fecha en que caduca la tarjeta de ESTE cliente, ya calculada
+  // (ver src/lib/card-expiration.ts). null = no caduca.
+  expiresAt?: Date | null;
 }
 
 // ─── PNG generator (no external deps) ───────────────────────────────────────
@@ -475,6 +480,33 @@ function promoBackField(data: LoyaltyPassData) {
   ];
 }
 
+/**
+ * Campo visible con la vigencia, para el reverso del pase.
+ * Va aparte de `expirationDate`: esa es la fecha que Apple usa internamente
+ * para atenuar el pase cuando caduca, pero no se la enseña al cliente. Si
+ * queremos que la vea, tiene que haber un campo.
+ */
+function vigenciaBackField(data: LoyaltyPassData) {
+  if (!data.expiresAt) return [];
+  return [
+    {
+      key: "vigencia",
+      label: "Vigencia",
+      value: textoVigencia(data.expiresAt),
+      changeMessage: "Nueva vigencia: %@",
+    },
+  ];
+}
+
+/**
+ * `expirationDate` de PassKit. Al pasar la fecha, el iPhone atenúa el pase y lo
+ * manda al final del Wallet. Solo se incluye si la tarjeta realmente caduca:
+ * un pase sin esta propiedad no vence nunca, que es lo que queremos por defecto.
+ */
+function expiracionPassJson(data: LoyaltyPassData) {
+  return data.expiresAt ? { expirationDate: data.expiresAt.toISOString() } : {};
+}
+
 function buildPassJson(data: LoyaltyPassData, hasStrip: boolean): object {
   const authToken = generateAuthToken(data.customerId, data.cardId);
   const appUrl = process.env.NEXT_PUBLIC_APP_URL!;
@@ -492,6 +524,7 @@ function buildPassJson(data: LoyaltyPassData, hasStrip: boolean): object {
       organizationName: data.businessName,
       description: data.cardTitle,
       logoText: data.businessName,
+      ...expiracionPassJson(data),
       foregroundColor: hexToRgb(data.colorText),
       backgroundColor: hexToRgb(data.colorBackground),
       labelColor: hexToRgb(data.colorText),
@@ -523,6 +556,7 @@ function buildPassJson(data: LoyaltyPassData, hasStrip: boolean): object {
               : `Presenta este QR en ${data.businessName} en cada compra para acumular cashback. Usa tu saldo cuando quieras.`,
           },
           { key: "card", label: "Programa", value: data.cardTitle },
+          ...vigenciaBackField(data),
           ...promoBackField(data),
           { key: "powered", label: "", value: "Powered by Roxier Fidelity · roxierco.com" },
         ],
@@ -552,6 +586,7 @@ function buildPassJson(data: LoyaltyPassData, hasStrip: boolean): object {
       organizationName: data.businessName,
       description: data.cardTitle,
       logoText: data.businessName,
+      ...expiracionPassJson(data),
       foregroundColor: hexToRgb(data.colorText),
       backgroundColor: hexToRgb(data.colorBackground),
       labelColor: hexToRgb(data.colorText),
@@ -578,6 +613,7 @@ function buildPassJson(data: LoyaltyPassData, hasStrip: boolean): object {
               : `Presenta este QR en ${data.businessName} para obtener tu descuento.`,
           },
           { key: "card", label: "Programa", value: data.cardTitle },
+          ...vigenciaBackField(data),
           ...promoBackField(data),
           { key: "powered", label: "", value: "Powered by Roxier Fidelity · roxierco.com" },
         ],
@@ -607,6 +643,7 @@ function buildPassJson(data: LoyaltyPassData, hasStrip: boolean): object {
     organizationName: data.businessName,
     description: data.cardTitle,
     logoText: data.businessName,
+    ...expiracionPassJson(data),
     foregroundColor: hexToRgb(data.colorText),
     backgroundColor: hexToRgb(data.colorBackground),
     labelColor: hexToRgb(data.colorText),
@@ -656,6 +693,7 @@ function buildPassJson(data: LoyaltyPassData, hasStrip: boolean): object {
           label: "Programa",
           value: data.cardTitle,
         },
+        ...vigenciaBackField(data),
         ...promoBackField(data),
         {
           key: "powered",

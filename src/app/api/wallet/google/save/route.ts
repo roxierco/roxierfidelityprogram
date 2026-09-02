@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { calcularExpiracion } from "@/lib/card-expiration";
 import {
   isGoogleWalletConfigured,
   upsertLoyaltyClass,
@@ -27,7 +28,7 @@ export async function POST(req: NextRequest) {
 
   const { data: customer } = await admin
     .from("end_customers")
-    .select("id, full_name, current_stamps, cashback_balance, business_id")
+    .select("id, full_name, current_stamps, cashback_balance, business_id, enrolled_at")
     .eq("id", customerId)
     .single();
 
@@ -43,7 +44,7 @@ export async function POST(req: NextRequest) {
 
   const { data: card } = await admin
     .from("loyalty_cards")
-    .select("id, title, color_primary, color_background, logo_url, stamps_required, reward_text, card_type, coupon_value")
+    .select("id, title, color_primary, color_background, logo_url, stamps_required, reward_text, card_type, coupon_value, expiration_enabled, expiration_type, expiration_days, expiration_date")
     .eq("id", cardId)
     .eq("business_id", customer.business_id)
     .single();
@@ -85,6 +86,7 @@ export async function POST(req: NextRequest) {
         stampsRequired: card.stamps_required,
         rewardText: card.reward_text,
         cardUrl,
+        expiresAt: calcularExpiracion(card, customer.enrolled_at),
       });
     }
 

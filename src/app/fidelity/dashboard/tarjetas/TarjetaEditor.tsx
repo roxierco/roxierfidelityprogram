@@ -508,6 +508,36 @@ export function TarjetaEditor({
     setUploadingBg(false);
   }
 
+  /**
+   * Normaliza los cuatro campos de vigencia antes de guardar.
+   * Si el negocio dijo "Sí" pero no llenó el valor, se guarda como apagada en
+   * vez de dejar una tarjeta que dice caducar sin saber cuándo.
+   */
+  function vigenciaPayload(c: Partial<LoyaltyCard>): {
+    expiration_enabled: boolean;
+    expiration_type: "dias" | "fecha" | null;
+    expiration_days: number | null;
+    expiration_date: string | null;
+  } {
+    const tipo = c.expiration_type === "fecha" ? "fecha" : "dias";
+    const valorOk = tipo === "fecha" ? !!c.expiration_date : !!c.expiration_days;
+
+    if (!c.expiration_enabled || !valorOk) {
+      return {
+        expiration_enabled: false,
+        expiration_type: null,
+        expiration_days: null,
+        expiration_date: null,
+      };
+    }
+    return {
+      expiration_enabled: true,
+      expiration_type: tipo,
+      expiration_days: tipo === "dias" ? Number(c.expiration_days) : null,
+      expiration_date: tipo === "fecha" ? (c.expiration_date ?? null) : null,
+    };
+  }
+
   async function guardar() {
     setSaving(true);
     const supabase = createClient();
@@ -536,6 +566,9 @@ export function TarjetaEditor({
       cashback_min_purchase: cardType === "cashback" ? (card.cashback_min_purchase ?? 0) : 0,
       cashback_max_balance: cardType === "cashback" ? (card.cashback_max_balance ?? null) : null,
       cashback_expires_days: cardType === "cashback" ? (card.cashback_expires_days ?? null) : null,
+      // Vigencia. Solo se guarda el campo del modo elegido y el otro va en null:
+      // la base tiene una restricción que rechaza "caduca pero no se sabe cuándo".
+      ...vigenciaPayload(card),
     };
 
     let savedCardId = card.id;
@@ -787,6 +820,110 @@ export function TarjetaEditor({
                 </div>
               </div>
             )}
+
+            {/* Vigencia — aplica a cualquier tipo de tarjeta */}
+            <div className="card space-y-4">
+              <div>
+                <p className="label">¿Quieres fecha de expiración?</p>
+                <p className="mt-1 text-xs text-mist">
+                  La fecha aparece en la tarjeta del cliente, en Apple y Google Wallet.
+                </p>
+                <div className="mt-3 grid grid-cols-2 gap-2">
+                  <button type="button"
+                    onClick={() => update("expiration_enabled", false as unknown as boolean)}
+                    className={`rounded-brand border py-2.5 text-sm font-semibold transition-colors ${
+                      !card.expiration_enabled
+                        ? "border-magenta bg-magenta/10 text-magenta"
+                        : "border-surface-border text-mist hover:text-paper"
+                    }`}>
+                    No
+                  </button>
+                  <button type="button"
+                    onClick={() => {
+                      update("expiration_enabled", true as unknown as boolean);
+                      if (!card.expiration_type) update("expiration_type", "dias" as unknown as "dias");
+                    }}
+                    className={`rounded-brand border py-2.5 text-sm font-semibold transition-colors ${
+                      card.expiration_enabled
+                        ? "border-magenta bg-magenta/10 text-magenta"
+                        : "border-surface-border text-mist hover:text-paper"
+                    }`}>
+                    Sí
+                  </button>
+                </div>
+              </div>
+
+              {card.expiration_enabled && (
+                <>
+                  <div>
+                    <label className="label">¿Cómo se cuenta?</label>
+                    <div className="mt-2 grid gap-2 sm:grid-cols-2">
+                      <button type="button"
+                        onClick={() => update("expiration_type", "dias" as unknown as "dias")}
+                        className={`rounded-brand border p-3 text-left transition-colors ${
+                          card.expiration_type !== "fecha"
+                            ? "border-magenta bg-magenta/10"
+                            : "border-surface-border hover:border-mist"
+                        }`}>
+                        <p className="text-sm font-semibold text-paper">Días desde que se registra</p>
+                        <p className="mt-0.5 text-[11px] text-mist">Cada cliente tiene su propia fecha</p>
+                      </button>
+                      <button type="button"
+                        onClick={() => update("expiration_type", "fecha" as unknown as "fecha")}
+                        className={`rounded-brand border p-3 text-left transition-colors ${
+                          card.expiration_type === "fecha"
+                            ? "border-magenta bg-magenta/10"
+                            : "border-surface-border hover:border-mist"
+                        }`}>
+                        <p className="text-sm font-semibold text-paper">Fecha fija</p>
+                        <p className="mt-0.5 text-[11px] text-mist">Todos vencen el mismo día</p>
+                      </button>
+                    </div>
+                  </div>
+
+                  {card.expiration_type === "fecha" ? (
+                    <div>
+                      <label className="label">Fecha de finalización</label>
+                      <input className="input mt-1" type="date"
+                        min={new Date().toISOString().slice(0, 10)}
+                        value={card.expiration_date ?? ""}
+                        onChange={(e) => update("expiration_date", e.target.value || (null as unknown as string))} />
+                      <p className="mt-1 text-xs text-mist">
+                        Todas las tarjetas de esta campaña vencen ese día, sin importar cuándo se registró el cliente.
+                      </p>
+                    </div>
+                  ) : (
+                    <div>
+                      <label className="label">Días de vigencia</label>
+                      <input className="input mt-1" type="number" min={1} placeholder="Ej: 90"
+                        value={card.expiration_days ?? ""}
+                        onChange={(e) => update("expiration_days", e.target.value ? Number(e.target.value) : (null as unknown as number))} />
+                      <p className="mt-1 text-xs text-mist">
+                        Se cuentan desde que cada cliente se registra. Si pones 90, quien se registre hoy vence en 90 días.
+                      </p>
+                    </div>
+                  )}
+
+                  <div className="rounded-xl border border-magenta/20 bg-magenta/10 p-3 text-xs text-magenta">
+                    {card.expiration_type === "fecha"
+                      ? card.expiration_date
+                        ? `Todas las tarjetas vencerán el ${new Date(
+                            Number(card.expiration_date.slice(0, 4)),
+                            Number(card.expiration_date.slice(5, 7)) - 1,
+                            Number(card.expiration_date.slice(8, 10)),
+                          ).toLocaleDateString("es-MX", { day: "numeric", month: "long", year: "numeric" })}.`
+                        : "Elige la fecha en que vencerán todas las tarjetas."
+                      : card.expiration_days
+                        ? `Un cliente que se registre hoy vería: vence el ${(() => {
+                            const f = new Date();
+                            f.setDate(f.getDate() + Number(card.expiration_days));
+                            return f.toLocaleDateString("es-MX", { day: "numeric", month: "long", year: "numeric" });
+                          })()}.`
+                        : "Escribe cuántos días dura la tarjeta desde que el cliente se registra."}
+                  </div>
+                </>
+              )}
+            </div>
 
           </div>
         )}

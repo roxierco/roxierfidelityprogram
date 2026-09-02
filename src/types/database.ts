@@ -53,6 +53,13 @@ export interface LoyaltyCard {
   bg_image_position: "top" | "center" | "bottom" | "cover" | null;
   stamp_icon: string | null;
   apple_wallet_strip_url: string | null;
+  // Vigencia de la tarjeta (ver supabase/expiracion.sql y src/lib/card-expiration.ts)
+  // 'dias'  = N días desde que cada cliente se registra (fecha distinta por cliente)
+  // 'fecha' = el mismo día para todos
+  expiration_enabled: boolean;
+  expiration_type: "dias" | "fecha" | null;
+  expiration_days: number | null;
+  expiration_date: string | null;
   created_at: string;
   updated_at: string;
 }

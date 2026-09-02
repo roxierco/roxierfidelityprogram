@@ -1,4 +1,5 @@
 import { GoogleAuth } from "google-auth-library";
+import { textoVigencia } from "@/lib/card-expiration";
 import { sign } from "jsonwebtoken";
 
 const API = "https://walletobjects.googleapis.com/walletobjects/v1";
@@ -188,23 +189,37 @@ export async function upsertLoyaltyObject(params: {
   rewardText: string;
   cardUrl: string;
   rewarded?: boolean;
+  /** Fecha en que caduca la tarjeta de este cliente. null = no caduca. */
+  expiresAt?: Date | null;
 }) {
-  const { customerId, cardId, customerName, currentStamps, stampsRequired, rewardText, cardUrl, rewarded } = params;
+  const { customerId, cardId, customerName, currentStamps, stampsRequired, rewardText, cardUrl, rewarded, expiresAt } = params;
   const id = getObjectId(customerId, cardId);
   const classId = getClassId(cardId);
 
   const loyaltyObject = {
     id,
     classId,
-    state: "ACTIVE",
+    // Google atenúa el pase solo cuando el estado es EXPIRED; validTimeInterval
+    // por sí solo no cambia cómo se ve. Se marca al vuelo según la fecha.
+    state: expiresAt && expiresAt.getTime() < Date.now() ? "EXPIRED" : "ACTIVE",
     accountId: customerId,
     accountName: customerName,
     loyaltyPoints: {
       label: "Sellos",
       balance: { string: rewarded ? `¡Premio ganado!` : `${currentStamps} / ${stampsRequired}` },
     },
+    // Ventana de validez nativa de Google Wallet. Solo se manda si la tarjeta
+    // caduca: sin esta propiedad, el pase no vence nunca.
+    ...(expiresAt
+      ? { validTimeInterval: { end: { date: expiresAt.toISOString() } } }
+      : {}),
     textModulesData: [
       { header: "Premio al completar", body: rewardText, id: "reward" },
+      // El cliente no ve validTimeInterval; para que sepa la fecha hace falta
+      // un texto visible, igual que en Apple.
+      ...(expiresAt
+        ? [{ header: "Vigencia", body: textoVigencia(expiresAt), id: "vigencia" }]
+        : []),
     ],
     barcode: {
       type: "QR_CODE",
@@ -259,6 +274,7 @@ export async function syncAfterStamp(params: {
   rewardText: string;
   cardUrl: string;
   rewarded: boolean;
+  expiresAt?: Date | null;
 }) {
   const objectId = await upsertLoyaltyObject(params);
   if (!objectId) return;
