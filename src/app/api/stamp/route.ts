@@ -4,7 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { isGoogleWalletConfigured, syncAfterStamp } from "@/lib/google-wallet";
-import { calcularExpiracion, cargarExpiracion } from "@/lib/card-expiration";
+import { calcularExpiracion, cargarExpiracion, estaExpirada, formatearExpiracion } from "@/lib/card-expiration";
 import { isAppleWalletConfigured, sendApnsPassUpdate } from "@/lib/apple-wallet";
 import { logWalletEvent } from "@/lib/wallet-events";
 import { isPushConfigured, sendPush } from "@/lib/web-push";
@@ -89,6 +89,22 @@ export async function POST(req: NextRequest) {
     card = data;
   }
 
+  // ── Vigencia: se comprueba ANTES de tocar nada ──────────────────────────
+  // Sin este bloqueo la fecha sería puramente decorativa: el pase se vería
+  // vencido en el celular pero el empleado podría seguir sellando y canjeando.
+  const expiracionCfg = card ? await cargarExpiracion(admin, card.id) : null;
+  const venceEl = calcularExpiracion(expiracionCfg, customer.enrolled_at);
+  if (estaExpirada(venceEl)) {
+    return NextResponse.json(
+      {
+        error: `La tarjeta de ${customer.full_name} venció el ${formatearExpiracion(venceEl!)}.`,
+        expired: true,
+        expiredAt: venceEl!.toISOString(),
+      },
+      { status: 409 },
+    );
+  }
+
   // Canjes de ESTE cliente en ESTA tarjeta (cupón/descuento se llevan por-tarjeta,
   // nunca con el contador global rewards_redeemed que es compartido entre tarjetas).
   let cardRedemptions = 0;
@@ -171,10 +187,6 @@ export async function POST(req: NextRequest) {
     }),
   }).catch(() => null);
 
-  // Vigencia en consulta aparte y tolerante: si las columnas aun no existen
-  // (supabase/expiracion.sql sin correr), queda null y todo lo demas sigue igual.
-  const expiracionCfg = cardId ? await cargarExpiracion(admin, cardId) : null;
-
   // 2. Google Wallet sync
   if (isGoogleWalletConfigured() && cardId) {
     syncAfterStamp({
@@ -186,7 +198,7 @@ export async function POST(req: NextRequest) {
       rewardText: card?.reward_text ?? "",
       cardUrl,
       rewarded,
-      expiresAt: calcularExpiracion(expiracionCfg, customer.enrolled_at),
+      expiresAt: venceEl,
     }).catch(() => null);
   }
 

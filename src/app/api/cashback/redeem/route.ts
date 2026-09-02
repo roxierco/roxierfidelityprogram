@@ -3,6 +3,7 @@ export const runtime = "nodejs";
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { calcularExpiracion, cargarExpiracion, estaExpirada, formatearExpiracion } from "@/lib/card-expiration";
 import { redeemCashbackSchema } from "@/lib/cashback/schemas";
 import { logWalletEvent } from "@/lib/wallet-events";
 import { notifyCashbackUpdate } from "@/lib/cashback/notify";
@@ -38,6 +39,23 @@ export async function POST(req: Request) {
     .eq("owner_id", user.id)
     .single();
   if (!business) return NextResponse.json({ error: "No autorizado para este negocio" }, { status: 403 });
+
+  // ── Vigencia: se comprueba ANTES del RPC ────────────────────────────────
+  // Aquí hay dinero de por medio: acreditar o redimir saldo sobre una tarjeta
+  // vencida deja el saldo en un limbo que el cliente ve caducado en su Wallet.
+  const { data: clienteVig } = await admin
+    .from("end_customers").select("enrolled_at, full_name").eq("id", customerId).maybeSingle();
+  const venceEl = calcularExpiracion(await cargarExpiracion(admin, cardId), clienteVig?.enrolled_at);
+  if (estaExpirada(venceEl)) {
+    return NextResponse.json(
+      {
+        error: `La tarjeta de ${clienteVig?.full_name ?? "este cliente"} venció el ${formatearExpiracion(venceEl!)}.`,
+        expired: true,
+        expiredAt: venceEl!.toISOString(),
+      },
+      { status: 409 },
+    );
+  }
 
   const { data, error } = await admin.rpc("redeem_cashback", {
     p_customer_id: customerId,
