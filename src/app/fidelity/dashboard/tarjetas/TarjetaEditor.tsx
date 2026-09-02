@@ -571,12 +571,33 @@ export function TarjetaEditor({
       ...vigenciaPayload(card),
     };
 
+    // Si las columnas de vigencia todavía no existen (supabase/expiracion.sql sin
+    // correr), guardar con ellas falla y se perdería la tarjeta entera. Se
+    // reintenta sin ellas: es preferible que la vigencia no se guarde a que el
+    // negocio no pueda guardar su tarjeta.
+    const sinVigencia = { ...payload };
+    delete (sinVigencia as Record<string, unknown>).expiration_enabled;
+    delete (sinVigencia as Record<string, unknown>).expiration_type;
+    delete (sinVigencia as Record<string, unknown>).expiration_days;
+    delete (sinVigencia as Record<string, unknown>).expiration_date;
+
+    const faltanColumnas = (e: { message?: string } | null) =>
+      !!e?.message && /expiration_/.test(e.message);
+
     let savedCardId = card.id;
     const isNewCard = !card.id;
     if (card.id) {
-      await supabase.from("loyalty_cards").update(payload).eq("id", card.id);
+      const { error } = await supabase.from("loyalty_cards").update(payload).eq("id", card.id);
+      if (faltanColumnas(error)) {
+        console.warn("Vigencia no guardada: falta correr supabase/expiracion.sql");
+        await supabase.from("loyalty_cards").update(sinVigencia).eq("id", card.id);
+      }
     } else {
-      const { data } = await supabase.from("loyalty_cards").insert(payload).select().single();
+      let { data, error } = await supabase.from("loyalty_cards").insert(payload).select().single();
+      if (faltanColumnas(error)) {
+        console.warn("Vigencia no guardada: falta correr supabase/expiracion.sql");
+        ({ data } = await supabase.from("loyalty_cards").insert(sinVigencia).select().single());
+      }
       if (data) { setCard(data); savedCardId = data.id; }
     }
 

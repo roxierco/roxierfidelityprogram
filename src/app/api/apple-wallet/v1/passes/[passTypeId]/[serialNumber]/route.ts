@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isAppleWalletConfigured, generateLoyaltyPass, verifyAuthToken } from "@/lib/apple-wallet";
-import { calcularExpiracion } from "@/lib/card-expiration";
+import { calcularExpiracion, cargarExpiracion } from "@/lib/card-expiration";
 
 // Apple descarga el pass actualizado tras recibir una notificación push
 export async function GET(req: NextRequest, { params }: { params: Promise<{ passTypeId: string; serialNumber: string }> }) {
@@ -24,7 +24,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ pass
 
   const [{ data: customer }, { data: card }] = await Promise.all([
     admin.from("end_customers").select("id, full_name, current_stamps, cashback_balance, business_id, enrolled_at").eq("id", customerId).single(),
-    admin.from("loyalty_cards").select("id, title, stamps_required, reward_text, color_primary, color_background, text_color, logo_url, stamp_icon, apple_wallet_strip_url, card_type, coupon_value, cashback_percent, expiration_enabled, expiration_type, expiration_days, expiration_date").eq("id", cardId).single(),
+    admin.from("loyalty_cards").select("id, title, stamps_required, reward_text, color_primary, color_background, text_color, logo_url, stamp_icon, apple_wallet_strip_url, card_type, coupon_value, cashback_percent").eq("id", cardId).single(),
   ]);
 
   if (!customer || !card) return new NextResponse(null, { status: 404 });
@@ -47,6 +47,10 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ pass
       .eq("card_id", cardId);
     redeemed = (count ?? 0) > 0;
   }
+
+  // Vigencia en consulta aparte y tolerante: si las columnas aun no existen
+  // (supabase/expiracion.sql sin correr), queda null y todo lo demas sigue igual.
+  const expiracionCfg = await cargarExpiracion(admin, cardId);
 
   const cardUrl = `${process.env.NEXT_PUBLIC_APP_URL}/c/${business.slug}/u/${customerId}?card=${cardId}`;
 
@@ -73,7 +77,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ pass
       redeemed,
       stampIcon: card.stamp_icon ?? null,
       promoText,
-      expiresAt: calcularExpiracion(card, customer.enrolled_at),
+      expiresAt: calcularExpiracion(expiracionCfg, customer.enrolled_at),
     });
 
     return new NextResponse(new Uint8Array(passBuffer), {

@@ -4,7 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { isGoogleWalletConfigured, syncAfterStamp } from "@/lib/google-wallet";
-import { calcularExpiracion } from "@/lib/card-expiration";
+import { calcularExpiracion, cargarExpiracion } from "@/lib/card-expiration";
 import { isAppleWalletConfigured, sendApnsPassUpdate } from "@/lib/apple-wallet";
 import { logWalletEvent } from "@/lib/wallet-events";
 import { isPushConfigured, sendPush } from "@/lib/web-push";
@@ -67,7 +67,7 @@ export async function POST(req: NextRequest) {
   if (cardId && uuidRegex.test(cardId)) {
     const { data } = await admin
       .from("loyalty_cards")
-      .select("id, stamps_required, reward_text, card_type, coupon_value, max_uses, expiration_enabled, expiration_type, expiration_days, expiration_date")
+      .select("id, stamps_required, reward_text, card_type, coupon_value, max_uses")
       .eq("id", cardId)
       .eq("business_id", businessId)
       .eq("is_active", true)
@@ -79,7 +79,7 @@ export async function POST(req: NextRequest) {
     // pero NUNCA una de cashback (esas se manejan por /api/cashback, no con sellos).
     const { data } = await admin
       .from("loyalty_cards")
-      .select("id, stamps_required, reward_text, card_type, coupon_value, max_uses, expiration_enabled, expiration_type, expiration_days, expiration_date")
+      .select("id, stamps_required, reward_text, card_type, coupon_value, max_uses")
       .eq("business_id", businessId)
       .eq("is_active", true)
       .neq("card_type", "cashback")
@@ -171,6 +171,10 @@ export async function POST(req: NextRequest) {
     }),
   }).catch(() => null);
 
+  // Vigencia en consulta aparte y tolerante: si las columnas aun no existen
+  // (supabase/expiracion.sql sin correr), queda null y todo lo demas sigue igual.
+  const expiracionCfg = cardId ? await cargarExpiracion(admin, cardId) : null;
+
   // 2. Google Wallet sync
   if (isGoogleWalletConfigured() && cardId) {
     syncAfterStamp({
@@ -182,7 +186,7 @@ export async function POST(req: NextRequest) {
       rewardText: card?.reward_text ?? "",
       cardUrl,
       rewarded,
-      expiresAt: calcularExpiracion(card, customer.enrolled_at),
+      expiresAt: calcularExpiracion(expiracionCfg, customer.enrolled_at),
     }).catch(() => null);
   }
 

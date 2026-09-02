@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isAppleWalletConfigured, generateLoyaltyPass } from "@/lib/apple-wallet";
-import { calcularExpiracion } from "@/lib/card-expiration";
+import { calcularExpiracion, cargarExpiracion } from "@/lib/card-expiration";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -31,7 +31,7 @@ export async function GET(req: NextRequest) {
   const [{ data: card }, { data: business }] = await Promise.all([
     admin
       .from("loyalty_cards")
-      .select("title, stamps_required, reward_text, color_primary, color_background, text_color, logo_url, stamp_icon, apple_wallet_strip_url, card_type, coupon_value, cashback_percent, expiration_enabled, expiration_type, expiration_days, expiration_date")
+      .select("title, stamps_required, reward_text, color_primary, color_background, text_color, logo_url, stamp_icon, apple_wallet_strip_url, card_type, coupon_value, cashback_percent")
       .eq("id", cardId)
       .eq("business_id", customer.business_id)
       .eq("is_active", true)
@@ -44,6 +44,10 @@ export async function GET(req: NextRequest) {
   ]);
 
   if (!card || !business) return new NextResponse("Not found", { status: 404 });
+
+  // Vigencia en consulta aparte y tolerante: si las columnas aun no existen
+  // (supabase/expiracion.sql sin correr), queda null y todo lo demas sigue igual.
+  const expiracionCfg = await cargarExpiracion(admin, cardId);
 
   // Promo por separado y tolerante: si la columna aún no existe (SQL sin correr),
   // queda null y la generación del pase sigue funcionando igual.
@@ -88,7 +92,7 @@ export async function GET(req: NextRequest) {
       redeemed,
       stampIcon: card.stamp_icon ?? null,
       promoText,
-      expiresAt: calcularExpiracion(card, customer.enrolled_at),
+      expiresAt: calcularExpiracion(expiracionCfg, customer.enrolled_at),
     });
 
     return new NextResponse(new Uint8Array(passBuffer), {

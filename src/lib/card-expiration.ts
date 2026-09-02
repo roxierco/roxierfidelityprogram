@@ -67,3 +67,30 @@ export function textoVigencia(fecha: Date): string {
 export function estaExpirada(fecha: Date | null): boolean {
   return fecha !== null && fecha.getTime() < Date.now();
 }
+
+/**
+ * Lee la config de vigencia de una tarjeta SIN romperse si las columnas todavía
+ * no existen (supabase/expiracion.sql sin correr).
+ *
+ * Va en una consulta aparte a propósito. Si estas columnas se pidieran en el
+ * mismo `select` que el resto de la tarjeta, un despliegue anterior a la
+ * migración haría fallar la consulta entera: se caerían los pases y el sellado,
+ * no solo la vigencia. Mismo criterio que `latest_promo_text` en las rutas del
+ * pase de Apple.
+ */
+export async function cargarExpiracion(
+  admin: { from: (t: string) => any }, // eslint-disable-line @typescript-eslint/no-explicit-any
+  cardId: string,
+): Promise<ExpirationConfig | null> {
+  try {
+    const { data, error } = await admin
+      .from("loyalty_cards")
+      .select("expiration_enabled, expiration_type, expiration_days, expiration_date")
+      .eq("id", cardId)
+      .maybeSingle();
+    if (error || !data) return null;
+    return data as ExpirationConfig;
+  } catch {
+    return null;
+  }
+}
