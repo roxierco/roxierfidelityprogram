@@ -57,9 +57,22 @@ export async function POST(
   // decía "Enviado a N clientes" aunque no hubiera salido una sola notificación.
   const canales = { email: 0, apple: 0, google: 0, web: 0 };
 
-  // 1. Emails via Resend
-  if (process.env.RESEND_API_KEY && process.env.RESEND_API_KEY !== "re_placeholder" && withEmail.length > 0) {
-    const resend = new Resend(process.env.RESEND_API_KEY);
+  // 1. Emails via Resend.
+  //    El guard antes comparaba con "re_placeholder" exacto, así que cualquier
+  //    variante ("re_placeholder_123") pasaba y luego Resend rechazaba TODO.
+  const resendKey = process.env.RESEND_API_KEY?.trim();
+  const keyEsPlaceholder = !!resendKey && /placeholder|^re_xxx|cambiar|tu-clave/i.test(resendKey);
+
+  if (withEmail.length > 0 && (!resendKey || keyEsPlaceholder)) {
+    await logWalletEvent("promo_push_failed", `promo:${promo.id}`, undefined, {
+      canal: "email",
+      error: !resendKey ? "RESEND_API_KEY sin configurar" : "RESEND_API_KEY es un placeholder",
+      nota: `${withEmail.length} cliente(s) con correo se quedaron sin aviso`,
+    });
+  }
+
+  if (resendKey && !keyEsPlaceholder && withEmail.length > 0) {
+    const resend = new Resend(resendKey);
     const from = process.env.RESEND_FROM_EMAIL ?? "Roxier Fidelity <noreply@roxierfidelity.com>";
 
     // Enviar en lotes de 50
@@ -84,7 +97,31 @@ export async function POST(
           })
         )
       );
-      canales.email += okBatch.filter((r) => r.status === "fulfilled").length;
+      // Resend NO lanza excepción cuando la API rechaza el correo: resuelve con
+      // { data: null, error: {...} }. Contar solo `fulfilled` daba por enviados
+      // los rechazados — el mismo error que ya había en el canal de Google.
+      canales.email += okBatch.filter(
+        (r) => r.status === "fulfilled" && !r.value?.error,
+      ).length;
+
+      const fallidos = okBatch.filter(
+        (r) => r.status === "rejected" || r.value?.error,
+      );
+      if (fallidos.length) {
+        const motivo = fallidos
+          .map((r) =>
+            r.status === "rejected"
+              ? String(r.reason)
+              : JSON.stringify(r.value?.error),
+          )
+          .find(Boolean);
+        await logWalletEvent("promo_push_failed", `promo:${promo.id}`, undefined, {
+          canal: "email",
+          error: motivo?.slice(0, 300),
+          fallidos: fallidos.length,
+          de: batch.length,
+        });
+      }
     }
   }
 
