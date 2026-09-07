@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { Resend } from "resend";
 import { isGoogleWalletConfigured, sendWalletPromoMessage, checkGoogleWalletAuth } from "@/lib/google-wallet";
 import { isPushConfigured, sendPush } from "@/lib/web-push";
 import { isAppleWalletConfigured, sendApnsPassUpdate } from "@/lib/apple-wallet";
@@ -37,11 +36,10 @@ export async function POST(
   // Obtener todos los clientes
   const { data: allCustomers } = await admin
     .from("end_customers")
-    .select("id, full_name, email")
+    .select("id, full_name")
     .eq("business_id", business.id);
 
   const customers = allCustomers ?? [];
-  const withEmail = customers.filter((c) => c.email);
 
   // TODAS las tarjetas del negocio, activas o no. No filtrar por `is_active`:
   // el cliente conserva el pase en su celular aunque el negocio haya desactivado
@@ -53,79 +51,12 @@ export async function POST(
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "";
 
-  // Conteo real por canal. Antes se devolvía solo el de emails, así que el panel
-  // decía "Enviado a N clientes" aunque no hubiera salido una sola notificación.
-  const canales = { email: 0, apple: 0, google: 0, web: 0 };
+  // Conteo real por canal. El aviso llega al celular del cliente (Wallet o
+  // navegador); el correo se retiró a propósito: era el canal más invasivo y
+  // el único que costaba dinero.
+  const canales = { apple: 0, google: 0, web: 0 };
 
-  // 1. Emails via Resend.
-  //    El guard antes comparaba con "re_placeholder" exacto, así que cualquier
-  //    variante ("re_placeholder_123") pasaba y luego Resend rechazaba TODO.
-  const resendKey = process.env.RESEND_API_KEY?.trim();
-  const keyEsPlaceholder = !!resendKey && /placeholder|^re_xxx|cambiar|tu-clave/i.test(resendKey);
-
-  if (withEmail.length > 0 && (!resendKey || keyEsPlaceholder)) {
-    await logWalletEvent("promo_push_failed", `promo:${promo.id}`, undefined, {
-      canal: "email",
-      error: !resendKey ? "RESEND_API_KEY sin configurar" : "RESEND_API_KEY es un placeholder",
-      nota: `${withEmail.length} cliente(s) con correo se quedaron sin aviso`,
-    });
-  }
-
-  if (resendKey && !keyEsPlaceholder && withEmail.length > 0) {
-    const resend = new Resend(resendKey);
-    const from = process.env.RESEND_FROM_EMAIL ?? "Roxier Fidelity <noreply@roxierfidelity.com>";
-
-    // Enviar en lotes de 50
-    const BATCH = 50;
-    for (let i = 0; i < withEmail.length; i += BATCH) {
-      const batch = withEmail.slice(i, i + BATCH);
-      const okBatch = await Promise.allSettled(
-        batch.map((c) =>
-          resend.emails.send({
-            from,
-            to: c.email!,
-            subject: `${business.name}: ${promo.title}`,
-            html: emailTemplate({
-              customerName: c.full_name,
-              businessName: business.name,
-              businessLogoUrl: business.logo_url,
-              promoTitle: promo.title,
-              promoMessage: promo.message,
-              cardUrl: `${appUrl}/c/${business.slug}/u/${c.id}`,
-              appUrl,
-            }),
-          })
-        )
-      );
-      // Resend NO lanza excepción cuando la API rechaza el correo: resuelve con
-      // { data: null, error: {...} }. Contar solo `fulfilled` daba por enviados
-      // los rechazados — el mismo error que ya había en el canal de Google.
-      canales.email += okBatch.filter(
-        (r) => r.status === "fulfilled" && !r.value?.error,
-      ).length;
-
-      const fallidos = okBatch.filter(
-        (r) => r.status === "rejected" || r.value?.error,
-      );
-      if (fallidos.length) {
-        const motivo = fallidos
-          .map((r) =>
-            r.status === "rejected"
-              ? String(r.reason)
-              : JSON.stringify(r.value?.error),
-          )
-          .find(Boolean);
-        await logWalletEvent("promo_push_failed", `promo:${promo.id}`, undefined, {
-          canal: "email",
-          error: motivo?.slice(0, 300),
-          fallidos: fallidos.length,
-          de: batch.length,
-        });
-      }
-    }
-  }
-
-  // 2. Google Wallet addMessage para clientes con tarjeta guardada en Wallet.
+  // 1. Google Wallet addMessage para clientes con tarjeta guardada en Wallet.
   //    Ojo: sendWalletPromoMessage no lanza excepción si Google responde error,
   //    así que hay que mirar `ok` — que la promesa se resuelva no basta.
   if (isGoogleWalletConfigured() && businessCards?.length) {
@@ -173,7 +104,7 @@ export async function POST(
     }
   }
 
-  // 3. Web Push para clientes con suscripción activa en el navegador
+  // 2. Web Push para clientes con suscripción activa en el navegador
   if (isPushConfigured() && customers.length > 0) {
     const customerIds = customers.map((c) => c.id);
     const { data: subs } = await admin
@@ -202,7 +133,7 @@ export async function POST(
     }
   }
 
-  // 4. Apple Wallet: Apple no permite mensajes libres. Guardamos el texto de la
+  // 3. Apple Wallet: Apple no permite mensajes libres. Guardamos el texto de la
   //    promo en el negocio (el pase lo muestra en el reverso con changeMessage) y
   //    empujamos un refresh por APNs; al cambiar el valor, el iPhone notifica.
   if (isAppleWalletConfigured() && customers.length > 0) {
@@ -284,9 +215,9 @@ export async function POST(
   }
 
   // Total real de avisos entregados, sumando canales. Un mismo cliente puede
-  // recibir por más de uno (email + Wallet), así que esto no es "clientes
-  // alcanzados" sino avisos enviados.
-  const totalAvisos = canales.email + canales.apple + canales.google + canales.web;
+  // recibir por más de uno (Apple y navegador, por ejemplo), así que esto no es
+  // "clientes alcanzados" sino avisos enviados.
+  const totalAvisos = canales.apple + canales.google + canales.web;
 
   // Registrar en historial
   await admin.from("push_notifications").insert({
@@ -297,78 +228,4 @@ export async function POST(
   });
 
   return NextResponse.json({ sent: totalAvisos, canales, clientes: customers.length });
-}
-
-function emailTemplate(data: {
-  customerName: string;
-  businessName: string;
-  businessLogoUrl: string | null;
-  promoTitle: string;
-  promoMessage: string;
-  cardUrl: string;
-  appUrl: string;
-}) {
-  const { customerName, businessName, businessLogoUrl, promoTitle, promoMessage, cardUrl } = data;
-  const firstName = customerName.split(" ")[0];
-
-  return `<!DOCTYPE html>
-<html lang="es">
-<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
-<body style="margin:0;padding:0;background:#F5F4F2;font-family:system-ui,sans-serif;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="background:#F5F4F2;padding:32px 16px;">
-    <tr><td align="center">
-      <table width="100%" style="max-width:560px;background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
-
-        <!-- Header -->
-        <tr><td style="background:#0E0E10;padding:24px 32px;">
-          <table width="100%" cellpadding="0" cellspacing="0">
-            <tr>
-              <td>
-                ${businessLogoUrl
-                  ? `<img src="${businessLogoUrl}" alt="${businessName}" style="height:40px;object-fit:contain;">`
-                  : `<span style="color:#FF2E63;font-weight:800;font-size:18px;">${businessName}</span>`}
-              </td>
-              <td align="right">
-                <span style="color:#96969E;font-size:11px;">Powered by Roxier Fidelity</span>
-              </td>
-            </tr>
-          </table>
-        </td></tr>
-
-        <!-- Promo badge -->
-        <tr><td style="background:#FF2E63;padding:12px 32px;">
-          <p style="margin:0;color:#ffffff;font-weight:700;font-size:13px;letter-spacing:1px;text-transform:uppercase;">
-            Promoción especial
-          </p>
-        </td></tr>
-
-        <!-- Body -->
-        <tr><td style="padding:32px;">
-          <p style="margin:0 0 8px;color:#0E0E10;font-size:15px;">Hola, <strong>${firstName}</strong></p>
-          <h1 style="margin:0 0 16px;color:#0E0E10;font-size:24px;font-weight:800;line-height:1.2;">
-            ${promoTitle}
-          </h1>
-          <p style="margin:0 0 24px;color:#555560;font-size:15px;line-height:1.6;">
-            ${promoMessage}
-          </p>
-
-          <a href="${cardUrl}"
-            style="display:inline-block;background:#FF2E63;color:#ffffff;font-weight:700;font-size:14px;padding:14px 28px;border-radius:100px;text-decoration:none;">
-            Ver mi tarjeta de lealtad →
-          </a>
-        </td></tr>
-
-        <!-- Footer -->
-        <tr><td style="padding:16px 32px 24px;border-top:1px solid #F0F0F0;">
-          <p style="margin:0;color:#96969E;font-size:12px;text-align:center;">
-            Recibiste este email porque tienes una tarjeta de lealtad de <strong>${businessName}</strong>.<br>
-            Este email fue enviado desde Roxier Fidelity.
-          </p>
-        </td></tr>
-
-      </table>
-    </td></tr>
-  </table>
-</body>
-</html>`;
 }

@@ -84,10 +84,9 @@ export function PromocionesClient({
       // que decirlo: antes siempre reportaba éxito y los fallos pasaban de largo.
       const c = data.canales ?? {};
       if (!data.sent) {
-        showToast("No se envió ningún aviso. Revisa que tus clientes tengan la tarjeta guardada o un correo registrado.", false);
+        showToast("No se envió ningún aviso. Revisa que tus clientes tengan la tarjeta guardada en su Wallet.", false);
       } else {
         const detalle = [
-          c.email ? `${c.email} por correo` : null,
           c.apple ? `${c.apple} a Apple Wallet` : null,
           c.google ? `${c.google} a Google Wallet` : null,
           c.web ? `${c.web} al navegador` : null,
@@ -116,7 +115,7 @@ export function PromocionesClient({
       <div className="flex items-end justify-between">
         <div>
           <h1 className="text-3xl font-extrabold text-paper">Promociones</h1>
-          <p className="mt-1 text-mist">Crea ofertas y envíalas por email a todos tus clientes.</p>
+          <p className="mt-1 text-mist">Crea ofertas y avísale a tus clientes en su celular, directo en su Wallet.</p>
         </div>
         {!creando && (
           <button onClick={() => setCreando(true)} className="btn-primary !py-2 !px-5 text-sm">
@@ -226,7 +225,7 @@ export function PromocionesClient({
                       disabled={sending === p.id}
                       className="flex-1 rounded-brand bg-magenta/10 py-2 text-xs font-semibold text-magenta hover:bg-magenta/20 transition-colors disabled:opacity-50"
                     >
-                      {sending === p.id ? "Enviando..." : <span className="inline-flex items-center gap-1.5"><Icon name="correo" className="h-4 w-4" />Enviar a clientes</span>}
+                      {sending === p.id ? "Enviando..." : <span className="inline-flex items-center gap-1.5"><Icon name="campana" className="h-4 w-4" />Enviar a clientes</span>}
                     </button>
                     <button
                       onClick={() => setConfirmId(p.id)}
